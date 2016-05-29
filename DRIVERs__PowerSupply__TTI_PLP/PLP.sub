@@ -1,0 +1,682 @@
+FPAttributeValueFile
+
+n  SubType="IVI" 
+
+n  SubVersion="1" 
+
+v attrConfigRangeTable DataType="i" 
+ 0 (0)
+  "Dual channel unitsindependently in‘tracking mode’."
+
+ 1 (1)
+  "Single channel units and dual channel units working in parallel mode."
+
+ 2 (2)
+  "Dual channel units with both channels operating independently."
+
+ 3 (3)
+  "The mode is unknown"
+
+
+v attrCurrentLimitBehaviorRangeTable DataType="i" 
+ PLP_VAL_CURRENT_TRIP (1)
+  "When the output current reaches or exceeds the value of the "
+  "PLP_ATTR_CURRENT_LIMIT attribute, the power supply disables the output."
+
+
+v attrRangeSettingRangeTable DataType="i" 
+ 1 (1)
+  "Range 1, Model specific, see instrument user manual"
+
+ 2 (2)
+  "Range 2, Model specific, see instrument user manual"
+
+
+v measurementTypeRangeTable DataType="i" 
+ PLP_VAL_MEASURE_CURRENT (0)
+  ""
+
+ PLP_VAL_MEASURE_VOLTAGE (0)
+  ""
+
+
+v Boolean_values DataType="i" 
+ VI_TRUE (1)
+  "True"
+
+ VI_FALSE (0)
+  "False"
+
+
+v attrTriggerSourceRangeTable DataType="i" 
+ PLP_VAL_TRIG_IMMEDIATE (0)
+  "The power supply does not wait for a trigger before changing the output "
+  "signa."
+
+ PLP_VAL_TRIG_EXTERNAL (1)
+  "The power supply waits for a trigger on the external trigger input."
+
+ PLP_VAL_SOFTWARE_TRIG (2)
+  "The power supply waits for you to call the PLP_SendSoftwareTrigger "
+  "function."
+
+ PLP_VAL_TRIG_TTL0 (3)
+  "The power supply waits for a trigger on the PXI TRIG0 line (for PXI "
+  "instruments) or the VXI TTL0 line (for VXI instruments)."
+
+ PLP_VAL_TRIG_TTL1 (4)
+  "The power supply waits for a trigger on the PXI TRIG1 line (for PXI "
+  "instruments) or the VXI TTL1 line (for VXI instruments)."
+
+ PLP_VAL_TRIG_TTL2 (5)
+  "The power supply waits for a trigger on the PXI TRIG2 line (for PXI "
+  "instruments) or the VXI TTL2 line (for VXI instruments)."
+
+ PLP_VAL_TRIG_TTL3 (6)
+  "The power supply waits for a trigger on the PXI TRIG3 line (for PXI "
+  "instruments) or the VXI TTL3 line (for VXI instruments)."
+
+ PLP_VAL_TRIG_TTL4 (7)
+  "The power supply waits for a trigger on the PXI TRIG4 line (for PXI "
+  "instruments) or the VXI TTL4 line (for VXI instruments)."
+
+ PLP_VAL_TRIG_TTL5 (8)
+  "The power supply waits for a trigger on the PXI TRIG5 line (for PXI "
+  "instruments) or the VXI TTL5 line (for VXI instruments)."
+
+ PLP_VAL_TRIG_TTL6 (9)
+  "The power supply waits for a trigger on the PXI TRIG6 line (for PXI "
+  "instruments) or the VXI TTL6 line (for VXI instruments)."
+
+ PLP_VAL_TRIG_TTL7 (10)
+  "The power supply waits for a trigger on the PXI TRIG7 line (for PXI "
+  "instruments) or the VXI TTL7 line (for VXI instruments)."
+
+ PLP_VAL_TRIG_ECL0 (11)
+  "The power supply waits for a trigger on the VXI ECL0 line."
+
+ PLP_VAL_TRIG_ECL1 (12)
+  "The power supply waits for a trigger on the VXI ECL1 line."
+
+ PLP_VAL_TRIG_PXI_STAR (13)
+  "The power supply waits for a trigger on the PXI STAR trigger bus."
+
+ PLP_VAL_TRIG_RTSI_0 (14)
+  "The power supply waits for a trigger on RTSI line 0 ."
+
+ PLP_VAL_TRIG_RTSI_1 (15)
+  "The power supply waits for a trigger on RTSI line 1."
+
+ PLP_VAL_TRIG_RTSI_2 (16)
+  "The power supply waits for a trigger on RTSI line 2."
+
+ PLP_VAL_TRIG_RTSI_3 (17)
+  "The power supply waits for a trigger on RTSI line 3."
+
+ PLP_VAL_TRIG_RTSI_4 (18)
+  "The power supply waits for a trigger on RTSI line 4."
+
+ PLP_VAL_TRIG_RTSI_5 (19)
+  "The power supply waits for a trigger on RTSI line 5."
+
+ PLP_VAL_TRIG_RTSI_6 (20)
+  "The power supply waits for a trigger on RTSI line 6."
+
+
+0 PLP_SetAttributeViInt32 3 4 false s DataType="ViInt32" 
+0 PLP_GetAttributeViInt32 3 4 false g DataType="ViInt32" 
+0 PLP_CheckAttributeViInt32 3 4 false s DataType="ViInt32" 
+0 PLP_SetAttributeViReal64 3 4 false s DataType="ViReal64" 
+0 PLP_GetAttributeViReal64 3 4 false g DataType="ViReal64" 
+0 PLP_CheckAttributeViReal64 3 4 false s DataType="ViReal64" 
+0 PLP_SetAttributeViSession 3 4 false s DataType="ViSession" 
+0 PLP_GetAttributeViSession 3 4 false g DataType="ViSession" 
+0 PLP_CheckAttributeViSession 3 4 false s DataType="ViSession" 
+0 PLP_SetAttributeViBoolean 3 4 false s DataType="ViBoolean" 
+0 PLP_GetAttributeViBoolean 3 4 false g DataType="ViBoolean" 
+0 PLP_CheckAttributeViBoolean 3 4 false s DataType="ViBoolean" 
+0 PLP_SetAttributeViString 3 4 false s DataType="ViString" 
+0 PLP_GetAttributeViString 3 5 false g DataType="ViString" 
+0 PLP_CheckAttributeViString 3 4 false s DataType="ViString" 
+
+1 all "Inherent IVI Attributes" 
+ "Attributes common to all IVI instrument drivers."
+
+2 all "User Options" 
+ "Attributes you can set to affect the operation of this instrument driver.\n"
+ "    "
+
+3 all "Range Check" PLP_ATTR_RANGE_CHECK ViBoolean gs Boolean_values 
+ "Specifies whether to validate attribute values and function parameters.  "
+ "If enabled, the instrument driver validates the parameter values that you "
+ "pass to driver functions.  Range checking parameters is very useful for "
+ "debugging.  After you validate your program, you can set this attribute to "
+ "VI_FALSE to disable range checking and maximize performance.\n"
+ "    The default value is VI_TRUE.   Use the PLP_InitWithOptions function "
+ "to override this value.\n"
+ "    "
+
+3 all "Query Instrument Status" PLP_ATTR_QUERY_INSTRUMENT_STATUS ViBoolean gs Boolean_values 
+ "Specifies whether the instrument driver queries the instrument status "
+ "after each operation.  Querying the instrument status is very useful for "
+ "debugging.  After you validate your program, you can set this attribute to "
+ "VI_FALSE to disable status checking and maximize performance\n"
+ "    The instrument driver can choose to ignore status checking for "
+ "particular attributes regardless of the setting of this attribute.\n"
+ "    The default value is VI_TRUE.   Use the PLP_InitWithOptions function "
+ "to override this value.\n"
+ "    "
+
+3 all "Cache" PLP_ATTR_CACHE ViBoolean gs Boolean_values 
+ "Specifies whether to cache the value of attributes.  When caching is "
+ "enabled, the instrument driver keeps track of the current instrument "
+ "settings and avoids sending redundant commands to the instrument.  Thus, "
+ "you can significantly increase execution speed.\n"
+ "    The instrument driver can choose always to cache or never to cache "
+ "particular attributes regardless of the setting of this attribute.\n"
+ "    The default value is VI_TRUE.   Use the PLP_InitWithOptions function "
+ "to override this value.\n"
+ "    "
+
+3 all "Simulate" PLP_ATTR_SIMULATE ViBoolean gs Boolean_values 
+ "Specifies whether or not to simulate instrument driver I/O operations.  If "
+ "simulation is enabled, instrument driver functions perform range checking "
+ "and call Ivi_GetAttribute and Ivi_SetAttribute functions, but they do not "
+ "perform instrument I/O.  For output parameters that represent instrument "
+ "data, the instrument driver functions return calculated values.\n"
+ "    The default value is VI_FALSE.   Use the PLP_InitWithOptions function "
+ "to override this value.\n"
+ "    "
+
+3 all "Record Value Coercions" PLP_ATTR_RECORD_COERCIONS ViBoolean gs Boolean_values 
+ "Specifies whether the IVI engine keeps a list of the value coercions it "
+ "makes for ViInt32 and ViReal64 attributes.  You call "
+ "PLP_GetNextCoercionRecord to extract and delete the oldest coercion record "
+ "from the list.\n"
+ "    The default value is VI_FALSE.   Use the PLP_InitWithOptions function "
+ "to override this value.\n"
+ "    "
+
+3 all "Interchange Check" PLP_ATTR_INTERCHANGE_CHECK ViBoolean gs Boolean_values 
+ "Specifies whether to perform interchangeability checking and retrieve "
+ "interchangeability warnings.\n"
+ "\n"
+ "The default value is VI_FALSE.\n"
+ "\n"
+ "Interchangeability warnings indicate that using your application with a "
+ "different instrument might cause different behavior.  You call PLP Get "
+ "Next Interchange Warning to extract interchange warnings.  Call the "
+ "PLP_ClearInterchangeWarnings function to clear the list of "
+ "interchangeability warnings without reading them.\n"
+ "Interchangeability checking logs a warning for each attribute you have not "
+ "set that affects the behavior of the instrument.\n"
+ "    "
+
+2 all "Driver Identification" 
+ "Attributes that provide identity and version information about this "
+ "instrument driver.\n"
+ "    "
+
+3 all "Description" PLP_ATTR_SPECIFIC_DRIVER_DESCRIPTION ViString g 
+ "A string that contains a brief description of the specific driver\n"
+ "    "
+
+3 all "Driver Prefix" PLP_ATTR_SPECIFIC_DRIVER_PREFIX ViString g 
+ "A string that contains the prefix for the instrument driver.  The name of "
+ "each user-callable function in this driver starts with this prefix.\n"
+ "    "
+
+3 all "Driver Vendor" PLP_ATTR_SPECIFIC_DRIVER_VENDOR ViString g 
+ "A string that contains the name of the vendor that supplies this driver.\n"
+ "    "
+
+3 all "Revision" PLP_ATTR_SPECIFIC_DRIVER_REVISION ViString g 
+ "A string that contains additional version information about this "
+ "instrument driver.\n"
+ "    "
+
+3 all "Class Specification Major Version" PLP_ATTR_SPECIFIC_DRIVER_CLASS_SPEC_MAJOR_VERSION ViInt32 g 
+ "The major version number of the class specification with which this driver "
+ "is compliant.\n"
+ "    "
+
+3 all "Class Specification Minor Version" PLP_ATTR_SPECIFIC_DRIVER_CLASS_SPEC_MINOR_VERSION ViInt32 g 
+ "The minor version number of the class specification with which this driver "
+ "is compliant.\n"
+ "    "
+
+2 all "Driver Capabilities" 
+ "Attributes that provide information about the capabilities of this "
+ "instrument driver.\n"
+ "    "
+
+3 all "Supported Instrument Models" PLP_ATTR_SUPPORTED_INSTRUMENT_MODELS ViString g 
+ "Contains a model code of the instrument. For drivers that support more "
+ "than one device, this attribute contains a comma-separated list of "
+ "supported instrument models.\n"
+ "    "
+
+3 all "Class Group Capabilities" PLP_ATTR_GROUP_CAPABILITIES ViString g 
+ "A string that contains a comma-separated list of class-extention groups "
+ "that this driver implements.\n"
+ "    "
+
+2 all "Instrument Identification" 
+ "Attributes that provide identity information about the instrument that you "
+ "are using.    "
+
+3 all "Manufacturer" PLP_ATTR_INSTRUMENT_MANUFACTURER ViString g 
+ "A string that contains the name of the instrument manufacturer you are "
+ "currently using.\n"
+ "    "
+
+3 all "Model" PLP_ATTR_INSTRUMENT_MODEL ViString g 
+ "A string that contains the model number or name of the instrument that you "
+ "are currently using.\n"
+ "    "
+
+3 all "Firmware Revision" PLP_ATTR_INSTRUMENT_FIRMWARE_REVISION ViString g 
+ "A string that contains the firmware revision information for the "
+ "instrument you are currently using.\n"
+ "    "
+
+2 all "Error Info" 
+ "Attributes for error information.\n"
+ "    "
+
+2 all "Advanced Session Information" 
+ "Attributes that contain additional information concerning the instrument "
+ "driver session.      "
+
+3 all "Logical Name" PLP_ATTR_LOGICAL_NAME ViString g 
+ "A string containing the logical name you specified when opening the "
+ "current IVI session.\n"
+ "     You may pass a logical name to the PLP_init or PLP_InitWithOptions "
+ "functions.  The IVI Configuration utility must contain an entry for the "
+ "logical name.  The logical name entry refers to a virtual instrument "
+ "section in the IVI Configuration file.  The virtual instrument section "
+ "specifies a physical device and initial user options.\n"
+ "    "
+
+3 all "Resource Descriptor" PLP_ATTR_IO_RESOURCE_DESCRIPTOR ViString g 
+ "Indicates the resource descriptor the driver uses to identify the physical "
+ "device.\n"
+ "    If you initialize the driver with a logical name, this attribute "
+ "contains the resource descriptor that corresponds to the entry in the IVI "
+ "Configuration utility.  \n"
+ "    If you initialize the instrument driver with the resource descriptor, "
+ "this attribute contains that value.\n"
+ "    "
+
+3 all "Driver Setup" PLP_ATTR_DRIVER_SETUP ViString g 
+ "Some cases exist where you must specify instrument driver options at "
+ "initialization time.  An example of this is specifying a particular "
+ "instrument model from among a family of instruments that the driver "
+ "supports.  This is useful when using simulation.  You can specify "
+ "driver-specific options through the DriverSetup keyword in the "
+ "optionsString parameter to the PLP_InitWithOptions function.  If you open "
+ "an instrument using a logical name, you can also specify the options "
+ "through the IVI Configuration Utility.\n"
+ "    The default value is an empty string.\n"
+ "    "
+
+1 all "Basic Operation" 
+ "Attributes for controlling the basic features of the DC power supply."
+
+2 all "Reports the current operating mode set by the front panel MODE switch." PLP_ATTR_CONFIG ViInt32 g attrConfigRangeTable 
+ "The value is 1 for single channel units, 2 for dual units with both "
+ "channels operating independently and 0 for ‘tracking mode’.  Single "
+ "channel units always return 1."
+
+2 all "Verify voltage" PLP_ATTR_VERIFY_VOLTAGE ViBoolean gs Boolean_values 
+ "When set to VI_TRUE the Operation Complete message is generated when the "
+ "parameter being adjusted reaches the required value to within +/-5% or "
+ "+/-10 counts, whichever is the greater. If the value fails to settle to "
+ "within these limits within 5 seconds then the Verify Timeout bit (bit 3) "
+ "is set in the Standard Event Status register and the Operation Complete "
+ "message will not be generated"
+
+2 all "Address" PLP_ATTR_ADDRESS ViInt32 g 
+ "Returns the bus address of the instrument"
+
+2 all "Current step size" PLP_ATTR_CURRENT_STEP_SIZE ViReal64 gs 
+ "set the output current step size to the value specified in Amps"
+
+2 all "Voltage step size" PLP_ATTR_VOLTAGE_STEP_SIZE ViReal64 gs 
+ "set the output voltage step size to the value supplied in Volts"
+
+2 all "Output Enabled All" PLP_ATTR_OUTPUT_ENABLED_ALL ViBoolean gs Boolean_values 
+ "This attribute specifies whether the signal the power supply produces "
+ "appears at the ALL the output connectors. Note that this includes the AUX "
+ "output.\n"
+ "\n"
+ "NOTE: NOT ALL MODELS SUPPORT THIS ATTRIBUTE\n"
+ "    "
+
+2 all "Damping" PLP_ATTR_DAMPING ViBoolean s Boolean_values 
+ "Enables and disables the current meter averaging function on the specified "
+ "channel."
+
+2 all "Output Enabled" PLP_ATTR_OUTPUT_ENABLED ViBoolean gs Boolean_values 
+ "This channel-based attribute specifies whether the signal the power supply "
+ "produces appears at the output connector. \n"
+ "\n"
+ "NOTE: REFER TO THE INSTRUCTION MANUAL FOR THE CHANNELS SUPPORTED ON THE "
+ "MODEL CONNECTED    "
+
+2 all "Interface Lock" PLP_ATTR_IFLOCK ViBoolean gs Boolean_values 
+ "All interfaces are live at all times; this removes the need to select the "
+ "active interface and is also a LXI requirement.  To reduce the risk of the "
+ "instrument being inadvertently under the control of two interfaces at once "
+ "a simple lock and release mechanism is provided in the instruction set.  "
+ "The lock is automatically released where it possible to detect "
+ "disconnection and when the local button is pressed.  Access to the "
+ "interfaces may also be limited using the web page. \n"
+ "\n"
+ "To lock the interface set this attributte to TRUE."
+
+2 all "OVP Enabled" PLP_ATTR_OVP_ENABLED ViBoolean gs Boolean_values 
+ "The are no PSUs in the family that currently support not having this set "
+ "so always set this to VI_TRUE."
+
+2 all "OCP Limit" PLP_ATTR_OCP_LIMIT ViReal64 gs 
+ "Refer to the instruction manual for your model's Over-Current Protection "
+ "(OCP) settings.  If the output current exceeds the set OCP the output is "
+ "shut down (typically within 35ms). The factory default setting is model "
+ "dependent.\n"
+ "If the OCP is tripped the display shows the message   OCP triP   and the "
+ "output is turned off. Pressing ESCAPE at this point removes the message "
+ "and the display now shows the preset voltage and current limit. When the "
+ "cause of the OCP has been removed (or the OCP limit changed) the output "
+ "can be turned on again.\n"
+ "Note that as with OVP, the OCP setting is not changed when the range is "
+ "changed.  \n"
+ "Note also that is possible and valid to set OCP below the set current "
+ "limit.  For example, the power supply may be used to repetitively test a "
+ "unit under test (UUT) which normally takes a peak current of, say, 2 Amps. "
+ " However, a faulty UUT would take a current of more than 2 Amps and would "
+ "be damaged by being left in a 2 Amp current-limited state.  In this case "
+ "the current limit could be set to 2·1A, say, and the OCP set to 2·0A to "
+ "ensure that a faulty UUT will trip the supply off.\n"
+ "    "
+
+2 all "OVP Limit" PLP_ATTR_OVP_LIMIT ViReal64 gs 
+ "Refer to the instruction manual for your model's Over-Voltage Protection "
+ "(OVP) setting.  If the output voltage exceeds the set OVP the output is "
+ "immediately shut down (typically within 100µs), thus avoiding damage to "
+ "the circuit under test.  The OVP circuit will protect against accidental "
+ "excessive voltage settings from the front panel or via the remote control "
+ "interfaces, external voltages impressed across the output terminals, or a "
+ "failure in the control circuitry of the instrument itself. The factory "
+ "default setting is model dependent.\n"
+ "If the OVP is tripped the display shows the message   OUP triP  and the "
+ "output is turned off.  Pressing ESCAPE at this point removes the message "
+ "and the display now shows the preset voltage and current limit.  When the "
+ "cause of the OVP has been removed (or the OVP limit changed) the output "
+ "can be turned on again.\n"
+ "Note that the OVP setting is not changed when the range is changed (e.g. "
+ "an OVP setting of 38V remains valid on the 15V range); it is left to the "
+ "user to independently change the OVP setting if required.\n"
+ "Note also that it is possible and valid to set OVP below the set voltage.  "
+ "If the supply is in constant current mode the output voltage will be below "
+ "the set voltage; OVP could be set such that is was above the actual output "
+ "voltage but below the set voltage.  This could be used to trip the output "
+ "under a fault condition which caused the load impedance to increase and "
+ "the actual output voltage to therefore rise above the OVP point.\n"
+
+2 all "Current Limit Behavior" PLP_ATTR_CURRENT_LIMIT_BEHAVIOR ViInt32 gs attrCurrentLimitBehaviorRangeTable 
+ "This channel-based attribute specifies the behavior of the power supply "
+ "when the output current is equal to or greater than the value of the "
+ "PLP_ATTR_CURRENT_LIMIT attribute.\n"
+ "    "
+
+2 all "Ration" PLP_ATTR_RATIO ViReal64 gs 
+ "Sets the ratio of output 2 to output 1 in tracking mode to the percent (0 "
+ "to 100)."
+
+2 all "Current Limit" PLP_ATTR_CURRENT_LIMIT ViReal64 gs 
+ "This channel-based attribute specifies the output current limit. The units "
+ "are Amps.\n"
+ "    "
+
+2 all "Range setting" PLP_ATTR_RANGE_SETTING ViInt32 gs attrRangeSettingRangeTable 
+ "Specifies the range the instrument operates on. \n"
+ "\n"
+ "Valid values are: 1 and 2\n"
+ "\n"
+ "1 is the low current range\n"
+ "2 is the high current range\n"
+ "\n"
+ "Refer to the instruction manual for the range that will actually be set.\n"
+
+2 all "Voltage Level" PLP_ATTR_VOLTAGE_LEVEL ViReal64 gs 
+ "This channel-based attribute specifies the voltage level the DC power "
+ "supply attempts to generate.  The units are Volts.\n"
+ "\n"
+ "Note that the PLP_ATTR_RANGE_SETTING attribute determins what can actually "
+ "be set on the instrument.\n"
+ "    "
+
+1 all "Status Registers" 
+ "Attributes for accessing status registers"
+
+2 all "Limit status register two" PLP_ATTR_LIMIT_STATUS_REGISTER_2 ViInt32 g 
+ "Two pairs of registers are implemented as an addition to the IEEE "
+ "Std.488.2. Each pair consists of a Limit Event Status Register  and an "
+ "accompanying Limit Status Event Enable Register. Limit Event Status "
+ "Register 1 (LSR1) and Limit Event Status Enable Register 1 (LSE1) apply to "
+ "output 1. Limit Event Status Register 2 (LSR2) and Limit Event Status "
+ "Enable Register 2 (LSE2) apply to output 2 and the Auxiliary output. Their "
+ "purpose is to inform the controller of entry to and/or exit from current "
+ "or voltage limit conditions by storing a history of protection trip "
+ "conditions since the last read.\n"
+ "Any bits set in  a Limit Event Status Register which correspond to bits "
+ "set in the accompanying  Limit Event Status Enable Register will cause the "
+ "LIM1 or LIM2 bit to be set in the Status Byte Register.\n"
+ "\n"
+ "Limit Event Status Register 2\n"
+ "Bit 7 - not used\n"
+ "Bit 6 -     Set when  the Auxiliary output enters current limit\n"
+ "Bit 5 -     Set when an output 2 sense trip has occurred\n"
+ "Bit 4 -     Set when an output 2 thermal trip has occurred\n"
+ "Bit 3 -     Set when an output 2 over current trip has occurred\n"
+ "Bit 2 -     Set when an output 2 over voltage trip has occurred\n"
+ "Bit 1 -     Set when output 2 enters current limit (constant current mode)\n"
+ "Bit 0 -     Set when output 2 enters voltage limit (constant voltage mode)\n"
+
+2 all "Limit status register one" PLP_ATTR_LIMIT_STATUS_REGISTER_1 ViInt32 g 
+ "Two pairs of registers are implemented as an addition to the IEEE "
+ "Std.488.2. Each pair consists of a Limit Event Status Register  and an "
+ "accompanying Limit Status Event Enable Register. Limit Event Status "
+ "Register 1 (LSR1) and Limit Event Status Enable Register 1 (LSE1) apply to "
+ "output 1. Limit Event Status Register 2 (LSR2) and Limit Event Status "
+ "Enable Register 2 (LSE2) apply to output 2 and the Auxiliary output. Their "
+ "purpose is to inform the controller of entry to and/or exit from current "
+ "or voltage limit conditions by storing a history of protection trip "
+ "conditions since the last read.\n"
+ "Any bits set in  a Limit Event Status Register which correspond to bits "
+ "set in the accompanying  Limit Event Status Enable Register will cause the "
+ "LIM1 or LIM2 bit to be set in the Status Byte Register.\n"
+ "Limit Event Status Register 1\n"
+ "Bit 7 -     not used\n"
+ "Bit 6 -     not used\n"
+ "Bit 5 -     Set when an output 1 sense trip has occurred\n"
+ "Bit 4 -     Set when an output 1 thermal trip has occurred\n"
+ "Bit 3 -     Set when an output 1 over current trip has occurred\n"
+ "Bit 2 -     Set when an output 1 over voltage trip has occurred\n"
+ "Bit 1 -     Set when output 1 enters current limit (constant current mode)\n"
+ "Bit 0 -     Set when output 1 enters voltage limit (constant voltage mode)\n"
+
+2 all "Standard event status register" PLP_ATTR_STANDARD_EVENT_STATUS_REGISTER ViInt32 g 
+ "Standard Event Status and Standard Event Status Enable Registers are "
+ "implemented as required by the IEEE Std. 488.2.\n"
+ "Any bits set in the Standard Event Status Register which correspond to "
+ "bits set in the Standard Event Status Enable Register will cause the ESB "
+ "bit to be set in the Status Byte Register.\n"
+ "\n"
+ "Bit 7 -     Power On. Set when power is first applied to the instrument.\n"
+ "Bit 6 -     Not used.\n"
+ "Bit 5 -     Command Error. Set when a syntax type error is detected in a "
+ "command from the bus. The parser is reset and parsing continues at the "
+ "next byte in the input stream.\n"
+ "Bit 4 -     Execution Error. Set when an error is encountered while "
+ "attempting to execute a completely parsed command. The appropriate error "
+ "number will be reported in the Execution Error Register.\n"
+ "    1- 99   Indicates a hardware error has been encountered.\n"
+ "    116 A recall of set up data has been requested but the store specified "
+ "does not contain any data.\n"
+ "    117 A recall of set up data has been requested but the store specified "
+ "contains corrupted data.  This indicates either a hardware fault or a "
+ "temporary data corruption which can be corrected by writing data to the "
+ "store again.\n"
+ "    120 The numerical value sent with the command was too big or too "
+ "small.  Includes negative numbers where only positive numbers are "
+ "accepted.\n"
+ "    123 A recall/store of set up data has been requested from/to an "
+ "illegal store number.\n"
+ "    124 A range change has been requested but the current psu settings "
+ "make it illegal - see manual operation instructions for details.\n"
+ "Bit 3 - Verify Timeout Error.  Set when a parameter is set with 'verify' "
+ "specified and the value is not reached within 5 secs, e.g. output voltage "
+ "is slowed by a large capacitor on the output.\n"
+ "Bit 2 -     Query Error. Set when a query error occurs. The appropriate "
+ "error number will be reported in the Query Error Register as listed below.\n"
+ "    1.   Interrupted error\n"
+ "    2.   Deadlock error\n"
+ "    3.   Unterminated error\n"
+ "Bit 1 -     Not used.\n"
+ "Bit 0 -     Operation Complete. Set in response to the *OPC command.\n"
+
+2 all "Ist local message" PLP_ATTR_IST_LOCAL_MESSAGE ViInt32 g 
+ "Returns ist local message as defined by IEEE Std. 488.2. "
+
+2 all "Status byte register" PLP_ATTR_STATUS_BYTE_REGISTER ViInt32 g 
+ "Any bits set in the Status Byte Register which correspond to bits set in "
+ "the Service Request Enable Register will cause the RQS/MSS bit to be set "
+ "in the Status Byte Register, thus generating a Service Request on the bus.\n"
+ "\n"
+ "Bit 7 -     Not used.\n"
+ "Bit 6 -     RQS/MSS. This bit, as defined by IEEE Std. 488.2, contains "
+ "both the Requesting Service message and the Master Status Summary message. "
+ "RQS is returned in response to a Serial Poll and MSS is returned in "
+ "response to the *STB? command.\n"
+ "Bit 5 -     ESB. The Event Status Bit. This bit is set if any bits set in "
+ "the Standard Event Status Register correspond to bits set in the Standard "
+ "Event Status Enable Register.\n"
+ "Bit 4 -     MAV. The Message Available Bit. This will be set when the "
+ "instrument has a response message formatted and ready to send to the "
+ "controller. The bit will be cleared after the Response Message Terminator "
+ "has been sent.\n"
+ "Bit 3 -     Not used.\n"
+ "Bit 2 -     Not used.\n"
+ "Bit 1 -     LIM2.  This will be set if any bits in Limit Event Status "
+ "Register 2 are set and corresponding bits are set in Limit Event Status "
+ "Enable Register 2.\n"
+ "Bit 0 -     LIM1.  This will be set if any bits in Limit Event Status "
+ "Register 1 are set and corresponding bits are set in Limit Event Status "
+ "Enable Register 1.\n"
+
+2 all "Limit status enable register two" PLP_ATTR_LIMIT_STATUS_ENABLE_REGISTER_2 ViInt32 gs 
+ "Two pairs of registers are implemented as an addition to the IEEE "
+ "Std.488.2. Each pair consists of a Limit Event Status Register  and an "
+ "accompanying Limit Status Event Enable Register. Limit Event Status "
+ "Register 1 (LSR1) and Limit Event Status Enable Register 1 (LSE1) apply to "
+ "output 1. Limit Event Status Register 2 (LSR2) and Limit Event Status "
+ "Enable Register 2 (LSE2) apply to output 2 and the Auxiliary output. Their "
+ "purpose is to inform the controller of entry to and/or exit from current "
+ "or voltage limit conditions by storing a history of protection trip "
+ "conditions since the last read.\n"
+ "Any bits set in  a Limit Event Status Register which correspond to bits "
+ "set in the accompanying  Limit Event Status Enable Register will cause the "
+ "LIM1 or LIM2 bit to be set in the Status Byte Register.\n"
+
+2 all "Limit status enable register one" PLP_ATTR_LIMIT_STATUS_ENABLE_REGISTER_1 ViInt32 gs 
+ "Two pairs of registers are implemented as an addition to the IEEE "
+ "Std.488.2. Each pair consists of a Limit Event Status Register  and an "
+ "accompanying Limit Status Event Enable Register. Limit Event Status "
+ "Register 1 (LSR1) and Limit Event Status Enable Register 1 (LSE1) apply to "
+ "output 1. Limit Event Status Register 2 (LSR2) and Limit Event Status "
+ "Enable Register 2 (LSE2) apply to output 2 and the Auxiliary output. Their "
+ "purpose is to inform the controller of entry to and/or exit from current "
+ "or voltage limit conditions by storing a history of protection trip "
+ "conditions since the last read.\n"
+ "Any bits set in  a Limit Event Status Register which correspond to bits "
+ "set in the accompanying  Limit Event Status Enable Register will cause the "
+ "LIM1 or LIM2 bit to be set in the Status Byte Register.\n"
+
+2 all "Standard event enable register" PLP_ATTR_STANDARD_EVENT_ENABLE_REGISTER ViInt32 gs 
+ "Standard Event Status and Standard Event Status Enable Registers are "
+ "implemented as required by the IEEE Std. 488.2.\n"
+ "Any bits set in the Standard Event Status Register which correspond to "
+ "bits set in the Standard Event Status Enable Register will cause the ESB "
+ "bit to be set in the Status Byte Register.\n"
+
+2 all "Operation complete status" PLP_ATTR_OPERATION_COMPLETE_STATUS ViInt32 gs 
+ "Sets and reads the Operation Complete bit (bit 0) in the Standard Event "
+ "Status Register. "
+
+2 all "Parallel pole enable register" PLP_ATTR_PARALLEL_POLE_ENABLE_REGISTER ViInt32 gs 
+ "Complete parallel poll capabilities are offered on this instrument. The "
+ "Parallel Poll Enable Register is set to specify which bits in the Status "
+ "Byte Register are to be used to form the ist local message. The value in "
+ "the Parallel Poll Enable Register is ANDed with the Status Byte Register; "
+ "if the result is zero then the value of ist is 0 otherwise the value of "
+ "ist is 1.\n"
+ "The instrument must also be configured so that the value of ist can be "
+ "returned to the controller during a parallel poll operation. The "
+ "instrument is configured by the controller sending a Parallel Poll "
+ "Configure command (PPC) followed by a Parallel Poll Enable command (PPE). "
+ "The bits in the PPE command are shown below:\n"
+ "\n"
+ "bit 7 = X      don't care\n"
+ "bit 6 = 1   \n"
+ "bit 5 = 1      Parallel poll enable\n"
+ "bit 4 = 0   \n"
+ "bit 3 = Sense  sense of the response bit; 0 = low, 1 = high\n"
+ "bit 2 = ?   \n"
+ "bit 1 = ?      bit position of the response\n"
+ "bit 0 = ?   \n"
+
+2 all "Service request enable register" PLP_ATTR_SERVICE_REQUEST_ENABLE_REGISTER ViInt32 gs 
+ "Any bits set in the Status Byte Register which correspond to bits set in "
+ "the Service Request Enable Register will cause the RQS/MSS bit to be set "
+ "in the Status Byte Register, thus generating a Service Request on the bus.\n"
+ "\n"
+ "Bit 7 -     Not used.\n"
+ "Bit 6 -     RQS/MSS. This bit, as defined by IEEE Std. 488.2, contains "
+ "both the Requesting Service message and the Master Status Summary message. "
+ "RQS is returned in response to a Serial Poll and MSS is returned in "
+ "response to the *STB? command.\n"
+ "Bit 5 -     ESB. The Event Status Bit. This bit is set if any bits set in "
+ "the Standard Event Status Register correspond to bits set in the Standard "
+ "Event Status Enable Register.\n"
+ "Bit 4 -     MAV. The Message Available Bit. This will be set when the "
+ "instrument has a response message formatted and ready to send to the "
+ "controller. The bit will be cleared after the Response Message Terminator "
+ "has been sent.\n"
+ "Bit 3 -     Not used.\n"
+ "Bit 2 -     Not used.\n"
+ "Bit 1 -     LIM2.  This will be set if any bits in Limit Event Status "
+ "Register 2 are set and corresponding bits are set in Limit Event Status "
+ "Enable Register 2.\n"
+ "Bit 0 -     LIM1.  This will be set if any bits in Limit Event Status "
+ "Register 1 are set and corresponding bits are set in Limit Event Status "
+ "Enable Register 1.\n"
+
+1 all "Miscellaneous Attributes" 
+ "Additional Attributes."
+
+2 all "ID Query Response" PLP_ATTR_ID_QUERY_RESPONSE ViString g 
+ "Returns the ID Query response string.  The instrument driver gets the "
+ "value of this attribute when you pass VI_TRUE for the ID Query parameter "
+ "to the PLP_init or PLP_InitWithOptions function.\n"
+ "    "
+
+2 all "Hidden Attributes (not user-viewable)" 
+ "    "
+
+3 all "OPC Callback Timeout" PLP_ATTR_OPC_TIMEOUT ViInt32 hidden 
+ "This attribute is hidden.  The driver uses this attribute internally to "
+ "set the timeout for the OPC callback.\n"
+ "    "
+

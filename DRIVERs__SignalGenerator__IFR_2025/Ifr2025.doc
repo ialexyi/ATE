@@ -1,0 +1,3464 @@
+
+                      ifr2025 VXI plug&play Driver V3.20
+________________________________________________________________________________
+
+  Introduction:
+
+  This instrument driver provides programming support for ifr2025 VXI plug&play Driver V3.20.
+  It contains functions for opening, configuring, taking measurements from, and
+  closing the instrument.
+
+________________________________________________________________________________
+
+  Assumptions:
+
+  To successfully use this module, the following conditions must be met:
+
+  For GPIB instrument drivers:
+         -  the instrument is connected to the GPIB.
+         -  the GPIB address supplied to the initialize function must match the
+            GPIB address of the instrument.
+
+  For VXI instrument drivers:
+         -  the instrument is installed in the VXI mainframe and you are
+            using one of the following controller options:
+                  Embedded controller
+                  MXI
+                  MXI2
+                  GPIB-VXI
+         -  the logical address supplied to the initialize function must
+            match the logical address of the instrument.
+
+  For RS-232 instrument drivers:
+         -  the instrument is connected to the RS-232 interface.
+         -  the COM port, baud rate, parity, and timeout supplied to the
+            initialize function must match the settings of the instrument.
+
+________________________________________________________________________________
+
+  Error and Status Information:
+
+  Each function in this instrument driver returns a status code that
+  either indicates success or describes an error or warning condition.
+  Your program should examine the status code from each call to an
+  instrument driver function to determine if an error occurred.
+  The general meaning of the status code is as follows:
+
+       Value                  Meaning
+       -------------------------------
+       0                      Success
+       Positive Values        Warnings
+       Negative Values        Errors
+
+  The description of each instrument driver function lists possible error
+  codes and their meanings
+
+________________________________________________________________________________
+
+  How To Use This Document:
+
+  Use this document as a programming reference manual.
+  It describes each function in the
+
+                      ifr2025 VXI plug&play Driver V3.20
+
+  instrument.  The functions appear in alphabetical order, with a description
+  of the function and its C syntax, a description of each parameter, and a list
+  of possible error codes.
+
+________________________________________________________________________________
+
+Function Tree Layout:
+
+   Class/Panel Name:                     Function Name:
+
+      Initialize                         ifr2025_init
+      Source Functions
+         Configure
+            Carrier
+               Frequency                 ifr2025_rfFreq
+               Level                     ifr2025_rfLevel
+               Phase                     ifr2025_rfPhase
+               RF Type & Units           ifr2025_rfType
+               RF State                  ifr2025_rfState
+               RF Limit                  ifr2025_rfLimit
+               RF Offset                 ifr2025_rfOffset
+               Attenuator Lock/Unlock    ifr2025_attenLockUnlock
+            Modulation
+               Mod Mode                  ifr2025_modMode
+               Control                   ifr2025_modControl
+               Phase                     ifr2025_modPhase
+               AM                        ifr2025_modAM
+               FM                        ifr2025_modFM
+               PM                        ifr2025_modPM
+               Set FSK Ext               ifr2025_setFSK
+               DCFM Null                 ifr2025_dcfmNull
+            ILS (not on ifr2025)
+               Sum of Depth              ifr2025_depthSDM
+               Difference in Depth       ifr2025_depthDDM
+               Ident Depth               ifr2025_depthILSID
+            VOR (not on ifr2025)
+               Subcarrier Depth          ifr2025_depthVOR
+               REF Signal Depth          ifr2025_depthREF
+               Bearing                   ifr2025_bearingVOR
+               Ident Tone Depth          ifr2025_depthVORID
+            Memory
+               Store                     ifr2025_memStore
+               Recall                    ifr2025_memRecall
+               Erase                     ifr2025_memErase
+               Protection                ifr2025_memProtection
+               Power On                  ifr2025_memPowerUp
+               Download                  ifr2025_memDownload
+            Sweep
+               Parameters                ifr2025_sweep
+               Sweep Mode                ifr2025_sweepMode
+            Sequencing
+               Define                    ifr2025_memSequence
+               Select                    ifr2025_memSelectSeq
+            Sinad                        ifr2025_sinad
+         Initiate Functions
+            Run Sweep                    ifr2025_sweepRun
+            Memory Trigger               ifr2025_memTrigger
+            Step through Sequence        ifr2025_memStepSeq
+            Auto Sinad                   ifr2025_autoSinad
+      Utility Functions
+         Reset                           ifr2025_reset
+         Self Test                       ifr2025_self_test
+         Error Handling
+            Error Query                  ifr2025_error_query
+            Error Message                ifr2025_error_message
+         Revision Query                  ifr2025_revision_query
+         Frequency Standard              ifr2025_setFSTD
+         Elapsed Time Reset              ifr2025_resetElapsedTime
+         RPP Reset                       ifr2025_rppReset
+      Query Functions
+         Carrier?                        ifr2025_carrierQuery
+         Sweep?                          ifr2025_sweepQuery
+         Modulation?                     ifr2025_modulationQuery
+         Modulation Modes?               ifr2025_modeQuery
+         ILS? (not on ifr2025)           ifr2025_ilsQuery
+         VOR? (not on ifr2025)           ifr2025_vorQuery
+         Elapsed Time?                   ifr2025_elapsedTimeQuery
+         Operating Time?                 ifr2025_operatingTimeQuery
+         Reverse Power Protection?       ifr2025_rppQuery
+         Sinad Setup?                    ifr2025_sinadSetupQuery
+         Sinad Ready?                    ifr2025_sinadReadyQuery
+         Sinad Value?                    ifr2025_sinadValueQuery
+         Auto Sinad?                     ifr2025_autoSinadQuery
+      Close                              ifr2025_close
+________________________________________________________________________________
+
+  ifr2025 VXI plug&play Driver V3.20
+
+       Instrument Name: ifr2025
+      
+       Description:     This instrument module provides
+                        programming support for signal generators:
+                        mi2023, mi2024
+                        mi3002
+                        ri3271
+                        ifr2023A, ifr2023B, ifr2025
+                        The module is divided into the
+                        following functions:
+      
+       Functions/Classes:
+      
+       (1) Initialize:
+           Initialize the instrument and sets it to default
+           configuration.
+      
+       (2) Source Functions (Class)
+             Configure        (Class)
+               Carrier          (Class)
+               Modulation       (Class)
+               Memory           (Class)
+               Sweep            (Class)
+               Sequencing       (Class)
+               Sinad
+             Initiate         (Class)
+      
+       (3) Utility Functions: (Class)
+      
+       (4) Query Functions:  (Class)
+       (5) Close
+________________________________________________________________________________
+
+              The following functions are in alphabetical order.
+
+________________________________________________________________________________
+
+  ifr2025_attenLockUnlock
+
+      ViStatus ifr2025_attenLockUnlock (ViSession vi, ViInt16 attenuator);
+
+  Purpose
+
+      Allows the RF level to be reduced by at least 10dB without the step
+      attenuator operating.
+
+  Parameter List
+
+      vi
+
+          Variable Type       ViSession
+
+          The ViSession parameter which identifies the instrument.
+
+      attenuator
+
+          Variable Type       ViInt16
+
+          Lock or unlock the current attenuator pad settings.
+          
+          Valid values : ifr2025_ATTEN_LOCK or ifr2025_ATTEN_UNLOCK.
+
+  Return Value
+
+          Function return value.
+          
+          Value                 Meaning
+          ========              =========================================
+          VI_ERROR_PARAMETER2   Illegal value for attenuator lock
+          <VI_SUCCESS           Error condition
+          >=VI_SUCCESS          No errors
+          
+________________________________________________________________________________
+
+  ifr2025_autoSinad
+
+      ViStatus ifr2025_autoSinad (ViSession vi, ViInt16 state);
+
+  Purpose
+
+      This function allows the auto Sinad levelling process to be started
+      (seek) and stopped (pause).
+
+  Parameter List
+
+      vi
+
+          Variable Type       ViSession
+
+          The ViSession parameter which identifies the instrument.
+
+      state
+
+          Variable Type       ViInt16
+
+          Selection to start and stop the automatic Sinad levelling process
+          .
+          Value               Comment
+          =================   ===============================
+          1                   Start levelling process
+          0                   Stop levelling process
+          
+
+  Return Value
+
+          Function return value.
+          
+          Value                 Meaning
+          ========              =========================================
+          <VI_SUCCESS           Error condition
+          >=VI_SUCCESS          No errors
+          
+________________________________________________________________________________
+
+  ifr2025_autoSinadQuery
+
+      ViStatus ifr2025_autoSinadQuery (ViSession vi, ViPInt16 statusCode);
+
+  Purpose
+
+      This function returns the current status code of the automatic Sinad
+      levelling process:
+      
+
+  Parameter List
+
+      vi
+
+          Variable Type       ViSession
+
+          The ViSession parameter which identifies the instrument.
+
+      statusCode
+
+          Variable Type       ViInt16 (passed by reference)
+
+          Returns the status of the automatic levelling process:
+          
+          Code                    Status
+          =================       ===============================
+          ifr2025_SINAD_IDLE      Idle (Complete or Paused)
+          ifr2025_SINAD_ACTIVE    Levelling in progress
+          
+
+  Return Value
+
+          Function return value.
+          
+          Value                 Meaning
+          ========              =========================================
+          <VI_SUCCESS           Error condition
+          >=VI_SUCCESS          No errors
+          
+________________________________________________________________________________
+
+  ifr2025_bearingVOR
+
+      ViStatus ifr2025_bearingVOR (ViSession vi, ViInt16 direction,
+                                   ViReal64 bearing);
+
+  Purpose
+
+      Sets the VOR direction TO/FROM a beacon along with a bearing value.
+
+  Parameter List
+
+      vi
+
+          Variable Type       ViSession
+
+          The ViSession parameter which identifies the instrument.
+
+      direction
+
+          Variable Type       ViInt16
+
+          Sets bearing mode TO/FROM the beacon.
+          
+          Valid values are :-
+          
+            ifr2025_TO
+            ifr2025_FROM
+
+      bearing
+
+          Variable Type       ViReal64
+
+          Specifies the bearing in DEG.
+          
+          Valid range : ifr2025_BEARING_MIN to ifr2025_BEARING_MAX.
+
+  Return Value
+
+          Function return value.
+          
+          Value                 Meaning
+          ========              =========================================
+          ifr2025_ERROR_BEARING Invalid bearing value
+          <VI_SUCCESS           Error condition
+          >=VI_SUCCESS          No errors
+          
+________________________________________________________________________________
+
+  ifr2025_carrierQuery
+
+      ViStatus ifr2025_carrierQuery (ViSession vi, ViPReal64 frequency,
+                                     ViPReal64 RFLevel, ViPInt16 RFUnit,
+                                     ViPInt16 RFState, ViPInt16 RFType,
+                                     ViPInt16 carrierMode);
+
+  Purpose
+
+      Returns information about the carrier frequency and RF level of the
+      generator. The units for the returned value of RF level must be
+      specified.
+
+  Parameter List
+
+      vi
+
+          Variable Type       ViSession
+
+          The ViSession parameter which identifies the instrument.
+
+      frequency
+
+          Variable Type       ViReal64 (passed by reference)
+
+          Returns the actual carrier frequency.
+
+      RFLevel
+
+          Variable Type       ViReal64 (passed by reference)
+
+          Returns the actual RF level. See also RF Units and RF Type.
+
+      RFUnit
+
+          Variable Type       ViInt16 (passed by reference)
+
+          Returns the units in which the RF Level is currently set.
+          
+          Value  Type
+          =====  ===================
+            0    ifr2025_RFUNIT_dBm
+            1    ifr2025_RFUNIT_dBV
+            2    ifr2025_RFUNIT_dBmV
+            3    ifr2025_RFUNIT_dBuV
+            4    ifr2025_RFUNIT_V
+            5    ifr2025_RFUNIT_mV
+            6    ifr2025_RFUNIT_uV
+          
+
+      RFState
+
+          Variable Type       ViInt16 (passed by reference)
+
+          Returns a value indicating whether the output is on or off
+          
+          Value  Type
+          =====  ==============
+            0    ifr2025_OFF
+            1    ifr2025_ON
+
+      RFType
+
+          Variable Type       ViInt16 (passed by reference)
+
+          Returns the type of output selected.
+          
+          Value  Type
+          =====  ===============
+            0    ifr2025_RFTYPE_EMF
+            1    ifr2025_RFTYPE_PD
+          
+
+      carrierMode
+
+          Variable Type       ViInt16 (passed by reference)
+
+          Returns the carrier operation as fixed or swept.
+          
+          Value  Type
+          =====  ===============
+            0    ifr2025_SWEPT
+            1    ifr2025_FIXED
+          
+
+  Return Value
+
+          Function return value.
+          
+          Value                 Meaning
+          ========              =========================================
+          <VI_SUCCESS           Error condition
+          >=VI_SUCCESS          No errors
+          
+________________________________________________________________________________
+
+  ifr2025_close
+
+      ViStatus ifr2025_close (ViSession vi);
+
+  Purpose
+
+      This function performs the following operations:
+                      viClose (instrSession) and
+                      viClose (rmSession).
+      
+      Note: The instrument must be re-initialized to use it again.
+      
+      
+
+  Parameter List
+
+      vi
+
+          Variable Type       ViSession
+
+          The VISA Instrument Description.
+          
+          Examples: VXI::5, GPIB-VXI::128::INSTR
+
+  Return Value
+
+          Function return value.
+          if ==VI_SUCCESS: No error.
+          if !=VI_SUCCESS: Indicates error condition.
+________________________________________________________________________________
+
+  ifr2025_dcfmNull
+
+      ViStatus ifr2025_dcfmNull (ViSession vi);
+
+  Purpose
+
+      This function selects DC FM null operation (only for EXTDC mode).
+
+  Parameter List
+
+      vi
+
+          Variable Type       ViSession
+
+          The VISA Instrument Description.
+          
+          Examples: VXI::5, GPIB-VXI::128::INSTR
+
+  Return Value
+
+          Function return value.
+          
+          Value                 Meaning
+          ========              =========================================
+          <VI_SUCCESS           Error condition
+          >=VI_SUCCESS          No errors
+          
+________________________________________________________________________________
+
+  ifr2025_depthDDM
+
+      ViStatus ifr2025_depthDDM (ViSession vi, ViInt16 type, ViReal64 depth);
+
+  Purpose
+
+      Configures DDM90 or DDM150 to be predominant.
+
+  Parameter List
+
+      vi
+
+          Variable Type       ViSession
+
+          The ViSession parameter which identifies the instrument.
+
+      type
+
+          Variable Type       ViInt16
+
+          Specifies 90Hz or 150Hz to be predominant.
+          
+          Valid values are:-
+          
+          90  ifr2025_DDM90
+          150 ifr2025_DDM150
+
+      depth
+
+          Variable Type       ViReal64
+
+          Specifies  depth of modulation for DDM90 or DDM150 in %.
+          
+          Valid range : ifr2025_DEPTH_DDM_MIN to ifr2025_DEPTH_DDM_MAX.
+
+  Return Value
+
+          Function return value.
+          
+          Value                 Meaning
+          ========              =========================================
+          ifr2025_ERROR_DEPTH   Invalid depth value
+          <VI_SUCCESS           Error condition
+          >=VI_SUCCESS          No errors
+          
+________________________________________________________________________________
+
+  ifr2025_depthILSID
+
+      ViStatus ifr2025_depthILSID (ViSession vi, ViReal64 depth);
+
+  Purpose
+
+      Sets the ILS ident tone depth.
+
+  Parameter List
+
+      vi
+
+          Variable Type       ViSession
+
+          The ViSession parameter which identifies the instrument.
+
+      depth
+
+          Variable Type       ViReal64
+
+          Specifies the ILSID depth of modulation in %.
+          
+          Valid range : ifr2025_DEPTH_ILS_MIN to ifr2025_DEPTH_ILS_MAX.
+
+  Return Value
+
+          Function return value.
+          
+          Value                 Meaning
+          ========              =========================================
+          ifr2025_ERROR_DEPTH   Invalid depth value
+          <VI_SUCCESS           Error condition
+          >=VI_SUCCESS          No errors
+          
+________________________________________________________________________________
+
+  ifr2025_depthREF
+
+      ViStatus ifr2025_depthREF (ViSession vi, ViReal64 depth);
+
+  Purpose
+
+      Sets the REF variable signal (30Hz) depth.
+
+  Parameter List
+
+      vi
+
+          Variable Type       ViSession
+
+          The ViSession parameter which identifies the instrument.
+
+      depth
+
+          Variable Type       ViReal64
+
+          Specifies the REF depth of modulation in %.
+          
+          Valid range : ifr2025_DEPTH_REF_MIN to ifr2025_DEPTH_REF_MAX.
+
+  Return Value
+
+          Function return value.
+          
+          Value                 Meaning
+          ========              =========================================
+          ifr2025_ERROR_DEPTH   Invalid depth value
+          <VI_SUCCESS           Error condition
+          >=VI_SUCCESS          No errors
+          
+________________________________________________________________________________
+
+  ifr2025_depthSDM
+
+      ViStatus ifr2025_depthSDM (ViSession vi, ViReal64 depth);
+
+  Purpose
+
+      Sets the sum of depth of modulation in ILS mode.
+
+  Parameter List
+
+      vi
+
+          Variable Type       ViSession
+
+          The ViSession parameter which identifies the instrument.
+
+      depth
+
+          Variable Type       ViReal64
+
+          Specifies the sum of depth of modulation in %.
+          
+          Valid range : ifr2025_DEPTH_SDM_MIN to ifr2025_DEPTH_SDM_MAX.
+
+  Return Value
+
+          Function return value.
+          
+          Value                 Meaning
+          ========              =========================================
+          ifr2025_ERROR_DEPTH   Invalid depth value
+          <VI_SUCCESS           Error condition
+          >=VI_SUCCESS          No errors
+          
+________________________________________________________________________________
+
+  ifr2025_depthVOR
+
+      ViStatus ifr2025_depthVOR (ViSession vi, ViReal64 depth);
+
+  Purpose
+
+      Sets the VOR/SUB subcarrier signal (9960Hz) depth.
+
+  Parameter List
+
+      vi
+
+          Variable Type       ViSession
+
+          The ViSession parameter which identifies the instrument.
+
+      depth
+
+          Variable Type       ViReal64
+
+          Specifies the VOR/SUB depth of modulation in %.
+          
+          Valid range : ifr2025_DEPTH_VOR_MIN to ifr2025_DEPTH_VOR_MAX.
+
+  Return Value
+
+          Function return value.
+          
+          Value                 Meaning
+          ========              =========================================
+          ifr2025_ERROR_DEPTH   Invalid depth value
+          <VI_SUCCESS           Error condition
+          >=VI_SUCCESS          No errors
+          
+________________________________________________________________________________
+
+  ifr2025_depthVORID
+
+      ViStatus ifr2025_depthVORID (ViSession vi, ViReal64 depth);
+
+  Purpose
+
+      Sets the VOR ident tone depth.
+
+  Parameter List
+
+      vi
+
+          Variable Type       ViSession
+
+          The ViSession parameter which identifies the instrument.
+
+      depth
+
+          Variable Type       ViReal64
+
+          Specifies the VORID depth of modulation in %.
+          
+          Valid range : ifr2025_DEPTH_VORID_MIN to ifr2025_DEPTH_VORID_MAX.
+
+  Return Value
+
+          Function return value.
+          
+          Value                 Meaning
+          ========              =========================================
+          ifr2025_ERROR_DEPTH   Invalid depth value
+          <VI_SUCCESS           Error condition
+          >=VI_SUCCESS          No errors
+          
+________________________________________________________________________________
+
+  ifr2025_elapsedTimeQuery
+
+      ViStatus ifr2025_elapsedTimeQuery (ViSession vi, ViPReal64 elapsedTime);
+
+  Purpose
+
+      Returns the elapsed operating time of the instrument since last reset,
+      e.g. 454.00
+
+  Parameter List
+
+      vi
+
+          Variable Type       ViSession
+
+          The ViSession parameter which identifies the instrument.
+
+      elapsedTime
+
+          Variable Type       ViReal64 (passed by reference)
+
+          Returns the number of elapsed operating hours since the last reset.
+
+  Return Value
+
+          Function return value.
+          
+          Value                 Meaning
+          ========              =========================================
+          <VI_SUCCESS           Error condition
+          >=VI_SUCCESS          No errors
+          
+________________________________________________________________________________
+
+  ifr2025_error_message
+
+      ViStatus ifr2025_error_message (ViSession vi, ViStatus errorCode,
+                                      ViChar _VI_FAR errorMessage[]);
+
+  Purpose
+
+      Retrieves an error message based on an Error Code previously returned
+      from this driver. If the error did not originate in the instrument or
+      driver, a VISA error message will be returned.
+
+  Parameter List
+
+      vi
+
+          Variable Type       ViSession
+
+          The ViSession parameter which identifies the instrument.
+
+      errorCode
+
+          Variable Type       ViStatus
+
+          An error of type ViStatus previously returned from the driver. This
+          is used to obtain an error string.
+
+      errorMessage
+
+          Variable Type       ViChar[]
+
+          This is the string message associated with the Error Code supplied to
+          this function.
+
+  Return Value
+
+          Function return value.
+          
+          Value                 Meaning
+          ========              =========================================
+          <VI_SUCCESS           Error condition
+          >=VI_SUCCESS          No errors
+          
+________________________________________________________________________________
+
+  ifr2025_error_query
+
+      ViStatus ifr2025_error_query (ViSession vi, ViPInt32 errorCode,
+                                    ViChar _VI_FAR errorMessage[]);
+
+  Purpose
+
+      Retrieves the next error from the instrument.
+
+  Parameter List
+
+      vi
+
+          Variable Type       ViSession
+
+          The ViSession parameter which identifies the instrument.
+
+      errorCode
+
+          Variable Type       ViInt32 (passed by reference)
+
+          The error code returned from the instrument. A value indicates that
+          there are no errors.
+
+      errorMessage
+
+          Variable Type       ViChar[]
+
+          A string is returned, as obtained from the instrument, that matches
+          the Error Code.
+
+  Return Value
+
+          Function return value.
+          
+          Value                 Meaning
+          ========              =========================================
+          <VI_SUCCESS           Error condition
+          >=VI_SUCCESS          No errors
+          
+________________________________________________________________________________
+
+  ifr2025_ilsQuery
+
+      ViStatus ifr2025_ilsQuery (ViSession vi, ViPReal64 SDMDepth,
+                                 ViPReal64 DDMDepth, ViPReal64 ILSIDDepth,
+                                 ViPInt16 DDMType);
+
+  Purpose
+
+      Retrieve the current settings for ILS mode.
+
+  Parameter List
+
+      vi
+
+          Variable Type       ViSession
+
+          The ViSession parameter which identifies the instrument.
+
+      SDMDepth
+
+          Variable Type       ViReal64 (passed by reference)
+
+          Returns the percentage depth for SDM.
+
+      DDMDepth
+
+          Variable Type       ViReal64 (passed by reference)
+
+          Returns the percentage depth for DDM.
+
+      ILSIDDepth
+
+          Variable Type       ViReal64 (passed by reference)
+
+          Returns the percentage depth for ILSID.
+
+      DDMType
+
+          Variable Type       ViInt16 (passed by reference)
+
+          Indicates which DDM is predominant.
+          
+          Valid values : ifr2025_DDM90 or ifr2025_DDM150.
+
+  Return Value
+
+          Function return value.
+          
+          Value                 Meaning
+          ========              =========================================
+          <VI_SUCCESS           Error condition
+          >=VI_SUCCESS          No errors
+          
+________________________________________________________________________________
+
+  ifr2025_init
+
+      ViStatus ifr2025_init (ViRsrc instrDesc, ViBoolean IDQuery,
+                             ViBoolean resetDevice, ViPSession vi);
+
+  Purpose
+
+      This function must be called to open a VISA session to an instrument.
+
+  Parameter List
+
+      instrDesc
+
+          Variable Type       ViRsrc
+
+          A string containing the instrument descriptor.
+          
+          e.g. VXI0::96::INSTR
+
+      IDQuery
+
+          Variable Type       ViBoolean
+
+          Value     Action
+          ========  =============================================
+          VI_TRUE : Verify instrument ID during initialisation
+          VI_FALSE: Don't
+
+      resetDevice
+
+          Variable Type       ViBoolean
+
+          Value     Action
+          ========  =============================================
+          VI_TRUE : Reset instrument during initialisation
+          VI_FALSE: Don't
+
+      vi
+
+          Variable Type       ViSession (passed by reference)
+
+          Returns a ViSession value which identifies this occurrence of the
+          instrument. A value of VI_NULL is returned if the function fails.
+
+  Return Value
+
+          Function return value.
+          
+          Value        Meaning
+          ========     =============================================
+          <VI_SUCCESS  Error condition
+          >=VI_SUCCESS No errors
+          
+________________________________________________________________________________
+
+  ifr2025_memDownload
+
+      ViStatus ifr2025_memDownload (ViSession vi, ViBoolean RFOutput);
+
+  Purpose
+
+      This function is used to enable/disable the RF Output changes when
+      performing download of new instrument settings.
+      
+
+  Parameter List
+
+      vi
+
+          Variable Type       ViSession
+
+          The ViSession parameter which identifies the instrument.
+
+      RFOutput
+
+          Variable Type       ViBoolean
+
+          Enable or Disable RF Output changes to allow download of new
+          settings.
+          
+          Valid Range : ifr2025_ENABLE or ifr2025_DISABLE
+
+  Return Value
+
+          Function return value.
+          
+          Value                 Meaning
+          ========              =========================================
+          VI_ERROR_PARAMETER2   Invalid store type specified
+          VI_ERROR_PARAMETER3   Store number out of range
+          <VI_SUCCESS           Error condition
+          >=VI_SUCCESS          No errors
+          
+________________________________________________________________________________
+
+  ifr2025_memErase
+
+      ViStatus ifr2025_memErase (ViSession vi, ViInt16 eraseStores);
+
+  Purpose
+
+      This function erases the group of 100 instrument store selected.
+
+  Parameter List
+
+      vi
+
+          Variable Type       ViSession
+
+          The ViSession parameter which identifies the instrument.
+
+      eraseStores
+
+          Variable Type       ViInt16
+
+          Select type of store to erase.
+          
+          Value             Range
+          ===============   ===========
+          ifr2025_MEM_CFRQ  0 to 99
+          ifr2025_MEM_FULL  100 to 199
+          ifr2025_MEM_RAM   200 to 299
+          ifr2025_MEM_ALL   000 to 299
+          
+
+  Return Value
+
+          Function return value.
+          
+          Value                 Meaning
+          ========              =========================================
+          VI_ERROR_PARAMETER2   Invalid store type specified
+          <VI_SUCCESS           Error condition
+          >=VI_SUCCESS          No errors
+          
+________________________________________________________________________________
+
+  ifr2025_memPowerUp
+
+      ViStatus ifr2025_memPowerUp (ViSession vi, ViInt16 mode,
+                                   ViInt16 memoryNo);
+
+  Purpose
+
+      This command specifies the power up mode of the instrument to be either
+      with FACTORY setting or one of the CFRQ or FULL stores.
+
+  Parameter List
+
+      vi
+
+          Variable Type       ViSession
+
+          The ViSession parameter which identifies the instrument.
+
+      mode
+
+          Variable Type       ViInt16
+
+          Set memory power on mode
+          
+          Valid values : ifr2025_FACTORY or ifr2025_MEMORY
+
+      memoryNo
+
+          Variable Type       ViInt16
+
+          Set the memory location for memory power on.
+          
+          Valid values : 0 to 199
+
+  Return Value
+
+          Function return value.
+          
+          Value                 Meaning
+          ========              =========================================
+          VI_ERROR_PARAMETER2   Invalid mode specified
+          VI_ERROR_PARAMETER3   Store number out of range
+          <VI_SUCCESS           Error condition
+          >=VI_SUCCESS          No errors
+          
+________________________________________________________________________________
+
+  ifr2025_memProtection
+
+      ViStatus ifr2025_memProtection (ViSession vi, ViBoolean state,
+                                      ViInt16 start, ViInt16 stop);
+
+  Purpose
+
+      This command specifies either a single location or a block of locations
+      to be write-protected.
+      
+      Any protection applied to RAM will be lost on power down.
+
+  Parameter List
+
+      vi
+
+          Variable Type       ViSession
+
+          The ViSession parameter which identifies the instrument.
+
+      state
+
+          Variable Type       ViBoolean
+
+          Set memory protection On or Off
+          
+          Valid values : ifr2025_ON and ifr2025_OFF
+          
+
+      start
+
+          Variable Type       ViInt16
+
+          Specifies the start location to be protected.
+          
+          Valid values : 0 to 299
+          
+
+      stop
+
+          Variable Type       ViInt16
+
+          Specifies the start location to be protected.
+          
+          Valid values : Start to 299
+          
+          Note. Set Start==Stop to protect a single location.
+          
+
+  Return Value
+
+          Function return value.
+          
+          Value                 Meaning
+          ========              =========================================
+          VI_ERROR_PARAMETER2   Invalid selection for ON/OFF
+          VI_ERROR_PARAMETER3   Start store number out of range
+          VI_ERROR_PARAMETER4   Stop store number out of range
+          <VI_SUCCESS           Error condition
+          >=VI_SUCCESS          No errors
+          
+________________________________________________________________________________
+
+  ifr2025_memRecall
+
+      ViStatus ifr2025_memRecall (ViSession vi, ViInt16 recallType,
+                                  ViInt16 recallNumber);
+
+  Purpose
+
+      This function returns the instrument to the settings stored in the
+      specified location.
+      
+      Note that CFRQ and FULL stores are non-volitile, but RAM contents are
+      lost when the instrument is switched off.
+
+  Parameter List
+
+      vi
+
+          Variable Type       ViSession
+
+          The ViSession parameter which identifies the instrument.
+
+      recallType
+
+          Variable Type       ViInt16
+
+          Select type of store and perform checks on the store number.
+          
+          Value             Range
+          ===============   ===========
+          ifr2025_MEM_CFRQ  0 to 99
+          ifr2025_MEM_FULL  100 to 199
+          ifr2025_MEM_RAM   200 to 299
+          ifr2025_MEM_ALL   000 to 299 and 999
+          
+          Note. Location 999 is the factory default store.
+          
+          
+
+      recallNumber
+
+          Variable Type       ViInt16
+
+          A number representing the memory location
+          
+          For valid range, see Store Type parameter
+          
+
+  Return Value
+
+          Function return value.
+          
+          Value                 Meaning
+          ========              =========================================
+          VI_ERROR_PARAMETER2   Invalid store type specified
+          VI_ERROR_PARAMETER3   Store number out of range
+          <VI_SUCCESS           Error condition
+          >=VI_SUCCESS          No errors
+          
+________________________________________________________________________________
+
+  ifr2025_memSelectSeq
+
+      ViStatus ifr2025_memSelectSeq (ViSession vi, ViInt16 select,
+                                     ViPInt16 start, ViPInt16 stop);
+
+  Purpose
+
+      This command allows one of the nine sequences to be defined as the
+      current sequence.
+
+  Parameter List
+
+      vi
+
+          Variable Type       ViSession
+
+          The ViSession parameter which identifies the instrument.
+
+      select
+
+          Variable Type       ViInt16
+
+          Selects the sequence to be active
+          
+          Valid Range: 0 - OFF (0 to 299)
+                       1 - SEQ1
+                       2 - SEQ2
+                       3 - SEQ3
+                       4 - SEQ4
+                       5 - SEQ5
+                       6 - SEQ6
+                       7 - SEQ7
+                       8 - SEQ8
+                       9 - SEQ9
+
+      start
+
+          Variable Type       ViInt16 (passed by reference)
+
+          Returns the start location of the selected sequence.
+
+      stop
+
+          Variable Type       ViInt16 (passed by reference)
+
+          Returns the stop location of the selected sequence.
+
+  Return Value
+
+          Function return value.
+          
+          Value                 Meaning
+          ========              =========================================
+          VI_ERROR_PARAMETER2   Invalid sequence number
+          <VI_SUCCESS           Error condition
+          >=VI_SUCCESS          No errors
+          
+________________________________________________________________________________
+
+  ifr2025_memSequence
+
+      ViStatus ifr2025_memSequence (ViSession vi, ViInt16 set, ViInt16 start,
+                                    ViInt16 stop);
+
+  Purpose
+
+      This command allows up to 9 sequences, each consisting of a range of
+      memory locations to be defined.
+
+  Parameter List
+
+      vi
+
+          Variable Type       ViSession
+
+          The ViSession parameter which identifies the instrument.
+
+      set
+
+          Variable Type       ViInt16
+
+          Selects the sequence to define
+          
+          Valid Range: 1 - SEQ1
+                       2 - SEQ2
+                       3 - SEQ3
+                       4 - SEQ4
+                       5 - SEQ5
+                       6 - SEQ6
+                       7 - SEQ7
+                       8 - SEQ8
+                       9 - SEQ9
+          
+
+      start
+
+          Variable Type       ViInt16
+
+          Defines the start store location for the sequence
+          
+           Valid values : 0 to 299
+          
+
+      stop
+
+          Variable Type       ViInt16
+
+          Defines the stop store location for the sequence
+          
+           Valid values : 0 to 299
+          
+
+  Return Value
+
+          Function return value.
+          
+          Value                 Meaning
+          ========              =========================================
+          VI_ERROR_PARAMETER2   Invalid sequence number
+          VI_ERROR_PARAMETER3   Start number out of range
+          VI_ERROR_PARAMETER3   Stop number out of range
+          <VI_SUCCESS           Error condition
+          >=VI_SUCCESS          No errors
+          
+________________________________________________________________________________
+
+  ifr2025_memStepSeq
+
+      ViStatus ifr2025_memStepSeq (ViSession vi, ViInt16 step,
+                                   ViPInt16 storeNum);
+
+  Purpose
+
+      This command allows memory stores to be stepped up or down.
+
+  Parameter List
+
+      vi
+
+          Variable Type       ViSession
+
+          The ViSession parameter which identifies the instrument.
+
+      step
+
+          Variable Type       ViInt16
+
+          Step up or down through the current sequence setting.
+          
+          Valid values :  ifr2025_MEM_UP or ifr2025_MEM_DOWN
+
+      storeNum
+
+          Variable Type       ViInt16 (passed by reference)
+
+          Returns the location effective after the UP/DOWN operation.
+
+  Return Value
+
+          Function return value.
+          
+          Value                 Meaning
+          ========              =========================================
+          VI_ERROR_PARAMETER2   Invalid step type
+          <VI_SUCCESS           Error condition
+          >=VI_SUCCESS          No errors
+          
+________________________________________________________________________________
+
+  ifr2025_memStore
+
+      ViStatus ifr2025_memStore (ViSession vi, ViInt16 storeType,
+                                 ViInt16 storeNumber);
+
+  Purpose
+
+      Writes current instrument settings to the selected store location.
+
+  Parameter List
+
+      vi
+
+          Variable Type       ViSession
+
+          The ViSession parameter which identifies the instrument.
+
+      storeType
+
+          Variable Type       ViInt16
+
+          Select type of store and perform checks on the store number.
+          
+          Value             Range
+          ===============   ===========
+          ifr2025_MEM_CFRQ  0 to 99
+          ifr2025_MEM_FULL  100 to 199
+          ifr2025_MEM_RAM   200 to 299
+          
+          
+
+      storeNumber
+
+          Variable Type       ViInt16
+
+          A number representing the memory location
+          
+          For valid range, see Store Type parameter
+          
+
+  Return Value
+
+          Function return value.
+          
+          Value                 Meaning
+          ========              =========================================
+          VI_ERROR_PARAMETER2   Invalid store type specified
+          VI_ERROR_PARAMETER3   Store number out of range
+          <VI_SUCCESS           Error condition
+          >=VI_SUCCESS          No errors
+          
+________________________________________________________________________________
+
+  ifr2025_memTrigger
+
+      ViStatus ifr2025_memTrigger (ViSession vi, ViBoolean state);
+
+  Purpose
+
+      Enables memory trigger operation using either *TRG or external sources.
+
+  Parameter List
+
+      vi
+
+          Variable Type       ViSession
+
+          The ViSession parameter which identifies the instrument.
+
+      state
+
+          Variable Type       ViBoolean
+
+          Set memory trigger On or Off
+          
+          Valid values : ifr2025_OFF and ifr2025_ON
+
+  Return Value
+
+          Function return value.
+          
+          Value                 Meaning
+          ========              =========================================
+          VI_ERROR_PARAMETER2   Invalid state.
+          <VI_SUCCESS           Error condition
+          >=VI_SUCCESS          No errors
+          
+________________________________________________________________________________
+
+  ifr2025_modAM
+
+      ViStatus ifr2025_modAM (ViSession vi, ViInt16 channel, ViReal64 depth,
+                              ViReal64 modRate, ViInt16 waveform,
+                              ViInt16 source, ViBoolean state);
+
+  Purpose
+
+      Allows either of the two AM modulation sources to be configured.
+
+  Parameter List
+
+      vi
+
+          Variable Type       ViSession
+
+          The ViSession parameter which identifies the instrument.
+
+      channel
+
+          Variable Type       ViInt16
+
+          Selects the AM channel to configure.
+          
+          Valid values : ifr2025_MOD1 or ifr2025_MOD2.
+
+      depth
+
+          Variable Type       ViReal64
+
+          Specifies the amount of AM to be set.
+          
+          Valid range : ifr2025_AMDEPTH_MIN to ifr2025_AMDEPTH_MAX.
+          
+
+      modRate
+
+          Variable Type       ViReal64
+
+          Specifies the internal modulation rate to be set for AM.
+          
+          Valid range : ifr2025_AMRATE_MIN to ifr2025_AMRATE_MAX.
+
+      waveform
+
+          Variable Type       ViInt16
+
+          Select waveform for AM1 internal modulation.
+          
+          Allowed Values    Waveform
+          ===============   ==========
+          ifr2025_MODF_SIN  Sine wave
+          ifr2025_MODF_TRI  Triangle
+          ifr2025_MODF_SQR  Square
+          
+
+      source
+
+          Variable Type       ViInt16
+
+          Set AM modulation source
+          
+          Allowed Values    Source
+          ===============   ==========
+          ifr2025_SRC_INT    Internal
+          ifr2025_SRC_EXTAC  External
+          ifr2025_SRC_EXTALC External with ALC
+          ifr2025_SRC_EXTDC  External DC
+          
+
+      state
+
+          Variable Type       ViBoolean
+
+          Set AM channel On or Off
+          
+          Valid values : ifr2025_MOD_ON or ifr2025_MOD_OFF.
+
+  Return Value
+
+          Function return value.
+          
+          Value                  Meaning
+          ========               =========================================
+          ifr2025_ERROR_MODCHAN  Invalid channel specified
+          ifr2025_ERROR_DEPTH    Depth out of range
+          ifr2025_ERROR_RATE     Modulation rate out of range
+          ifr2025_ERROR_WAVEFORM Invalid waveform specified
+          ifr2025_ERROR_SOURCE   Invalid source specified
+          ifr2025_ERROR_ONOFF    Invalid state specified
+          <VI_SUCCESS            Error condition
+          >=VI_SUCCESS           No errors
+          
+________________________________________________________________________________
+
+  ifr2025_modControl
+
+      ViStatus ifr2025_modControl (ViSession vi, ViBoolean globalMod,
+                                   ViBoolean pulse);
+
+  Purpose
+
+      Controls the global modes of modulation and pulse.
+
+  Parameter List
+
+      vi
+
+          Variable Type       ViSession
+
+          The ViSession parameter which identifies the instrument.
+
+      globalMod
+
+          Variable Type       ViBoolean
+
+          Set Global Modulation On or Off
+          
+          Valid values : ifr2025_OFF or ifr2025_ON.
+
+      pulse
+
+          Variable Type       ViBoolean
+
+          Set Pulse Modulation On or Off
+          
+          Valid range : ifr2025_OFF or ifr2025_ON.
+
+  Return Value
+
+          Function return value.
+          
+          Value                 Meaning
+          ========              =========================================
+          VI_ERROR_PARAMETER2   Global mod value out of range
+          VI_ERROR_PARAMETER3   Pulse mode value out of range
+          <VI_SUCCESS           Error condition
+          >=VI_SUCCESS          No errors
+          
+________________________________________________________________________________
+
+  ifr2025_modeQuery
+
+      ViStatus ifr2025_modeQuery (ViSession vi, ViPInt16 modulationMode,
+                                  ViPInt16 pulse, ViPInt16 globalModulation,
+                                  ViPInt16 globalPulse);
+
+  Purpose
+
+      Returns information about the modulation and global modes of the
+      instrument.
+
+  Parameter List
+
+      vi
+
+          Variable Type       ViSession
+
+          The ViSession parameter which identifies the instrument.
+
+      modulationMode
+
+          Variable Type       ViInt16 (passed by reference)
+
+          Returns the instrument modulation mode.
+          
+          Value               Comment
+          =================   ===============================
+          ifr2025_MODE_AM     Amplitude modulation
+          ifr2025_MODE_FM     Frequency modulation
+          ifr2025_MODE_PM     Phase modulation
+          ifr2025_MODE_AMFM   AM(int)+FM(ext) or FM(int)+AM(ext)
+          ifr2025_MODE_AMPM   AM(int)+PM(ext) or PM(int)+AM(ext)
+          ifr2025_MODE_2FSK   FM plus logic level on trigger i/p
+          ifr2025_MODE_4FSK   FM plus trigger i/p and pulse i/p
+          ifr2025_MODE_ILS    ILS Feature (not ifr2025)
+          ifr2025_MODE_VOR    VOR Feature (not ifr2025)
+          
+
+      pulse
+
+          Variable Type       ViInt16 (passed by reference)
+
+          Indicates if pulse mode is enabled with modulation.
+          
+          Valid values : ifr2025_PULSE_OFF or ifr2025_PULSE_ON.
+
+      globalModulation
+
+          Variable Type       ViInt16 (passed by reference)
+
+          Indicates if global modulation is enabled.
+          
+          Valid values : ifr2025_OFF or ifr2025_ON.
+
+      globalPulse
+
+          Variable Type       ViInt16 (passed by reference)
+
+          Indicates if global pulse mode is enabled.
+          
+          Valid values : ifr2025_OFF or ifr2025_ON.
+
+  Return Value
+
+          Function return value.
+          
+          Value                 Meaning
+          ========              =========================================
+          <VI_SUCCESS           Error condition
+          >=VI_SUCCESS          No errors
+          
+________________________________________________________________________________
+
+  ifr2025_modFM
+
+      ViStatus ifr2025_modFM (ViSession vi, ViInt16 channel,
+                              ViReal64 deviation, ViReal64 modRate,
+                              ViInt16 waveform, ViInt16 source,
+                              ViBoolean state);
+
+  Purpose
+
+      Allows either of the two FM modulation sources to be configured.
+
+  Parameter List
+
+      vi
+
+          Variable Type       ViSession
+
+          The ViSession parameter which identifies the instrument.
+
+      channel
+
+          Variable Type       ViInt16
+
+          Selects the FM channel to configure.
+          
+          Valid values : ifr2025_MOD1 or ifr2025_MOD2.
+
+      deviation
+
+          Variable Type       ViReal64
+
+          Specifies the amount of FM deviation to be set.
+          
+          Valid range : ifr2025_FMDEVIATION_MIN to ifr2025_FMDEVIATION_MAX.
+          
+
+      modRate
+
+          Variable Type       ViReal64
+
+          Specifies the internal modulation rate to be set for FM.
+          
+          Valid range : ifr2025_FMRATE_MIN to ifr2025_FMRATE_MAX.
+
+      waveform
+
+          Variable Type       ViInt16
+
+          Select waveform for FM internal modulation.
+          
+          Allowed Values    Waveform
+          ===============   ==========
+          ifr2025_MODF_SIN  Sine wave
+          ifr2025_MODF_TRI  Triangle
+          ifr2025_MODF_SQR  Square
+          
+
+      source
+
+          Variable Type       ViInt16
+
+          Set FM modulation source
+          
+          Allowed Values     Source
+          ===============    ==========
+          ifr2025_SRC_INT    Internal
+          ifr2025_SRC_EXTAC  External
+          ifr2025_SRC_EXTALC External with ALC
+          ifr2025_SRC_EXTDC  External DC
+          
+
+      state
+
+          Variable Type       ViBoolean
+
+          Set FM channel On or Off
+          
+          Valid values : ifr2025_MOD_ON or ifr2025_MOD_OFF.
+
+  Return Value
+
+          Function return value.
+          
+          Value                  Meaning
+          ========               =========================================
+          ifr2025_ERROR_MODCHAN  Invalid channel specified
+          ifr2025_ERROR_DEPTH    Deviation out of range
+          ifr2025_ERROR_RATE     Modulation rate out of range
+          ifr2025_ERROR_WAVEFORM Invalid waveform specified
+          ifr2025_ERROR_SOURCE   Invalid source specified
+          ifr2025_ERROR_ONOFF    Invalid state specified
+          <VI_SUCCESS            Error condition
+          >=VI_SUCCESS           No errors
+          
+________________________________________________________________________________
+
+  ifr2025_modMode
+
+      ViStatus ifr2025_modMode (ViSession vi, ViInt16 modMode, ViInt16 pulse);
+
+  Purpose
+
+      Configures the instrument for a particular modulation mode.
+
+  Parameter List
+
+      vi
+
+          Variable Type       ViSession
+
+          The ViSession parameter which identifies the instrument.
+
+      modMode
+
+          Variable Type       ViInt16
+
+          Specifies the instrument modulation mode.
+          
+          Value               Comment
+          =================   ===============================
+          ifr2025_MODE_AM     Amplitude modulation
+          ifr2025_MODE_FM     Frequency modulation
+          ifr2025_MODE_PM     Phase modulation
+          ifr2025_MODE_AMFM   AM(int)+FM(ext) or FM(int)+AM(ext)
+          ifr2025_MODE_AMPM   AM(int)+PM(ext) or PM(int)+AM(ext)
+          ifr2025_MODE_2FSK   FM plus logic level on trigger i/p
+          ifr2025_MODE_4FSK   FM plus trigger i/p and pulse i/p
+          ifr2025_MODE_ILS    ILS Feature (not ifr2025)
+          ifr2025_MODE_VOR    VOR Feature (not ifr2025)
+          
+          These can be combined with PULSE modulation with the exception of
+          4FSK.
+
+      pulse
+
+          Variable Type       ViInt16
+
+          Enables or disables the pulse modulator.
+          
+          Valid values : ifr2025_PULSE_OFF or ifr2025_PULSE_ON.
+
+  Return Value
+
+          Function return value.
+          
+          Value                 Meaning
+          ========              =========================================
+          ifr2025_ERROR_MODMODE Illegal value for modulation mode
+          ifr2025_ERROR_PULSE   Pulse mode out of range or not supported
+          <VI_SUCCESS           Error condition
+          >=VI_SUCCESS          No errors
+          
+________________________________________________________________________________
+
+  ifr2025_modPhase
+
+      ViStatus ifr2025_modPhase (ViSession vi, ViReal64 modPhase);
+
+  Purpose
+
+      This function sets the phase difference between channel 1 and channel 2
+      of the instrument's modulation oscillator.
+
+  Parameter List
+
+      vi
+
+          Variable Type       ViSession
+
+          The VISA Instrument Description.
+          
+          Examples: VXI::5, GPIB-VXI::128::INSTR
+
+      modPhase
+
+          Variable Type       ViReal64
+
+           Control Name:  Mod Phase
+          
+           Description:   Specifies the phase difference of
+                          the modulation oscillator channel
+                          two relative to channel one.
+          
+           Variable Type: real
+          
+           Valid Range:   0.0 to 359.9 deg
+          
+           Default Value: 0.0 deg
+          
+           Note:  If you have set the phase and subsequently
+                  adjust the mod rate or altered the
+                  waveform, the relative phase difference
+                  will become indeterminate and will have to
+                  be reset.
+
+  Return Value
+
+          Function return value.
+          
+          Value                 Meaning
+          ========              =========================================
+          ifr2025_ERROR_PHASE   Phase out of range
+          <VI_SUCCESS           Error condition
+          >=VI_SUCCESS          No errors
+          
+________________________________________________________________________________
+
+  ifr2025_modPM
+
+      ViStatus ifr2025_modPM (ViSession vi, ViInt16 channel,
+                              ViReal64 deviation, ViReal64 modRate,
+                              ViInt16 waveform, ViInt16 source,
+                              ViBoolean state);
+
+  Purpose
+
+      Allows either of the two PM modulation sources to be configured.
+
+  Parameter List
+
+      vi
+
+          Variable Type       ViSession
+
+          The ViSession parameter which identifies the instrument.
+
+      channel
+
+          Variable Type       ViInt16
+
+          Selects the PM channel to configure.
+          
+          Valid values : ifr2025_MOD1 or ifr2025_MOD2.
+
+      deviation
+
+          Variable Type       ViReal64
+
+          Specifies the amount of PM to be set.
+          
+          Valid range : ifr2025_PMDEVIATION_MIN to ifr2025_PMDEVIATION_MAX.
+          
+
+      modRate
+
+          Variable Type       ViReal64
+
+          Specifies the internal modulation rate to be set for FM.
+          
+          Valid range : ifr2025_PMRATE_MIN to ifr2025_PMRATE_MAX.
+
+      waveform
+
+          Variable Type       ViInt16
+
+          Select waveform for PM internal modulation.
+          
+          Allowed Values    Waveform
+          ===============   ==========
+          ifr2025_MODF_SIN  Sine wave
+          ifr2025_MODF_TRI  Triangle
+          ifr2025_MODF_SQR  Square
+          
+
+      source
+
+          Variable Type       ViInt16
+
+          Set PM modulation source
+          
+          Allowed Values     Source
+          ===============    ==========
+          ifr2025_SRC_INT    Internal
+          ifr2025_SRC_EXTAC  External
+          ifr2025_SRC_EXTALC External with ALC
+          ifr2025_SRC_EXTDC  External DC
+          
+
+      state
+
+          Variable Type       ViBoolean
+
+          Set PM channel On or Off
+          
+          Valid values : ifr2025_MOD_ON or ifr2025_MOD_OFF.
+
+  Return Value
+
+          Function return value.
+          
+          Value                  Meaning
+          ========               =========================================
+          ifr2025_ERROR_MODCHAN  Invalid channel specified
+          ifr2025_ERROR_DEPTH    Deviation out of range
+          ifr2025_ERROR_RATE     Modulation rate out of range
+          ifr2025_ERROR_WAVEFORM Invalid waveform specified
+          ifr2025_ERROR_SOURCE   Invalid source specified
+          ifr2025_ERROR_ONOFF    Invalid state specified
+          <VI_SUCCESS            Error condition
+          >=VI_SUCCESS           No errors
+          
+________________________________________________________________________________
+
+  ifr2025_modulationQuery
+
+      ViStatus ifr2025_modulationQuery (ViSession vi, ViInt16 channel,
+                                        ViPReal64 depthDeviation,
+                                        ViPReal64 depthDevIncrement,
+                                        ViPReal64 frequency,
+                                        ViPReal64 frequencyIncrement,
+                                        ViPInt16 source, ViPInt16 shape,
+                                        ViPInt16 state);
+
+  Purpose
+
+      Returns information about any of the modulation sources.
+
+  Parameter List
+
+      vi
+
+          Variable Type       ViSession
+
+          The ViSession parameter which identifies the instrument.
+
+      channel
+
+          Variable Type       ViInt16
+
+          Selects the modulation channel to be interrogated :-
+          
+          Values
+          ===========
+          ifr2025_AM
+          ifr2025_AM1
+          ifr2025_AM2
+          ifr2025_FM
+          ifr2025_FM1
+          ifr2025_FM2
+          ifr2025_PM
+          ifr2025_PM1
+          ifr2025_PM2
+          
+
+      depthDeviation
+
+          Variable Type       ViReal64 (passed by reference)
+
+          AM
+          ==
+            Returns the depth in %.
+          
+          FM
+          ==
+            Returns the deviation in Hz.
+          
+          AM
+          ==
+            Returns the deviation in RAD.
+
+      depthDevIncrement
+
+          Variable Type       ViReal64 (passed by reference)
+
+          AM
+          ==
+            Returns the depth increment in %.
+          
+          FM
+          ==
+            Returns the deviation increment in Hz.
+          
+          AM
+          ==
+            Returns the deviation increment in RAD.
+
+      frequency
+
+          Variable Type       ViReal64 (passed by reference)
+
+          AM,FM,PM
+          =========
+            Returns the modulation frequency in Hz.
+
+      frequencyIncrement
+
+          Variable Type       ViReal64 (passed by reference)
+
+          AM,FM,PM
+          =========
+            Returns the modulation frequency increment in Hz.
+
+      source
+
+          Variable Type       ViInt16 (passed by reference)
+
+          Returns the modulation source for this channel :-
+          
+          Value  Source
+          =====  ==================
+            0    ifr2025_SRC_INT
+            1    ifr2025_SRC_EXTAC
+            2    ifr2025_SRC_EXTALC
+            3    ifr2025_SRC_EXTDC
+          
+
+      shape
+
+          Variable Type       ViInt16 (passed by reference)
+
+          Returns the modulation waveform shape for this channel :-
+          
+          Value  Source
+          =====  ==================
+            0    ifr2025_MODF_SIN
+            1    ifr2025_MODF_TRI
+            2    ifr2025_MODF_SQR
+          
+
+      state
+
+          Variable Type       ViInt16 (passed by reference)
+
+          Returns the state of the modulation source :-
+          
+          Value  State
+          =====  ===========
+            0    ifr2025_OFF
+            1    ifr2025_ON
+
+  Return Value
+
+          Function return value.
+          
+          Value                 Meaning
+          ========              =========================================
+          <VI_SUCCESS           Error condition
+          >=VI_SUCCESS          No errors
+          
+________________________________________________________________________________
+
+  ifr2025_operatingTimeQuery
+
+      ViStatus ifr2025_operatingTimeQuery (ViSession vi,
+                                           ViPReal64 operatingHours);
+
+  Purpose
+
+      This function reads the total number of operating hours on the
+      instrument, e.g. 1453.00
+
+  Parameter List
+
+      vi
+
+          Variable Type       ViSession
+
+          The ViSession parameter which identifies the instrument.
+
+      operatingHours
+
+          Variable Type       ViReal64 (passed by reference)
+
+          Returns the total number of operating hours.
+          
+
+  Return Value
+
+          Function return value.
+          
+          Value                 Meaning
+          ========              =========================================
+          <VI_SUCCESS           Error condition
+          >=VI_SUCCESS          No errors
+          
+________________________________________________________________________________
+
+  ifr2025_reset
+
+      ViStatus ifr2025_reset (ViSession vi);
+
+  Purpose
+
+      VISA required function.
+      
+      Closes the device session and associated resource manager session.
+
+  Parameter List
+
+      vi
+
+          Variable Type       ViSession
+
+          The ViSession parameter which identifies the instrument.
+
+  Return Value
+
+          Function return value.
+          
+          Value                 Meaning
+          ========              =========================================
+          <VI_SUCCESS           Error condition
+          >=VI_SUCCESS          No errors
+          
+________________________________________________________________________________
+
+  ifr2025_resetElapsedTime
+
+      ViStatus ifr2025_resetElapsedTime (ViSession vi);
+
+  Purpose
+
+      Resets the elapsed operating hours to zero.
+
+  Parameter List
+
+      vi
+
+          Variable Type       ViSession
+
+          The ViSession parameter which identifies the instrument.
+
+  Return Value
+
+          Function return value.
+          
+          Value                 Meaning
+          ========              =========================================
+          <VI_SUCCESS           Error condition
+          >=VI_SUCCESS          No errors
+          
+________________________________________________________________________________
+
+  ifr2025_revision_query
+
+      ViStatus ifr2025_revision_query (ViSession vi,
+                                       ViChar _VI_FAR driverRevision[],
+                                       ViChar _VI_FAR instrumentRevision[]);
+
+  Purpose
+
+      Retrieves version information from the driver and the instrument
+      associated with the session supplied to this function.
+
+  Parameter List
+
+      vi
+
+          Variable Type       ViSession
+
+          The ViSession parameter which identifies the instrument.
+
+      driverRevision
+
+          Variable Type       ViChar[]
+
+          Returns a string containing the version of this driver.
+
+      instrumentRevision
+
+          Variable Type       ViChar[]
+
+          Returns a string with the revision of the instrument assoicated with
+          this driver session.
+
+  Return Value
+
+          Function return value.
+          
+          Value                 Meaning
+          ========              =========================================
+          <VI_SUCCESS           Error condition
+          >=VI_SUCCESS          No errors
+          
+________________________________________________________________________________
+
+  ifr2025_rfFreq
+
+      ViStatus ifr2025_rfFreq (ViSession vi, ViReal64 frequency);
+
+  Purpose
+
+      This function sets the carrier frequency of the instrument.
+
+  Parameter List
+
+      vi
+
+          Variable Type       ViSession
+
+          The ViSession parameter which identifies the instrument.
+
+      frequency
+
+          Variable Type       ViReal64
+
+          Specifies the instrument carrier frequency.
+          
+          Valid range : ifr2025_FREQ_MIN
+                        to
+                        mi3002_FREQ_MAX (mi3002, mi2024, ri3271)
+                     or mi2023_FREQ_MAX (mi2023, ifr2023A)
+                     or ifr2023B_FREQ_MAX (ifr2023A)
+                     or ifr2025_FREQ_MAX (ifr2025)
+
+  Return Value
+
+          Function return value.
+          
+          Value                 Meaning
+          ========              =========================================
+          ifr2025_ERROR_RFFREQ  Frequency out of range
+          <VI_SUCCESS           Error condition
+          >=VI_SUCCESS          No errors
+          
+________________________________________________________________________________
+
+  ifr2025_rfLevel
+
+      ViStatus ifr2025_rfLevel (ViSession vi, ViReal64 RFLevel,
+                                ViInt16 RFUnit);
+
+  Purpose
+
+      This function sets the RF level of the carrier. The units and output type
+      can also be specified.
+
+  Parameter List
+
+      vi
+
+          Variable Type       ViSession
+
+          The ViSession parameter which identifies the instrument.
+
+      RFLevel
+
+          Variable Type       ViReal64
+
+          The RF output level of the generator. The limits depend on the units
+          selected and the output type.
+
+      RFUnit
+
+          Variable Type       ViInt16
+
+          Specifies the units in which the RF Level is expressed.
+          
+          The allowed values are :-
+          
+            ifr2025_RFUNIT_DBM
+            ifr2025_RFUNIT_DBV
+            ifr2025_RFUNIT_DBMV
+            ifr2025_RFUNIT_DBUV
+            ifr2025_RFUNIT_V
+            ifr2025_RFUNIT_MV
+            ifr2025_RFUNIT_UV
+          
+          
+
+  Return Value
+
+          Function return value.
+          
+          Value                 Meaning
+          ========              =========================================
+          ifr2025_ERROR_RFLEVEL RF level out of range
+          ifr2025_ERROR_RFUNITS Illegal RF unit specified
+          <VI_SUCCESS           Error condition
+          >=VI_SUCCESS          No errors
+          
+________________________________________________________________________________
+
+  ifr2025_rfLimit
+
+      ViStatus ifr2025_rfLimit (ViSession vi, ViReal64 level, ViInt16 unit,
+                                ViInt16 limit);
+
+  Purpose
+
+      Allows the RF output to be assigned a user programmed limit.
+
+  Parameter List
+
+      vi
+
+          Variable Type       ViSession
+
+          The ViSession parameter which identifies the instrument.
+
+      level
+
+          Variable Type       ViReal64
+
+          The user specified RF output level limit of the generator. The limits
+          depend on the units selected and the output type.
+
+      unit
+
+          Variable Type       ViInt16
+
+          Specifies the units in which the RF Level is expressed.
+          
+          The allowed values are :-
+          
+            ifr2025_RFUNIT_DBM
+            ifr2025_RFUNIT_DBV
+            ifr2025_RFUNIT_DBMV
+            ifr2025_RFUNIT_DBUV
+            ifr2025_RFUNIT_V
+            ifr2025_RFUNIT_MV
+            ifr2025_RFUNIT_UV
+          
+          
+
+      limit
+
+          Variable Type       ViInt16
+
+          This determines whether to enable or disable the offset for the
+          current frequency band.
+          
+          Valid values : ifr2025_ENABLE or ifr2025_DISABLE
+
+  Return Value
+
+          Function return value.
+          
+          Value                 Meaning
+          ========              =========================================
+          ifr2025_ERROR_RFLEVEL RF level out of range
+          ifr2025_ERROR_RFUNITS Illegal RF unit specified
+          <VI_SUCCESS           Error condition
+          >=VI_SUCCESS          No errors
+          
+________________________________________________________________________________
+
+  ifr2025_rfOffset
+
+      ViStatus ifr2025_rfOffset (ViSession vi, ViReal64 level,
+                                 ViInt16 offset);
+
+  Purpose
+
+      This function specifies an RF output offset to compensate for cable or
+      switching offsets. An offset is allowed for each output carrier frequency
+      band.
+
+  Parameter List
+
+      vi
+
+          Variable Type       ViSession
+
+          The ViSession parameter which identifies the instrument.
+
+      level
+
+          Variable Type       ViReal64
+
+          Specifies the output offset for a frequency band.
+          
+          Valid range : ifr2025_RFOFFSET_MIN to ifr2025_RFOFFSET_MAX.
+          
+          The bands available are :-
+          
+          9 kHz   to 150MHz
+          150 MHz to 300 MHz
+          300 MHz to 600 MHz
+          600 MHz to 1.2 GHz
+          1.2 GHz to 2.4 GHz
+
+      offset
+
+          Variable Type       ViInt16
+
+          This determines whether to enable or disable the offset for the
+          current frequency band.
+          
+          Valid values : ifr2025_ENABLE or ifr2025_DISABLE
+
+  Return Value
+
+          Function return value.
+          
+          Value                  Meaning
+          ========               =========================================
+          ifr2025_ERROR_RFOFFSET RF level offset out of range
+          <VI_SUCCESS            Error condition
+          >=VI_SUCCESS           No errors
+          
+________________________________________________________________________________
+
+  ifr2025_rfPhase
+
+      ViStatus ifr2025_rfPhase (ViSession vi, ViReal64 carrierPhase);
+
+  Purpose
+
+      Adjust the phase offset of the carrier.
+
+  Parameter List
+
+      vi
+
+          Variable Type       ViSession
+
+          The ViSession parameter which identifies the instrument.
+
+      carrierPhase
+
+          Variable Type       ViReal64
+
+          Adjust the carrier phase offset.
+          
+          Valid range : ifr2025_PHASE_MIN to ifr2025_PHASE_MAX.
+
+  Return Value
+
+          Function return value.
+          
+          Value                 Meaning
+          ========              =========================================
+          ifr2025_ERROR_PHASE   Phase out of range
+          <VI_SUCCESS           Error condition
+          >=VI_SUCCESS          No errors
+          
+________________________________________________________________________________
+
+  ifr2025_rfState
+
+      ViStatus ifr2025_rfState (ViSession vi, ViInt16 RFState);
+
+  Purpose
+
+      Controls the instrument RF output.
+
+  Parameter List
+
+      vi
+
+          Variable Type       ViSession
+
+          The ViSession parameter which identifies the instrument.
+
+      RFState
+
+          Variable Type       ViInt16
+
+          Enables or disables the RF output.
+          
+          Valid values : ifr2025_OFF and ifr2025_ON.
+
+  Return Value
+
+          Function return value.
+          
+          Value                 Meaning
+          ========              =========================================
+          ifr2025_ERROR_ONOFF   Illegal value for output state
+          <VI_SUCCESS           Error condition
+          >=VI_SUCCESS          No errors
+          
+________________________________________________________________________________
+
+  ifr2025_rfType
+
+      ViStatus ifr2025_rfType (ViSession vi, ViInt16 RFType, ViInt16 RFUnit);
+
+  Purpose
+
+      This function selects the required units, and EMF or PD for voltage
+      related units.
+
+  Parameter List
+
+      vi
+
+          Variable Type       ViSession
+
+          The ViSession parameter which identifies the instrument.
+
+      RFType
+
+          Variable Type       ViInt16
+
+          Specifies the type of output for the RF Level.
+          
+          The allowed values are :-
+          
+            ifr2025_RFTYPE_EMF
+            ifr2025_RFTYPE_PD
+          
+
+      RFUnit
+
+          Variable Type       ViInt16
+
+          Specifies the units in which the RF Level is returned from the query.
+          
+          Value  Type
+          =====  ===================
+            0    ifr2025_RFUNIT_dBm
+            1    ifr2025_RFUNIT_dBV
+            2    ifr2025_RFUNIT_dBmV
+            3    ifr2025_RFUNIT_dBuV
+            4    ifr2025_RFUNIT_V
+            5    ifr2025_RFUNIT_mV
+            6    ifr2025_RFUNIT_uV
+          
+
+  Return Value
+
+          Function return value.
+          
+          Value                 Meaning
+          ========              =========================================
+          ifr2025_ERROR_RFUNITS Illegal RF unit specified
+          ifr2025_ERROR_RFTYPE  Illegal RF type specified
+          <VI_SUCCESS           Error condition
+          >=VI_SUCCESS          No errors
+          
+________________________________________________________________________________
+
+  ifr2025_rppQuery
+
+      ViStatus ifr2025_rppQuery (ViSession vi, ViPInt16 RPPTripped,
+                                 ViPInt16 RPPCount);
+
+  Purpose
+
+      Returns information about the reverse power protection circuit.
+
+  Parameter List
+
+      vi
+
+          Variable Type       ViSession
+
+          The ViSession parameter which identifies the instrument.
+
+      RPPTripped
+
+          Variable Type       ViInt16 (passed by reference)
+
+          Indicates the current state of the RPP trip circuit.
+          
+          Value  State
+          =====  =============
+            0    Not tripped
+            1    Tripped
+          
+
+      RPPCount
+
+          Variable Type       ViInt16 (passed by reference)
+
+          Returns the number of times that the RPP circuitry has tripped.
+          
+
+  Return Value
+
+          Function return value.
+          
+          Value                 Meaning
+          ========              =========================================
+          <VI_SUCCESS           Error condition
+          >=VI_SUCCESS          No errors
+          
+________________________________________________________________________________
+
+  ifr2025_rppReset
+
+      ViStatus ifr2025_rppReset (ViSession vi);
+
+  Purpose
+
+      Resets the reverse power protection trip.
+
+  Parameter List
+
+      vi
+
+          Variable Type       ViSession
+
+          The ViSession parameter which identifies the instrument.
+
+  Return Value
+
+          Function return value.
+          
+          Value                 Meaning
+          ========              =========================================
+          <VI_SUCCESS           Error condition
+          >=VI_SUCCESS          No errors
+          
+________________________________________________________________________________
+
+  ifr2025_self_test
+
+      ViStatus ifr2025_self_test (ViSession vi, ViPInt16 result,
+                                  ViChar _VI_FAR message[]);
+
+  Purpose
+
+      Performs a self test on the instrument (*TST).
+
+  Parameter List
+
+      vi
+
+          Variable Type       ViSession
+
+          The ViSession parameter which identifies the instrument.
+
+      result
+
+          Variable Type       ViInt16 (passed by reference)
+
+          Returns a decimal representing the test result. A value of 0
+          indicates a PASS.
+
+      message
+
+          Variable Type       ViChar[]
+
+          Returns a string containing the self test result.
+
+  Return Value
+
+          Function return value.
+          
+          Value                 Meaning
+          ========              =========================================
+          <VI_SUCCESS           Error condition
+          >=VI_SUCCESS          No errors
+          
+________________________________________________________________________________
+
+  ifr2025_setFSK
+
+      ViStatus ifr2025_setFSK (ViSession vi, ViReal64 FM1Deviation,
+                               ViBoolean FM1State);
+
+  Purpose
+
+      This function controls FM1 for FSK mode by setting channel 1 of the
+      modulation oscillator.
+
+  Parameter List
+
+      vi
+
+          Variable Type       ViSession
+
+          The VISA Instrument Description.
+          
+          Examples: VXI::5, GPIB-VXI::128::INSTR
+
+      FM1Deviation
+
+          Variable Type       ViReal64
+
+           Control Name:  FM1 Deviation
+          
+           Description:   Specifies the amount of FM1
+                          to be set.
+          
+           Variable Type: Real
+          
+           Valid Range:   0Hz to 100KHz
+          
+           Default Value: 0Hz
+
+      FM1State
+
+          Variable Type       ViBoolean
+
+           Control Name:  FM1 State
+          
+           Description:   Set FM1 channel On or Off
+          
+           Variable Type: Integer
+          
+           Valid Range:   0 - Off (Default)
+                          1 - On
+
+  Return Value
+
+          Function return value.
+          
+          Value                 Meaning
+          ========              =========================================
+          ifr2025_ERROR_DEPTH   Deviation out of range
+          ifr2025_ERROR_ONOFF   Invalid state specified
+          <VI_SUCCESS           Error condition
+          >=VI_SUCCESS          No errors
+          
+          
+________________________________________________________________________________
+
+  ifr2025_setFSTD
+
+      ViStatus ifr2025_setFSTD (ViSession vi, ViInt16 standard);
+
+  Purpose
+
+      Determines the source of the frequency standard for carrier generation.
+
+  Parameter List
+
+      vi
+
+          Variable Type       ViSession
+
+          The ViSession parameter which identifies the instrument.
+
+      standard
+
+          Variable Type       ViInt16
+
+          Select internal or external frequency standard.
+          
+          Value                  Standard
+          ====================   ======================================
+          ifr2025_FSTD_INT       Internal source
+          ifr2025_FSTD_EXT10DIR  External @10MHz
+          ifr2025_FSTD_EXT1IND   External @1MHz
+          ifr2025_FSTD_EXT10IND  External @10MHz
+          ifr2025_FSTD_INT10OUT  Output internal source
+          
+
+  Return Value
+
+          Function return value.
+          
+          Value                 Meaning
+          ========              =========================================
+          VI_ERROR_PARAMETER2   Invalid freq standard
+          <VI_SUCCESS           Error condition
+          >=VI_SUCCESS          No errors
+          
+________________________________________________________________________________
+
+  ifr2025_sinad
+
+      ViStatus ifr2025_sinad (ViSession vi, int averages,
+                              ViInt16 filterWeighting, ViInt16 mode,
+                              ViReal64 autoTarget, ViReal64 deltaLevelStep);
+
+  Purpose
+
+      This function allows the parameters relating to Sinad measurement to be
+      specified.
+      If Mode AUTO is selected then an 'Auto Target' value should be specified.
+
+  Parameter List
+
+      vi
+
+          Variable Type       ViSession
+
+          The ViSession parameter which identifies the instrument.
+
+      averages
+
+          Variable Type       int
+
+          Specifies the number of averages used in the Sinad measurement.
+          
+          Valid range : 1 to 127
+          
+
+      filterWeighting
+
+          Variable Type       ViInt16
+
+          Specifies the type of weighting filter applied in making the Sinad
+          measurement.
+          
+          Value                Weighting Filter
+          =================    ===============================
+          ifr2025_NONE         None
+          ifr2025_CCITT        CCITT P53
+          ifr2025_CMESS        CMESSAGE
+          
+
+      mode
+
+          Variable Type       ViInt16
+
+          Selects the operational state of the Sinad measurement system
+          
+          Value                  State
+          =================      ===============================
+          ifr2025_DISABLE        Disabled
+          ifr2025_ENABLE         Enabled
+          ifr2025_AUTO           Automatic
+          
+
+      autoTarget
+
+          Variable Type       ViReal64
+
+          Specifies the target value for the Sinad measurement when operating
+          in automatic mode.
+
+      deltaLevelStep
+
+          Variable Type       ViReal64
+
+          Specifies the increment step size in dB for RF level when operating
+          in automatic mode.
+
+  Return Value
+
+          Function return value.
+          
+          Value                 Meaning
+          ========              =========================================
+          <VI_SUCCESS           Error condition
+          >=VI_SUCCESS          No errors
+          
+________________________________________________________________________________
+
+  ifr2025_sinadReadyQuery
+
+      ViStatus ifr2025_sinadReadyQuery (ViSession vi, ViPInt16 statusCode);
+
+  Purpose
+
+      This function returns a status code indicating if a new measured Sinad
+      value is available.
+
+  Parameter List
+
+      vi
+
+          Variable Type       ViSession
+
+          The ViSession parameter which identifies the instrument.
+
+      statusCode
+
+          Variable Type       ViInt16 (passed by reference)
+
+          Status Code indicates if a new Sinad measurement is ready. If the
+          Status Code indicates that a new measurement is not available then
+          the response to a Sinad Value Query will be delayed until a new
+          measurement is available:
+          
+          Code                    Status
+          =================       ===============================
+          ifr2025_SINAD_READY     New Sinad measurement available
+          ifr2025_SINAD_NONE      No new Sinad measurement available
+          
+
+  Return Value
+
+          Function return value.
+          
+          Value                 Meaning
+          ========              =========================================
+          <VI_SUCCESS           Error condition
+          >=VI_SUCCESS          No errors
+          
+________________________________________________________________________________
+
+  ifr2025_sinadSetupQuery
+
+      ViStatus ifr2025_sinadSetupQuery (ViSession vi, ViPInt16 averages,
+                                        ViPInt16 filterWeighting,
+                                        ViPInt16 mode, ViPReal64 targetSinad,
+                                        ViPReal64 deltaLevelStep);
+
+  Purpose
+
+      This function returns parameter values relating to the Sinad measurement
+      system.
+
+  Parameter List
+
+      vi
+
+          Variable Type       ViSession
+
+          The ViSession parameter which identifies the instrument.
+
+      averages
+
+          Variable Type       ViInt16 (passed by reference)
+
+          Returns the number of averages used in the Sinad measurement.
+
+      filterWeighting
+
+          Variable Type       ViInt16 (passed by reference)
+
+          Returns the type of weighting filter applied in making the Sinad
+          measurement.
+          
+          Value                Weighting Filter
+          =================    ===============================
+          ifr2025_NONE         None
+          ifr2025_CCITT        CCITT P53
+          ifr2025_CMESS        CMESSAGE
+          
+
+      mode
+
+          Variable Type       ViInt16 (passed by reference)
+
+          Returns the operational state of the Sinad measurement system
+          
+          Value                  State
+          =================      ===============================
+          ifr2025_DISABLE        Disabled
+          ifr2025_ENABLE         Enabled
+          ifr2025_AUTO           Automatic
+          
+
+      targetSinad
+
+          Variable Type       ViReal64 (passed by reference)
+
+          Returns the target SINAD set in dB's.
+
+      deltaLevelStep
+
+          Variable Type       ViReal64 (passed by reference)
+
+          Returns the increment step in dB for RF level
+
+  Return Value
+
+          Function return value.
+          
+          Value                 Meaning
+          ========              =========================================
+          <VI_SUCCESS           Error condition
+          >=VI_SUCCESS          No errors
+          
+________________________________________________________________________________
+
+  ifr2025_sinadValueQuery
+
+      ViStatus ifr2025_sinadValueQuery (ViSession vi, ViPReal64 sinadValue);
+
+  Purpose
+
+      This function returns the current measured Sinad value in dB's.
+
+  Parameter List
+
+      vi
+
+          Variable Type       ViSession
+
+          The ViSession parameter which identifies the instrument.
+
+      sinadValue
+
+          Variable Type       ViReal64 (passed by reference)
+
+          Returns the measured SINAD value in dB's.
+
+  Return Value
+
+          Function return value.
+          
+          Value                 Meaning
+          ========              =========================================
+          <VI_SUCCESS           Error condition
+          >=VI_SUCCESS          No errors
+          
+________________________________________________________________________________
+
+  ifr2025_sweep
+
+      ViStatus ifr2025_sweep (ViSession vi, ViReal64 startFreq,
+                              ViReal64 stopFreq, ViReal64 stepFreq,
+                              ViReal64 time_perStep,
+                              ViReal64 logarithmicIncrement);
+
+  Purpose
+
+      Specify the main sweep parameters.
+
+  Parameter List
+
+      vi
+
+          Variable Type       ViSession
+
+          The ViSession parameter which identifies the instrument.
+
+      startFreq
+
+          Variable Type       ViReal64
+
+          Specifies the sweep start frequency.
+          
+          Valid range : ifr2025_FREQ_MIN
+                        to
+                        mi3002_FREQ_MAX (mi3002, mi2024, ri3271)
+                        mi2023_FREQ_MAX (mi2023, ifr2023A)
+                        ifr2023B_FREQ_MAX (ifr2023B)
+                        ifr2025_FREQ_MAX (ifr2025)
+          
+
+      stopFreq
+
+          Variable Type       ViReal64
+
+          Specifies the sweep stop frequency.
+          
+          Valid range : ifr2025_FREQ_MIN
+                        to
+                        mi3002_FREQ_MAX (mi3002, mi2024, ri3271)
+                        mi2023_FREQ_MAX (mi2023, ifr2023A)
+                        ifr2023B_FREQ_MAX (ifr2023B)
+                        ifr2025_FREQ_MAX (ifr2025)
+          
+
+      stepFreq
+
+          Variable Type       ViReal64
+
+          Specifies the sweep step frequency. Only valid in linear sweep modes.
+          
+          Valid range : ifr2025_STEP_FREQ_MIN
+                        to
+                        mi3002_FREQ_MAX (mi3002, mi2024, ri3271)
+                        mi2023_FREQ_MAX (mi2023, ifr2023A)
+                        ifr2023B_FREQ_MAX (ifr2023B)
+                        ifr2025_FREQ_MAX (ifr2025)
+          
+
+      time_perStep
+
+          Variable Type       ViReal64
+
+          Specifies the sweep step time.
+          
+          Valid range : ifr2025_STEP_TIME_MIN to ifr2025_STEP_TIME_MAX
+          
+
+      logarithmicIncrement
+
+          Variable Type       ViReal64
+
+          Specifies the logarithmic increment as a percentage of current
+          carrier frequency. Only valid in logarithmic sweep mode.
+          
+          Valid range : 0.01% to 50.00%
+          
+
+  Return Value
+
+          Function return value.
+          
+          Value                   Meaning
+          ========                ========================================
+          ifr2025_ERROR_STARTFREQ Start frequency out of range
+          ifr2025_ERROR_STOPFREQ  Stop frequency out of range
+          ifr2025_ERROR_STEPFREQ  Step frequency out of range
+          ifr2025_ERROR_STEPTIME  Step time out of range
+          ifr2025_ERROR_LOGINC    Logarithmic increment out of range
+          <VI_SUCCESS             Error condition
+          >=VI_SUCCESS            No errors
+          
+________________________________________________________________________________
+
+  ifr2025_sweepMode
+
+      ViStatus ifr2025_sweepMode (ViSession vi, ViInt16 carrFreq,
+                                  ViInt16 sweepMode, ViInt16 trigger_mode,
+                                  ViInt16 triggerSource, ViInt16 sweepType);
+
+  Purpose
+
+      This command defines the carrier mode (SWEPT or FIXED) and the remainder
+      of the SWEPT mode parameters.
+
+  Parameter List
+
+      vi
+
+          Variable Type       ViSession
+
+          The ViSession parameter which identifies the instrument.
+
+      carrFreq
+
+          Variable Type       ViInt16
+
+          Sets Carrier frequency mode.
+          
+          Valid values : ifr2025_FIXED or ifr2025_SWEPT
+
+      sweepMode
+
+          Variable Type       ViInt16
+
+          Select sweep mode
+          
+          Valid values : ifr2025_SINGLE or ifr2025_CONTINUOUS
+
+      trigger_mode
+
+          Variable Type       ViInt16
+
+          Sets the trigger mode
+          
+          Value
+          =====================
+          ifr2025_TRIG_OFF        Disables the trigger
+          ifr2025_TRIG_START      Starts sweep, disables trigger until end
+          ifr2025_TRIG_STARTSTOP  Starts/stops sweep alternate triggers
+          ifr2025_TRIG_STEP       Steps sweep on each trigger
+
+      triggerSource
+
+          Variable Type       ViInt16
+
+          Selects the trigger source
+          
+          Value              Source
+          ================   ===============================
+          ifr2025_TRIG_HOLD  No triggering
+          ifr2025_TRIG_TTL0  VXI backplane trigger source 0
+          ifr2025_TRIG_TTL1               "               1
+          ifr2025_TRIG_TTL2               "               2
+          ifr2025_TRIG_TTL3               "               3
+          ifr2025_TRIG_TTL4               "               4
+          ifr2025_TRIG_TTL5               "               5
+          ifr2025_TRIG_TTL6               "               6
+          ifr2025_TRIG_TTL7  VXI backplane trigger source 7
+          ifr2025_TRIG_BUS   Triggered by VXI command
+          ifr2025_TRIG_FRONT Use the TRIGGER INPUT socket
+          
+
+      sweepType
+
+          Variable Type       ViInt16
+
+          Select sweep mode
+          
+          Valid values : ifr2025_SINGLE or ifr2025_CONTINUOUS
+
+  Return Value
+
+          Function return value.
+          
+          Value                 Meaning
+          ========              =========================================
+          VI_ERROR_PARAMETER2   Invalid carrier mode specified
+          VI_ERROR_PARAMETER3   Invalid sweep mode specified
+          VI_ERROR_PARAMETER4   Invalid trigger mode specified
+          VI_ERROR_PARAMETER5   Invalid trigger source specified
+          <VI_SUCCESS           Error condition
+          >=VI_SUCCESS          No errors
+          
+________________________________________________________________________________
+
+  ifr2025_sweepQuery
+
+      ViStatus ifr2025_sweepQuery (ViSession vi, ViPReal64 startFrequency,
+                                   ViPReal64 stopFrequency,
+                                   ViPReal64 stepFrequency,
+                                   ViPReal64 stepTime, ViPInt16 mode,
+                                   ViPInt16 trigger, ViPReal64 logIncrement,
+                                   ViPInt16 type);
+
+  Purpose
+
+      Returns the current sweep limits for the generator.
+
+  Parameter List
+
+      vi
+
+          Variable Type       ViSession
+
+          The ViSession parameter which identifies the instrument.
+
+      startFrequency
+
+          Variable Type       ViReal64 (passed by reference)
+
+          Returns the sweep start frequency in Hertz.
+
+      stopFrequency
+
+          Variable Type       ViReal64 (passed by reference)
+
+          Returns the sweep stop frequency in Hertz.
+
+      stepFrequency
+
+          Variable Type       ViReal64 (passed by reference)
+
+          Returns the sweep step frequency in Hertz.
+
+      stepTime
+
+          Variable Type       ViReal64 (passed by reference)
+
+          Returns the sweep step time in milliseconds.
+
+      mode
+
+          Variable Type       ViInt16 (passed by reference)
+
+          Returns the sweep mode.
+          
+          Value  Mode
+          =====  ==================
+            0    ifr2025_CONTINUOUS
+            1    ifr2025_SINGLE
+
+      trigger
+
+          Variable Type       ViInt16 (passed by reference)
+
+          Returns the sweep trigger mode.
+          
+          Value  Mode
+          =====  ======================
+            0    ifr2025_TRIG_OFF
+            1    ifr2025_TRIG_START
+            2    ifr2025_TRIG_STARTSTOP
+            3    ifr2025_TRIG_STEP
+          
+
+      logIncrement
+
+          Variable Type       ViReal64 (passed by reference)
+
+          Returns the logarithmic increment value expressed in %.
+          
+          
+
+      type
+
+          Variable Type       ViInt16 (passed by reference)
+
+          Returns the sweep type.
+          
+          Value  Mode
+          =====  ======================
+            0    ifr2025_LIN
+            1    ifr2025_LOG
+          
+
+  Return Value
+
+          Function return value.
+          
+          Value                 Meaning
+          ========              =========================================
+          <VI_SUCCESS           Error condition
+          >=VI_SUCCESS          No errors
+          
+________________________________________________________________________________
+
+  ifr2025_sweepRun
+
+      ViStatus ifr2025_sweepRun (ViSession vi, ViInt16 sweepControl);
+
+  Purpose
+
+      This command allows software control over sweep operation.
+
+  Parameter List
+
+      vi
+
+          Variable Type       ViSession
+
+          The ViSession parameter which identifies the instrument.
+
+      sweepControl
+
+          Variable Type       ViInt16
+
+          Defines the sweep operation.
+          
+          Value                Operation
+          ==================   =========================================
+          ifr2025_SWEEP_GO     Commence sweep (Default)
+          ifr2025_SWEEP_HALT   Pause sweep
+          ifr2025_SWEEP_CONT   Continue sweep
+          ifr2025_SWEEP_RESET  Reset sweep to start values
+          ifr2025_SWEEP_RETN   Return to original setting
+          ifr2025_SWEEP_XFER   Transfer current setting as new setting
+          ifr2025_SWEEP_UP     Go up one step while paused
+          ifr2025_SWEEP_DOWN   Go down one step while paused
+
+  Return Value
+
+          Function return value.
+          
+          Value                 Meaning
+          ========              =========================================
+          VI_ERROR_PARAMETER2   Invalid sweep command
+          <VI_SUCCESS           Error condition
+          >=VI_SUCCESS          No errors
+          
+________________________________________________________________________________
+
+  ifr2025_vorQuery
+
+      ViStatus ifr2025_vorQuery (ViSession vi, ViPReal64 VORDepth,
+                                 ViPReal64 REFDepth, ViPReal64 VORIDDepth,
+                                 ViPInt16 direction, ViPReal64 bearing);
+
+  Purpose
+
+      Retrieve the current settings for VOR mode.
+
+  Parameter List
+
+      vi
+
+          Variable Type       ViSession
+
+          The ViSession parameter which identifies the instrument.
+
+      VORDepth
+
+          Variable Type       ViReal64 (passed by reference)
+
+          Returns the percentage depth for VOR/SUB.
+
+      REFDepth
+
+          Variable Type       ViReal64 (passed by reference)
+
+          Returns the percentage depth for REF.
+
+      VORIDDepth
+
+          Variable Type       ViReal64 (passed by reference)
+
+          Returns the percentage depth for VORID.
+
+      direction
+
+          Variable Type       ViInt16 (passed by reference)
+
+          Indicates the direction relative to the beacon.
+          
+          Valid values : ifr2025_TO or ifr2025_FROM.
+
+      bearing
+
+          Variable Type       ViReal64 (passed by reference)
+
+          Returns the current direction to/from the beacon in DEG.
+          
+
+  Return Value
+
+          Function return value.
+          
+          Value                 Meaning
+          ========              =========================================
+          <VI_SUCCESS           Error condition
+          >=VI_SUCCESS          No errors
+          
+

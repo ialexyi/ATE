@@ -1,0 +1,67 @@
+ZT-Modular Command List:
+
+The following Command/Query list can be used to control the ZT Modular By:
+ZTModular ActiveX DLL or
+ZTModular .NET Class Library or
+Ethernet HTTP Get/Post       or 
+Ethernet TELNET protocol
+
+
+* The SCPI List and Examples refers to SLOT1 cell A  - but can use the same way for SLOT2, SLOT3, SLOT4, SLOT5 and SLOT6 cell A or B
+
+:MN?  // Get Model Name
+:SN?  // Get Serial Number
+:Firmware?  // Get Firmware
+:T0? Get Temperature on Board
+:T1? Get Temperature sensor #1 ( if exist )
+:T2? Get Temperature sensor #2 ( if exist )
+:T3? Get Temperature sensor #3 ( if exist )
+
+
+
+RUDATs -
+
+:RUDAT:1A:ATT:3.50   // 1A refers to SLOT1 A  - same thing for SLOT2 to SLOT6 A or B
+:RUDAT:1A:ATT?
+
+On Start Up - RUDAT:
+
+:RUDAT:1A:STARTUPATT:INDICATOR:L or F or N (L=Last Value , F=fixed value , N=Normal - Max Value )
+:RUDAT:1A:STARTUPATT:INDICATOR?
+:RUDAT:1A:STARTUPATT:VALUE:20.50  ( value in dB - this command together with INDICATOR:F will define the RUDAT to start up with this - 20.50 - value.)
+:RUDAT:1A:STARTUPATT:VALUE?         
+
+Max attenuations:
+
+:RUDAT:1A:MAX?
+
+
+Switches:
+
+Get Counter value:
+
+:SP4T:1:SCOUNTER?
+:SPDT:1A:SCOUNTER?
+:MTS:1A:SCOUNTER?
+
+
+Switches - Set :
+
+:SPDT:1A:STATE:2   for SPDT state may be 1 or 2.
+:SPDT:1A:STATE?
+:MTS:1A:STATE:2   for MTS state may be 1 or 2.
+:MTS:1A:STATE?
+:SP4T:1:STATE:2   for SP4T state may be: 0 or 1 or 2 or 3 or 4.
+:SP4T:1:STATE?
+
+On Start Up - SWITCHES:
+
+:STARTUPSW:INDICATOR:L or N  ( L=Last N=Normal ).
+:STARTUPSW:INDICATOR?
+
+Labels:
+
+:LABEL:1A:"PROJECT-AAA"
+:LABEL:1A?
+
+

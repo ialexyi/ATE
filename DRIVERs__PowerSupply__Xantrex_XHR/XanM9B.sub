@@ -1,0 +1,841 @@
+FPAttributeValueFile
+
+n  SubType="IVI" 
+
+n  SubVersion="1" 
+
+v attrCurrentLimitBehaviorRangeTable DataType="i" 
+ XANM9B_VAL_CURRENT_REGULATE (0)
+  "When the output current reaches the value of the "
+  "XANM9B_ATTR_CURRENT_LIMIT attribute, the power supply restricts the "
+  "output voltage such that the output current is not greater than the value "
+  "of the XANM9B_ATTR_CURRENT_LIMIT attribute."
+
+ XANM9B_VAL_CURRENT_TRIP (1)
+  "When the output current reaches or exceeds the value of the "
+  "XANM9B_ATTR_CURRENT_LIMIT attribute, the power supply disables the output."
+
+
+v attrFoldbackSettingRangeTable DataType="i" 
+ XANM9B_VAL_FOLD_OFF (0)
+  ""
+
+ XANM9B_VAL_FOLD_CV (1)
+  ""
+
+ XANM9B_VAL_FOLD_CC (2)
+  ""
+
+
+v attrMaskSettingRangeTable DataType="i" 
+ XANM9B_VAL_MASK_CV (0)
+  ""
+
+ XANM9B_VAL_MASK_CC (1)
+  ""
+
+ XANM9B_VAL_MASK_OV (3)
+  ""
+
+ XANM9B_VAL_MASK_OT (4)
+  ""
+
+ XANM9B_VAL_MASK_SD (5)
+  ""
+
+ XANM9B_VAL_MASK_FOLD (6)
+  ""
+
+ XANM9B_VAL_MASK_ERR (7)
+  ""
+
+ XANM9B_VAL_MASK_PON (8)
+  ""
+
+ XANM9B_VAL_MASK_REM (9)
+  ""
+
+ XANM9B_VAL_MASK_ACF (10)
+  ""
+
+ XANM9B_VAL_MASK_OPF (11)
+  ""
+
+ XANM9B_VAL_MASK_SNSP (12)
+  ""
+
+ XANM9B_VAL_MASK_NONE (13)
+  ""
+
+ XANM9B_VAL_MASK_ALL (14)
+  ""
+
+
+v attrRemoteModeRangeTableXFR DataType="i" 
+ XANM9B_VAL_LOC (0)
+  ""
+
+ XANM9B_VAL_REM (1)
+  ""
+
+
+v attrRemoteModeRangeTableXT DataType="i" 
+ XANM9B_VAL_LOC (0)
+  ""
+
+ XANM9B_VAL_REM (1)
+  ""
+
+
+v measurementTypeRangeTable DataType="i" 
+ XANM9B_VAL_MEASURE_CURRENT (0)
+  ""
+
+ XANM9B_VAL_MEASURE_VOLTAGE (0)
+  ""
+
+
+v outputStateRangeTable DataType="i" 
+ XANM9B_VAL_OUTPUT_CONSTANT_VOLTAGE (0)
+  ""
+
+ XANM9B_VAL_OUTPUT_CONSTANT_CURRENT (0)
+  ""
+
+ XANM9B_VAL_OUTPUT_OVER_VOLTAGE (0)
+  ""
+
+ XANM9B_VAL_OUTPUT_UNREGULATED (0)
+  ""
+
+ XANM9B_VAL_OUTPUT_OVER_TEMPERATURE (0)
+  ""
+
+ XANM9B_VAL_OUTPUT_FOLD_TRIPPED (0)
+  ""
+
+
+v Boolean_values DataType="i" 
+ VI_TRUE (1)
+  "True"
+
+ VI_FALSE (0)
+  "False"
+
+
+v rangeTypeRangeTable DataType="i" 
+ XANM9B_VAL_RANGE_CURRENT (0)
+  ""
+
+ XANM9B_VAL_RANGE_VOLTAGE (0)
+  ""
+
+
+0 XanM9B_SetAttributeViInt32 3 4 false s DataType="ViInt32" 
+0 XanM9B_GetAttributeViInt32 3 4 false g DataType="ViInt32" 
+0 XanM9B_CheckAttributeViInt32 3 4 false s DataType="ViInt32" 
+0 XanM9B_SetAttributeViReal64 3 4 false s DataType="ViReal64" 
+0 XanM9B_GetAttributeViReal64 3 4 false g DataType="ViReal64" 
+0 XanM9B_CheckAttributeViReal64 3 4 false s DataType="ViReal64" 
+0 XanM9B_SetAttributeViSession 3 4 false s DataType="ViSession" 
+0 XanM9B_GetAttributeViSession 3 4 false g DataType="ViSession" 
+0 XanM9B_CheckAttributeViSession 3 4 false s DataType="ViSession" 
+0 XanM9B_SetAttributeViBoolean 3 4 false s DataType="ViBoolean" 
+0 XanM9B_GetAttributeViBoolean 3 4 false g DataType="ViBoolean" 
+0 XanM9B_CheckAttributeViBoolean 3 4 false s DataType="ViBoolean" 
+0 XanM9B_SetAttributeViString 3 4 false s DataType="ViString" 
+0 XanM9B_GetAttributeViString 3 5 false g DataType="ViString" 
+0 XanM9B_CheckAttributeViString 3 4 false s DataType="ViString" 
+
+1 all "Inherent IVI Attributes" 
+ "Attributes common to all IVI instrument drivers."
+
+2 all "User Options" 
+ "Attributes you can set to affect the operation of this instrument driver.\n"
+ "    "
+
+3 all "Range Check" XANM9B_ATTR_RANGE_CHECK ViBoolean gs Boolean_values 
+ "Specifies whether to validate attribute values and function parameters.  "
+ "If enabled, the instrument driver validates the parameter values that you "
+ "pass to driver functions.  Range checking parameters is very useful for "
+ "debugging.  After you validate your program, you can set this attribute to "
+ "VI_FALSE to disable range checking and maximize performance.\n"
+ "    The default value is VI_TRUE.   Use the XanM9B_InitWithOptions "
+ "function to override this value.\n"
+ "    "
+
+3 all "Query Instrument Status" XANM9B_ATTR_QUERY_INSTRUMENT_STATUS ViBoolean gs Boolean_values 
+ "Specifies whether the instrument driver queries the instrument status "
+ "after each operation.  Querying the instrument status is very useful for "
+ "debugging.  After you validate your program, you can set this attribute to "
+ "VI_FALSE to disable status checking and maximize performance\n"
+ "    The instrument driver can choose to ignore status checking for "
+ "particular attributes regardless of the setting of this attribute.\n"
+ "    The default value is VI_TRUE.   Use the XanM9B_InitWithOptions "
+ "function to override this value.\n"
+ "    "
+
+3 all "Cache" XANM9B_ATTR_CACHE ViBoolean gs Boolean_values 
+ "Specifies whether to cache the value of attributes.  When caching is "
+ "enabled, the instrument driver keeps track of the current instrument "
+ "settings and avoids sending redundant commands to the instrument.  Thus, "
+ "you can significantly increase execution speed.\n"
+ "    The instrument driver can choose always to cache or never to cache "
+ "particular attributes regardless of the setting of this attribute.\n"
+ "    The default value is VI_TRUE.   Use the XanM9B_InitWithOptions "
+ "function to override this value.\n"
+ "    "
+
+3 all "Simulate" XANM9B_ATTR_SIMULATE ViBoolean gs Boolean_values 
+ "Specifies whether or not to simulate instrument driver I/O operations.  If "
+ "simulation is enabled, instrument driver functions perform range checking "
+ "and call Ivi_GetAttribute and Ivi_SetAttribute functions, but they do not "
+ "perform instrument I/O.  For output parameters that represent instrument "
+ "data, the instrument driver functions return calculated values.\n"
+ "    The default value is VI_FALSE.   Use the XanM9B_InitWithOptions "
+ "function to override this value.\n"
+ "    "
+
+3 all "Record Value Coercions" XANM9B_ATTR_RECORD_COERCIONS ViBoolean gs Boolean_values 
+ "Specifies whether the IVI engine keeps a list of the value coercions it "
+ "makes for ViInt32 and ViReal64 attributes.  You call "
+ "XanM9B_GetNextCoercionRecord to extract and delete the oldest coercion "
+ "record from the list.\n"
+ "    The default value is VI_FALSE.   Use the XanM9B_InitWithOptions "
+ "function to override this value.\n"
+ "    "
+
+3 all "Interchange Check" XANM9B_ATTR_INTERCHANGE_CHECK ViBoolean gs Boolean_values 
+ "Specifies whether to perform interchangeability checking and retrieve "
+ "interchangeability warnings when you call XanM9B_Measure, XanM9B_Initiate. "
+
+2 all "Driver Identification" 
+ "Attributes that provide identity and version information about this "
+ "instrument driver.\n"
+ "    "
+
+3 all "Description" XANM9B_ATTR_SPECIFIC_DRIVER_DESCRIPTION ViString g 
+ "A string that contains a brief description of the specific driver\n"
+ "    "
+
+3 all "Driver Prefix" XANM9B_ATTR_SPECIFIC_DRIVER_PREFIX ViString g 
+ "A string that contains the prefix for the instrument driver.  The name of "
+ "each user-callable function in this driver starts with this prefix.\n"
+ "    "
+
+3 all "Driver Vendor" XANM9B_ATTR_SPECIFIC_DRIVER_VENDOR ViString g 
+ "A string that contains the name of the vendor that supplies this driver.\n"
+ "    "
+
+3 all "Revision" XANM9B_ATTR_SPECIFIC_DRIVER_REVISION ViString g 
+ "A string that contains additional version information about this "
+ "instrument driver.\n"
+ "    "
+
+3 all "Class Specification Major Version" XANM9B_ATTR_SPECIFIC_DRIVER_CLASS_SPEC_MAJOR_VERSION ViInt32 g 
+ "The major version number of the class specification with which this driver "
+ "is compliant.\n"
+ "    "
+
+3 all "Class Specification Minor Version" XANM9B_ATTR_SPECIFIC_DRIVER_CLASS_SPEC_MINOR_VERSION ViInt32 g 
+ "The minor version number of the class specification with which this driver "
+ "is compliant.\n"
+ "    "
+
+2 all "Driver Capabilities" 
+ "Attributes that provide information about the capabilities of this "
+ "instrument driver.\n"
+ "    "
+
+3 all "Supported Instrument Models" XANM9B_ATTR_SUPPORTED_INSTRUMENT_MODELS ViString g 
+ "Contains a model code of the instrument. For drivers that support more "
+ "than one device, this attribute contains a comma-separated list of "
+ "supported instrument models.\n"
+ "    "
+
+3 all "Class Group Capabilities" XANM9B_ATTR_GROUP_CAPABILITIES ViString g 
+ "A string that contains a comma-separated list of class-extention groups "
+ "that this driver implements.\n"
+ "    "
+
+3 all "Number of Channels" XANM9B_ATTR_CHANNEL_COUNT ViInt32 g 
+ "Indicates the number of channels that the specific instrument driver "
+ "supports.  \n"
+ "    For each attribute for which the IVI_VAL_MULTI_CHANNEL flag attribute "
+ "is set, the IVI engine maintains a separate cache value for each channel.\n"
+ "    "
+
+2 all "Instrument Identification" 
+ "Attributes that provide identity information about the instrument that you "
+ "are using.    "
+
+3 all "Manufacturer" XANM9B_ATTR_INSTRUMENT_MANUFACTURER ViString g 
+ "A string that contains the name of the instrument manufacturer you are "
+ "currently using.\n"
+ "    "
+
+3 all "Model" XANM9B_ATTR_INSTRUMENT_MODEL ViString g 
+ "A string that contains the model number or name of the instrument that you "
+ "are currently using.\n"
+ "    "
+
+3 all "Firmware Revision" XANM9B_ATTR_INSTRUMENT_FIRMWARE_REVISION ViString g 
+ "A string that contains the firmware revision information for the "
+ "instrument you are currently using.\n"
+ "    "
+
+2 all "Advanced Session Information" 
+ "Attributes that contain additional information concerning the instrument "
+ "driver session.\n"
+ "    "
+
+3 all "Driver Setup" XANM9B_ATTR_DRIVER_SETUP ViString g 
+ "This attribute indicates the Driver Setup string that the user specified "
+ "when initializing the driver.\n"
+ "\n"
+ "Some cases exist where the end-user must specify instrument driver options "
+ "at initialization time.  An example of this is specifying a particular "
+ "instrument model from among a family of instruments that the driver "
+ "supports.  This is useful when using simulation.  The end-user can specify "
+ "driver-specific options through the DriverSetup keyword in the "
+ "optionsString parameter to the XanM9B_InitWithOptions function, or through "
+ "the IVI Configuration Utility.\n"
+ "\n"
+ "If the user does not specify a Driver Setup string, this attribute returns "
+ "an empty string.\n"
+ "    "
+
+3 all "Logical Name" XANM9B_ATTR_LOGICAL_NAME ViString g 
+ "A string containing the logical name you specified when opening the "
+ "current IVI session.\n"
+ "     You may pass a logical name to the XanM9B_init or "
+ "XanM9B_InitWithOptions functions.  The IVI Configuration utility must "
+ "contain an entry for the logical name.  The logical name entry refers to a "
+ "virtual instrument section in the IVI Configuration file.  The virtual "
+ "instrument section specifies a physical device and initial user options.\n"
+ "    "
+
+3 all "Resource Descriptor" XANM9B_ATTR_IO_RESOURCE_DESCRIPTOR ViString g 
+ "Indicates the resource descriptor the driver uses to identify the physical "
+ "device.\n"
+ "    If you initialize the driver with a logical name, this attribute "
+ "contains the resource descriptor that corresponds to the entry in the IVI "
+ "Configuration utility.  \n"
+ "    If you initialize the instrument driver with the resource descriptor, "
+ "this attribute contains that value.\n"
+ "    "
+
+1 all "Non-Inherent IVI Attributes" 
+ ""
+
+2 all "Basic Operation" 
+ "Attributes for controlling the basic features of the DC power supply."
+
+3 all "Voltage Level" XANM9B_ATTR_VOLTAGE_LEVEL ViReal64 gs 
+ "This channel-based attribute specifies the voltage level the DC power "
+ "supply attempts to generate.  The units are Volts.\n"
+ "\n"
+ "Valid Range:  <XFR 2.8KW Models>\n"
+ "              XFR7.5-300 - 0 to 7.5 volts\n"
+ "              XFR12-220  - 0 to 12 volts\n"
+ "              XFR20-130  - 0 to 20 volts\n"
+ "              XFR33-85   - 0 to 33 volts\n"
+ "              XFR40-70   - 0 to 40 volts\n"
+ "              XFR50-60   - 0 to 50 volts\n"
+ "              XFR60-46   - 0 to 60 volts\n"
+ "              XFR80-37   - 0 to 80 volts\n"
+ "              XFR100-28  - 0 to 100 volts\n"
+ "              XFR150-18  - 0 to 150 volts\n"
+ "              XFR300-9   - 0 to 300 volts\n"
+ "              XFR420-7   - 0 to 420 volts\n"
+ "              XFR600-4   - 0 to 600 volts\n"
+ "              <XFR 1.2KW Models>\n"
+ "              XFR6-200   - 0 to 6 volts \n"
+ "              XFR7.5-140 - 0 to 7.5 volts\n"
+ "              XFR12-100  - 0 to 12 volts\n"
+ "              XFR20-60   - 0 to 20 volts\n"
+ "              XFR35-35   - 0 to 35 volts\n"
+ "              XFR40-30   - 0 to 40 volts\n"
+ "              XFR45-30   - 0 to 45 volts\n"
+ "              XFR60-20   - 0 to 60 volts\n"
+ "              XFR100-12  - 0 to 100 volts\n"
+ "              XFR150-8   - 0 to 150 volts\n"
+ "              XFR160-7.5 - 0 to 160 volts\n"
+ "              XFR300-4   - 0 to 300 volts\n"
+ "              XFR600-2   - 0 to 600 volts\n"
+ "              <XHR 1KW Models>\n"
+ "              XHR7.5-130 - 0 to 7.5 volts\n"
+ "              XHR20-50   - 0 to 20 volts\n"
+ "              XHR33-33   - 0 to 33 volts\n"
+ "              XHR40-25   - 0 to 40 volts\n"
+ "              XHR60-18   - 0 to 60 volts\n"
+ "              XHR100-10  - 0 to 100 volts\n"
+ "              XHR150-7   - 0 to 150 volts\n"
+ "              XHR300-3.5 - 0 to 300 volts\n"
+ "              XHR600-1.7 - 0 to 600 volts\n"
+ "              <XHR 600W Models>\n"
+ "              XHR7.5-80  - 0 to 7.5 volts \n"
+ "              XHR20-30   - 0 to 20 volts\n"
+ "              XHR33-18   - 0 to 33 volts\n"
+ "              XHR40-15   - 0 to 40 volts\n"
+ "              XHR60-10   - 0 to 60 volts\n"
+ "              XHR100-6   - 0 to 100 volts\n"
+ "              XHR150-4   - 0 to 150 volts\n"
+ "              XHR300-2   - 0 to 300 volts\n"
+ "              XHR600-1   - 0 to 600 volts\n"
+ "              <XPD models>\n"
+ "              XPD7.5-67  - 0 to 7.5 volts\n"
+ "              XPD18-30   - 0 to 18 volts\n"
+ "              XPD33-16   - 0 to 33 volts\n"
+ "              XPD60-9    - 0 to 60 volts\n"
+ "              XPD120-4.5 - 0 to 120 volts\n"
+ "              <HPD 300W Models>\n"
+ "              HPD15-20   - 0 to 15 volts\n"
+ "              HPD30-10   - 0 to 30 volts\n"
+ "              HPD60-5    - 0 to 60 volts\n"
+ "              <XT 60W Models>\n"
+ "              XT7-6      - 0 to 7 volts\n"
+ "              XT15-4     - 0 to 15 volts\n"
+ "              XT20-3     - 0 to 20 volts\n"
+ "              XT30-2     - 0 to 30 volts\n"
+ "              XT60-1     - 0 to 60 volts\n"
+ "              XT120-0.5  - 0 to 120 volts\n"
+ "              XT250-0.25 - 0 to 250 volts"
+
+3 all "Current Limit" XANM9B_ATTR_CURRENT_LIMIT ViReal64 gs 
+ "This channel-based attribute specifies the output current limit. The units "
+ "are Amps.\n"
+ "\n"
+ "The value of the XANM9B_ATTR_CURRENT_LIMIT_BEHAVIOR attribute determines "
+ "the behavior of the power supply when the output current is equal to or "
+ "greater than the value of this attribute.\n"
+ "\n"
+ "Valid Range:  <XFR 2.8KW Models>\n"
+ "              XFR7.5-300 - 0 to 300 amps\n"
+ "              XFR12-220  - 0 to 220 amps\n"
+ "              XFR20-130  - 0 to 130 amps\n"
+ "              XFR33-85   - 0 to 85 amps\n"
+ "              XFR40-70   - 0 to 70 amps\n"
+ "              XFR50-60   - 0 to 60 amps\n"
+ "              XFR60-46   - 0 to 46 amps\n"
+ "              XFR80-37   - 0 to 37 amps\n"
+ "              XFR100-28  - 0 to 28 amps\n"
+ "              XFR150-18  - 0 to 18 amps\n"
+ "              XFR300-9   - 0 to 9 amps\n"
+ "              XFR420-7   - 0 to 7 amps\n"
+ "              XFR600-4   - 0 to 4 amps\n"
+ "              <XFR 1.2KW Models>\n"
+ "              XFR6-200   - 0 to 200 amps \n"
+ "              XFR7.5-140 - 0 to 140 amps\n"
+ "              XFR12-100  - 0 to 100 amps\n"
+ "              XFR20-60   - 0 to 60 amps\n"
+ "              XFR35-35   - 0 to 35 amps\n"
+ "              XFR40-30   - 0 to 30 amps\n"
+ "              XFR45-30   - 0 to 30 amps\n"
+ "              XFR60-20   - 0 to 20 amps\n"
+ "              XFR100-12  - 0 to 12 amps\n"
+ "              XFR150-8   - 0 to 8 amps\n"
+ "              XFR160-7.5 - 0 to 7.5 amps\n"
+ "              XFR300-4   - 0 to 4 amps\n"
+ "              XFR600-2   - 0 to 2 amps\n"
+ "              <XHR 1KW Models>\n"
+ "              XHR7.5-130 - 0 to 130 amps\n"
+ "              XHR20-50   - 0 to 50 amps\n"
+ "              XHR33-33   - 0 to 33 amps\n"
+ "              XHR40-25   - 0 to 25 amps\n"
+ "              XHR60-18   - 0 to 18 amps\n"
+ "              XHR100-10  - 0 to 10 amps\n"
+ "              XHR150-7   - 0 to 7 amps\n"
+ "              XHR300-3.5 - 0 to 3.5 amps\n"
+ "              XHR600-1.7 - 0 to 1.7 amps\n"
+ "              <XHR 600W Models>\n"
+ "              XHR7.5-80  - 0 to 80 amps \n"
+ "              XHR20-30   - 0 to 30 amps\n"
+ "              XHR33-18   - 0 to 18 amps\n"
+ "              XHR40-15   - 0 to 15 amps\n"
+ "              XHR60-10   - 0 to 10 amps\n"
+ "              XHR100-6   - 0 to 6 amps\n"
+ "              XHR150-4   - 0 to 4 amps\n"
+ "              XHR300-2   - 0 to 2 amps\n"
+ "              XHR600-1   - 0 to 1 amp\n"
+ "              <XPD models>\n"
+ "              XPD7.5-67  - 0 to 67 amps\n"
+ "              XPD18-30   - 0 to 30 amps\n"
+ "              XPD33-16   - 0 to 16 amps\n"
+ "              XPD60-9    - 0 to 9 amps\n"
+ "              XPD120-4.5 - 0 to 4.5 amps\n"
+ "              <HPD 300W Models>\n"
+ "              HPD15-20   - 0 to 20 amps\n"
+ "              HPD30-10   - 0 to 10 amps\n"
+ "              HPD60-5    - 0 to 5 amps\n"
+ "              <XT 60W Models>\n"
+ "              XT7-6      - 0 to 6 amps\n"
+ "              XT15-4     - 0 to 4 amps\n"
+ "              XT20-3     - 0 to 3 amps\n"
+ "              XT30-2     - 0 to 2 amps\n"
+ "              XT60-1     - 0 to 1 amp\n"
+ "              XT120-0.5  - 0 to 0.5 amps\n"
+ "              XT250-0.25 - 0 to 0.25 amps\n"
+
+3 all "Current Limit Behavior" XANM9B_ATTR_CURRENT_LIMIT_BEHAVIOR ViInt32 gs attrCurrentLimitBehaviorRangeTable 
+ "This channel-based attribute specifies the behavior of the power supply "
+ "when the output current is equal to or greater than the value of the "
+ "XANM9B_ATTR_CURRENT_LIMIT attribute.\n"
+ "    "
+
+3 all "OVP Limit" XANM9B_ATTR_OVP_LIMIT ViReal64 gs 
+ "This channel-based attribute specifies the voltage the power supply "
+ "allows. The units are Volts.\n"
+ "If the XANM9B_ATTR_OVP_ENABLED attribute is set to VI_TRUE, the power "
+ "supply disables the output when the output voltage is greater than or "
+ "equal to the value of this attribute.\n"
+ "\n"
+ "If the XANM9B_ATTR_OVP_ENABLED attribute is set to VI_FALSE, this "
+ "attribute does not affect the behavior of the instrument.\n"
+ "\n"
+ "The valid range for this attribute is between 5% and 110% of the rated "
+ "output voltage for the specific model.\n"
+
+3 all "OVP Enabled" XANM9B_ATTR_OVP_ENABLED ViBoolean gs Boolean_values 
+ "This channel-based attribute specifies whether the power supply provides "
+ "over-voltage protection.  If this attribute is set to VI_TRUE, the power "
+ "supply disables the output when the output voltage is greater than or "
+ "equal to the value of the XANM9B_ATTR_OVP_LIMIT attribute.\n"
+ "    "
+
+3 all "XanM9B_ATTR_OUTPUT_ENABLED" XANM9B_ATTR_OUTPUT_ENABLED ViBoolean gs Boolean_values 
+ "If set to VI_TRUE, the supply's output is enabled.\n"
+ "\n"
+ "If set to VI_FALSE, the ouput is disabled. The supply will continue to "
+ "accept new commands, but they will not be implemented until the output is "
+ "re-enabled.\n"
+ "\n"
+ "Disabling the output also sets the isolation signal on connector J7-3 "
+ "(J21-3 on the XPD). "
+
+2 all "Trigger Subsystem" 
+ "Attributes for triggered output changes."
+
+3 all "Trigger Source" XANM9B_ATTR_TRIGGER_SOURCE ViInt32 gs 
+ "This channel-based attribute specifies the trigger source.  After you call "
+ "XanM9B_Initiate, the power supply waits for a trigger event from the "
+ "source you specify with this attribute.  After a trigger event occurs, the "
+ "power supply changes the voltage level to the value of the "
+ "XANM9B_ATTR_TRIGGERED_VOLTAGE_LEVEL and the current limit to the value of "
+ "the XANM9B_ATTR_TRIGGERED_CURRENT_LIMIT attributes.\n"
+ "    "
+
+3 all "Triggered Voltage Level" XANM9B_ATTR_TRIGGERED_VOLTAGE_LEVEL ViReal64 gs 
+ "This channel-based attribute specifies the value to  which the power "
+ "supply sets the voltage level after a trigger event occurs. The units are "
+ "Volts.\n"
+ "\n"
+ "After you call XanM9B_Initiate, the power supply waits for a trigger event "
+ "from the source you specify with the XANM9B_ATTR_TRIGGER_SOURCE attribute. "
+ " After a trigger event occurs, the power supply sets the voltage level to "
+ "the value of this attribute.  After a trigger occurs, the value of the "
+ "XANM9B_ATTR_VOLTAGE_LEVEL attribute reflects the new value to which the "
+ "voltage level has been set.\n"
+ "   \n"
+ "Valid Range: See the Voltage Level attribute for a\n"
+ "             list of instrument voltage ranges\n"
+ "     "
+
+3 all "Triggered Current Limit" XANM9B_ATTR_TRIGGERED_CURRENT_LIMIT ViReal64 gs 
+ "This channel-based attribute specifies the value to  which the power "
+ "supply sets the current limit after a trigger event occurs. The units are "
+ "amps.\n"
+ "\n"
+ "After you call XanM9B_Initiate, the power supply waits for a trigger event "
+ "from the source you specify with the XANM9B_ATTR_TRIGGER_SOURCE attribute. "
+ " After a trigger event occurs, the power supply sets the current limit to "
+ "the value of this attribute.  After a trigger occurs, the value of the "
+ "XANM9B_ATTR_CURRENT_LIMIT attribute reflects the new value to which the "
+ "current limit has been set.\n"
+ "\n"
+ "Valid Range: See the Current Limit attribute for a\n"
+ "             list of instrument current ranges"
+
+2 all "Miscellaneous Attributes" 
+ "Additional Attributes."
+
+3 all "ID Query Response" XANM9B_ATTR_ID_QUERY_RESPONSE ViString g 
+ "Returns the ID Query response string.  The instrument driver gets the "
+ "value of this attribute when you pass VI_TRUE for the ID Query parameter "
+ "to the XanM9B_init or XanM9B_InitWithOptions function.\n"
+ "    "
+
+3 all "XanM9B_ATTR_FAULT_DELAY" XANM9B_ATTR_FAULT_DELAY ViReal64 gs 
+ "This channel-based attribute is the time delay value you want the power "
+ "supply to wait before reporting fault conditions.   \n"
+ "The units are seconds."
+
+3 all "XanM9B_ATTR_SRQ_ENABLED" XANM9B_ATTR_SRQ_ENABLED ViBoolean gs Boolean_values 
+ "This channel-based attribute defines whether the supply is to respond to "
+ "fault conditions with a request for service to the IEEE-488 Bus "
+ "Controller.\n"
+ "\n"
+ "\n"
+ "Valid Values:\n"
+ "VI_TRUE  - SRQ ON\n"
+ "VI_FALSE - SRQ OFF\n"
+ "\n"
+ " \n"
+ "Default Value: VI_TRUE\n"
+
+3 all "XanM9B_ATTR_AUXA_ENABLED" XANM9B_ATTR_AUXA_ENABLED ViBoolean gs Boolean_values 
+ "This channel based attribute define whether you want the AUXA output "
+ "signal level to appear at rear panel connector J7-7 (or J21-7 on XPD "
+ "models).  \n"
+ "\n"
+ "\n"
+ "Valid Values:\n"
+ "VI_TRUE  - Enable the AUXA output\n"
+ "VI_FALSE - Disable the AUXA output\n"
+ "\n"
+ " \n"
+ "Default Value: VI_TRUE"
+
+3 all "XanM9B_ATTR_AUXB_ENABLED" XANM9B_ATTR_AUXB_ENABLED ViBoolean gs Boolean_values 
+ "This channel-based attribute defines whether you want the AUXB output "
+ "signal level to appear at rear panel connector J7-8 (or J21-8 on XPD "
+ "models).  \n"
+ "\n"
+ "\n"
+ "Valid Values:\n"
+ "VI_TRUE  - Enable the AUXB output\n"
+ "VI_FALSE - Disable the AUXB output\n"
+ "\n"
+ " \n"
+ "Default Value: VI_TRUE"
+
+3 all "XanM9B_ATTR_HOLD_ENABLED" XANM9B_ATTR_HOLD_ENABLED ViBoolean gs Boolean_values 
+ "This channel-based attribute defines whether you want to enable or disable "
+ "HOLD mode.   \n"
+ "\n"
+ "Valid Values:\n"
+ "VI_TRUE  - Enable HOLD\n"
+ "VI_FALSE - Disable HOLD\n"
+ "\n"
+ "\n"
+ "Default Value: VI_TRUE\n"
+
+3 all "XanM9B_ATTR_CMODE_ENABLED" XANM9B_ATTR_CMODE_ENABLED ViBoolean gs Boolean_values 
+ "This channel-based attribute enables the power supply to be in calibration "
+ "mode   \n"
+ "\n"
+ "Valid Values:\n"
+ "VI_TRUE  - Enable CMODE\n"
+ "VI_FALSE - Disable CMODE\n"
+ "\n"
+ " \n"
+ "Default Value: VI_TRUE"
+
+3 all "XanM9B_ATTR_MAXIMUM_CURRENT_LIMIT" XANM9B_ATTR_MAXIMUM_CURRENT_LIMIT ViReal64 gs 
+ "This channel-based attribute is the maximum programmable current limit you "
+ "want to use. \n"
+ "\n"
+ "Units: amps\n"
+ "\n"
+ "Valid Range:  <XFR 2.8KW Models>\n"
+ "              XFR7.5-300 - 0 to 300 amps\n"
+ "              XFR12-220  - 0 to 220 amps\n"
+ "              XFR20-130  - 0 to 130 amps\n"
+ "              XFR33-85   - 0 to 85 amps\n"
+ "              XFR40-70   - 0 to 70 amps\n"
+ "              XFR50-60   - 0 to 60 amps\n"
+ "              XFR60-46   - 0 to 46 amps\n"
+ "              XFR80-37   - 0 to 37 amps\n"
+ "              XFR100-28  - 0 to 28 amps\n"
+ "              XFR150-18  - 0 to 18 amps\n"
+ "              XFR300-9   - 0 to 9 amps\n"
+ "              XFR420-7   - 0 to 7 amps\n"
+ "              XFR600-4   - 0 to 4 amps\n"
+ "              <XFR 1.2KW Models>\n"
+ "              XFR6-200   - 0 to 200 amps \n"
+ "              XFR7.5-140 - 0 to 140 amps\n"
+ "              XFR12-100  - 0 to 100 amps\n"
+ "              XFR20-60   - 0 to 60 amps\n"
+ "              XFR35-35   - 0 to 35 amps\n"
+ "              XFR40-30   - 0 to 30 amps\n"
+ "              XFR45-30   - 0 to 30 amps\n"
+ "              XFR60-20   - 0 to 20 amps\n"
+ "              XFR100-12  - 0 to 12 amps\n"
+ "              XFR150-8   - 0 to 8 amps\n"
+ "              XFR160-7.5 - 0 to 7.5 amps\n"
+ "              XFR300-4   - 0 to 4 amps\n"
+ "              XFR600-2   - 0 to 2 amps\n"
+ "              <XHR 1KW Models>\n"
+ "              XHR7.5-130 - 0 to 130 amps\n"
+ "              XHR20-50   - 0 to 50 amps\n"
+ "              XHR33-33   - 0 to 33 amps\n"
+ "              XHR40-25   - 0 to 25 amps\n"
+ "              XHR60-18   - 0 to 18 amps\n"
+ "              XHR100-10  - 0 to 10 amps\n"
+ "              XHR150-7   - 0 to 7 amps\n"
+ "              XHR300-3.5 - 0 to 3.5 amps\n"
+ "              XHR600-1.7 - 0 to 1.7 amps\n"
+ "              <XHR 600W Models>\n"
+ "              XHR7.5-80  - 0 to 80 amps \n"
+ "              XHR20-30   - 0 to 30 amps\n"
+ "              XHR33-18   - 0 to 18 amps\n"
+ "              XHR40-15   - 0 to 15 amps\n"
+ "              XHR60-10   - 0 to 10 amps\n"
+ "              XHR100-6   - 0 to 6 amps\n"
+ "              XHR150-4   - 0 to 4 amps\n"
+ "              XHR300-2   - 0 to 2 amps\n"
+ "              XHR600-1   - 0 to 1 amp\n"
+ "              <XPD models>\n"
+ "              XPD7.5-67  - 0 to 67 amps\n"
+ "              XPD18-30   - 0 to 30 amps\n"
+ "              XPD33-16   - 0 to 16 amps\n"
+ "              XPD60-9    - 0 to 9 amps\n"
+ "              XPD120-4.5 - 0 to 4.5 amps\n"
+ "              <HPD 300W Models>\n"
+ "              HPD15-20   - 0 to 20 amps\n"
+ "              HPD30-10   - 0 to 10 amps\n"
+ "              HPD60-5    - 0 to 5 amps\n"
+ "              <XT 60W Models>\n"
+ "              XT7-6      - 0 to 6 amps\n"
+ "              XT15-4     - 0 to 4 amps\n"
+ "              XT20-3     - 0 to 3 amps\n"
+ "              XT30-2     - 0 to 2 amps\n"
+ "              XT60-1     - 0 to 1 amp\n"
+ "              XT120-0.5  - 0 to 0.5 amps\n"
+ "              XT250-0.25 - 0 to 0.25 amps\n"
+
+3 all "XanM9B_ATTR_MAXIMUM_VOLTAGE" XANM9B_ATTR_MAXIMUM_VOLTAGE ViReal64 gs 
+ "This channel-based attribute is the maximum programmable voltage level.\n"
+ "  \n"
+ "Units: volts\n"
+ "\n"
+ "Valid Range:  <XFR 2.8KW Models>\n"
+ "              XFR7.5-300 - 0 to 7.5 volts\n"
+ "              XFR12-220  - 0 to 12 volts\n"
+ "              XFR20-130  - 0 to 20 volts\n"
+ "              XFR33-85   - 0 to 33 volts\n"
+ "              XFR40-70   - 0 to 40 volts\n"
+ "              XFR50-60   - 0 to 50 volts\n"
+ "              XFR60-46   - 0 to 60 volts\n"
+ "              XFR80-37   - 0 to 80 volts\n"
+ "              XFR100-28  - 0 to 100 volts\n"
+ "              XFR150-18  - 0 to 150 volts\n"
+ "              XFR300-9   - 0 to 300 volts\n"
+ "              XFR420-7   - 0 to 420 volts\n"
+ "              XFR600-4   - 0 to 600 volts\n"
+ "              <XFR 1.2KW Models>\n"
+ "              XFR6-200   - 0 to 6 volts \n"
+ "              XFR7.5-140 - 0 to 7.5 volts\n"
+ "              XFR12-100  - 0 to 12 volts\n"
+ "              XFR20-60   - 0 to 20 volts\n"
+ "              XFR35-35   - 0 to 35 volts\n"
+ "              XFR40-30   - 0 to 40 volts\n"
+ "              XFR45-30   - 0 to 45 volts\n"
+ "              XFR60-20   - 0 to 60 volts\n"
+ "              XFR100-12  - 0 to 100 volts\n"
+ "              XFR150-8   - 0 to 150 volts\n"
+ "              XFR160-7.5 - 0 to 160 volts\n"
+ "              XFR300-4   - 0 to 300 volts\n"
+ "              XFR600-2   - 0 to 600 volts\n"
+ "              <XHR 1KW Models>\n"
+ "              XHR7.5-130 - 0 to 7.5 volts\n"
+ "              XHR20-50   - 0 to 20 volts\n"
+ "              XHR33-33   - 0 to 33 volts\n"
+ "              XHR40-25   - 0 to 40 volts\n"
+ "              XHR60-18   - 0 to 60 volts\n"
+ "              XHR100-10  - 0 to 100 volts\n"
+ "              XHR150-7   - 0 to 150 volts\n"
+ "              XHR300-3.5 - 0 to 300 volts\n"
+ "              XHR600-1.7 - 0 to 600 volts\n"
+ "              <XHR 600W Models>\n"
+ "              XHR7.5-80  - 0 to 7.5 volts \n"
+ "              XHR20-30   - 0 to 20 volts\n"
+ "              XHR33-18   - 0 to 33 volts\n"
+ "              XHR40-15   - 0 to 40 volts\n"
+ "              XHR60-10   - 0 to 60 volts\n"
+ "              XHR100-6   - 0 to 100 volts\n"
+ "              XHR150-4   - 0 to 150 volts\n"
+ "              XHR300-2   - 0 to 300 volts\n"
+ "              XHR600-1   - 0 to 600 volts\n"
+ "              <XPD models>\n"
+ "              XPD7.5-67  - 0 to 7.5 volts\n"
+ "              XPD18-30   - 0 to 18 volts\n"
+ "              XPD33-16   - 0 to 33 volts\n"
+ "              XPD60-9    - 0 to 60 volts\n"
+ "              XPD120-4.5 - 0 to 120 volts\n"
+ "              <HPD 300W Models>\n"
+ "              HPD15-20   - 0 to 15 volts\n"
+ "              HPD30-10   - 0 to 30 volts\n"
+ "              HPD60-5    - 0 to 60 volts\n"
+ "              <XT 60W Models>\n"
+ "              XT7-6      - 0 to 7 volts\n"
+ "              XT15-4     - 0 to 15 volts\n"
+ "              XT20-3     - 0 to 20 volts\n"
+ "              XT30-2     - 0 to 30 volts\n"
+ "              XT60-1     - 0 to 60 volts\n"
+ "              XT120-0.5  - 0 to 120 volts\n"
+ "              XT250-0.25 - 0 to 250 volts"
+
+3 all "XanM9B_ATTR_FOLDBACK_SETTING" XANM9B_ATTR_FOLDBACK_SETTING ViInt32 gs attrFoldbackSettingRangeTable 
+ "This channel-based attribute is the Foldback Setting the power supply "
+ "generates. \n"
+ "\n"
+ "Values: 0 - FOLD OFF -  Foldback mode disabled\n"
+ "        1 - FOLD CV  -  Supply operates in Constant Current mode and "
+ "disables output if the supply switches to Constant Voltage mode.\n"
+ "        2 - FOLD CC  -  Supply operates in Constant Voltage mode and "
+ "disables output if the supply switches to Constant Current mode.\n"
+ " \n"
+ "\n"
+ "Default Value : 0"
+
+3 all "XANM9B_ATTR_MASK_SETTING" XANM9B_ATTR_MASK_SETTING ViString gs 
+ "This channel-based attribute is the operating conditions to be masked.\n"
+ "\n"
+ "Format "
+ "\"CC,CV\"\n"
+ "     \n"
+ "Valid Values for XFR-XHR-XPD:  \n"
+ "    CV,CC,OV,OT,SD,FOLD,ERR,PON,REM,ACF,OPF,SNS,ALL,NONE\n"
+ "\n"
+ "Valid Values for HPD-XT:\n"
+ "    CV,CC,OV,SD,FOLD,ERR,PON,REM,ALL,NONE    "
+
+3 all "XANM9B_ATTR_UNMASK_SETTING" XANM9B_ATTR_UNMASK_SETTING ViString gs 
+ "This channel-based attribute is the operating conditions to be unmasked.\n"
+ "\n"
+ "Format "
+ "\"CC,CV\"\n"
+ "     \n"
+ "Valid Values for XFR-XHR-XPD:  \n"
+ "    CV,CC,OV,OT,SD,FOLD,ERR,PON,REM,ACF,OPF,SNSP,ALL,NONE\n"
+ "\n"
+ "Valid Values for HPD-XT:\n"
+ "    CV,CC,OV,SD,FOLD,ERR,PON,REM,ALL,NONE "
+
+3 all "Remote Mode" XANM9B_ATTR_REMOTE_MODE ViInt32 gs attrRemoteModeRangeTableXFR 
+ "Sets the unit into remote or local state\n"
+ "\n"
+ "Valid Values:\n"
+ "XANM9B_VAL_REM\n"
+ "XANM9B_VAL_LOC"
+
+3 all "XANM9B_ATTR_UNMASK_CONDITION" XANM9B_ATTR_UNMASK_CONDITION ViInt32 gs 
+ "This channel-based attribute is the supply's fault conditions which are "
+ "currently enabled.\n"
+
+2 all "Hidden Attributes (not user-viewable)" 
+ "    "
+
+3 all "Instrument Status Register" XANM9B_ATTR_INSTR_STATUS_REG ViInt32 hidden 
+ "1 = CV\n"
+ "2 = CC\n"
+ "4 = Not Used\n"
+ "8 = Over Voltage\n"
+ "16 = Over Temperature"
+
+3 all "OPC Callback Timeout" XANM9B_ATTR_OPC_TIMEOUT ViInt32 hidden 
+ "This attribute is hidden.  The driver uses this attribute internally to "
+ "set the timeout for the OPC callback.\n"
+ "    "
+

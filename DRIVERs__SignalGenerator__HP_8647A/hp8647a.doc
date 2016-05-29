@@ -1,0 +1,1453 @@
+
+                         HP 8647A RF Signal Generator
+
+________________________________________________________________________________
+
+  Introduction:
+
+  This instrument driver provides programming support for HP 8647A RF Signal
+  Generator.
+  It contains functions for opening, configuring, taking measurement from,
+  and closing the instrument.
+
+________________________________________________________________________________
+
+  Assumptions:
+
+  To successfully use this module, the following conditions must be met:
+
+  For GPIB instruments drivers:
+         -  the instrument is connected to the GPIB.
+         -  the GPIB address supplied to the initialize function must match
+            the GPIB address of the instrument.
+         -  there must be at least one unused device name in the handler.
+________________________________________________________________________________
+
+  LabWindows Libraries:
+
+  In order to use this instrument driver outside of the LabWindows
+  environment, it must be linked with the following LabWindows libraries:
+
+  For GPIB instruments drivers:
+         -  GPIB Library
+         -  Format and I/O Library
+         -  LabWindows System Library
+
+  National Instruments strongly recommends that you use the LWMake utility to
+  build any standalone executable program based on this instrument driver.
+
+________________________________________________________________________________
+
+  Error Codes:
+
+  Error codes are returned as the return value of each instrument driver
+  function. A program should examine this value after each call to an
+  instrument driver function to determine if any error occurred. Possible
+  error codes and their meanings are listed with the corresponding instrument
+  driver function.
+
+________________________________________________________________________________
+
+  How To Use This Document:
+
+  This document is intended to be used as a programming reference manual.
+  It describes each function in the HP 8647A RF Signal Generator instrument
+  driver. The functions are listed in alphabetical order with a description
+  of the function, C and QuickBASIC syntax of the function, a description of
+  each parameter, and possible error codes.
+
+________________________________________________________________________________
+
+Function Tree Layout:
+
+   HP RF 8647A Signal Generator         Function Name:
+
+      Initialize                        hp8647a_init
+      Application Functions
+         Output RF Signal               hp8647a_output_signal
+      Configure
+         RF Signal                      hp8647a_rf_signal
+         Modulation                     hp8647a_modulation
+      Generate Signal                   hp8647a_gen_signl
+      Low Level Functions
+         Write To Instrument            hp8647a_write
+         Read Instrument Data           hp8647a_read
+         Reset                          hp8647a_reset
+         Self-Test                      hp8647a_self_test
+         Revision Query                 hp8647a_revision_query
+         Reference & Attenuation        hp8647a_set_ref_att
+         Determine Modul Setting        hp8647a_det_mod_set
+         Modulation On/Off              hp8647a_mod_on_off
+      Close                             hp8647a_close
+
+________________________________________________________________________________
+
+  Instrument         : HP 8647A RF Signal Generator
+
+                      Instrument Name: HP 8647A RF Signal Generator
+
+                      Description:     This instrument module provides
+                                       programming support for the
+                                       HP 8647A RF Signal Generator
+                                       (250 kHz - 1000 MHz). The module is
+                                       divided into the following functions:
+
+                      Functions/Classes:
+
+                      (1) Initialize:
+                          Initialize the instrument and set to default
+                          configuration.
+
+                      (2) Application Functions: (Class)
+                          This class provides high-level functions to
+                          configure, trigger, and force the instrument
+                          to perform a desired action.
+
+                      (3) Configure: (Class)
+                          Provides function to configure the instrument
+                          to generate an RF signal.
+
+                      (4) Generate Signal:
+                          Sets the instrument to generate the
+                          configured RF signal.
+
+                      (5) Low Level Functions: (Class)
+                          Provides lower level functions to communicate
+                          with the instrument, and change instrument
+                          parameters.
+
+                      (6) Close:
+                          Take the instrument offline.
+
+________________________________________________________________________________
+
+
+                 Following functions are in alphabetical order.
+
+________________________________________________________________________________
+
+  Function Name      : hp8647a_close
+
+  C Syntax           : int hp8647a_close(Instrument_ID);
+                       int Instrument_ID;
+
+  QuickBASIC Syntax  : Error.Code% = hp8647a.close(Instrument.ID%)
+
+  Purpose            : Closes the instrument and takes it off line.
+
+                        Note: The instrument must be reinitialized to use
+                              it again.
+
+  Parameter List     : Instrument ID
+
+                            Description:   Accepts the Instrument ID returned
+                                           by the Initialize function to
+                                           select the desired instrument.
+
+                            Variable Type: Integer
+
+                            Valid Range:   1 to  Maximum Instances of
+                                                 this Instrument
+
+                                           The Maximum Instances of this
+                                           Instrument is the maximum number
+                                           of instruments that can be
+                                           controlled by this driver in a
+                                           single system. The value is set
+                                           internally in the driver. The
+                                           typical value is 10.
+
+  Error Codes          :       0   Success
+
+                              -1   Instrument ID out of range
+
+                             221   Unable to close instrument
+                             232   Instrument not initialized
+
+
+________________________________________________________________________________
+
+  Function Name      : hp8647a_det_mod_set
+
+  C Syntax           : int hp8647a_det_mod_set(Instrument_ID,
+                                Selected_Modulation, Desired_Modul_Value,
+                                Ext_Mod_Signal_Level, Value_To_Set_Modul);
+                       int Instrument_ID;
+                       int Selected_Modulation;
+                       double Desired_Modul_Value;
+                       double Ext_Mod_Signal_Level;
+                       double *Value_To_Set_Modul;
+
+  QuickBASIC Syntax  : Error.Code% = hp8647a.det.mod.set(Instrument.ID%, _
+                                Selected.Modulation%, Desired.Modul.Value#, _
+                                Ext.Mod.Signal.Level#, Value.To.Set.Modul#)
+
+  Purpose            : Determines the Modulation level to be set for
+                       Depth(AM), Deviation(FM), or Deviation(PM) when the
+                       internal and external modulating sources are used
+                       with the selected modulation.
+
+  Parameter List     : Instrument ID
+
+                            Description:   Accepts the Instrument ID returned
+                                           by the Initialize function to
+                                           select the desired instrument.
+
+                            Variable Type: Integer
+
+                            Valid Range:   1 to  Maximum Instances of
+                                                 this Instrument
+
+                                           The Maximum Instances of this
+                                           Instrument is the maximum number
+                                           of instruments that can be
+                                           controlled by this driver in a
+                                           single system. The value is set
+                                           internally in the driver. The
+                                           typical value is 10.
+
+                       Selected Modulation
+
+                            Description:   Select the Modulation for which to
+                                           determine the modulation level
+                                           when internal and external
+                                           modulating signals are used.
+
+                            Variable Type: Integer
+
+                            Valid Range:   0 - Amplitude Modulation
+                                           1 - Frequency Modulation
+                                           2 - Phase Modulation
+
+                            Default Value: 0 - Amplitude Modulation
+
+                       Desired Modul Value
+
+                            Description:   Indicates the desired depth or
+                                           deviation for the specified
+                                           modulation.
+
+                            Variable Type: Double
+
+                            Valid Range:   The range of this control is
+                                           dependent upon the selected
+                                           modulation.
+
+                                           AM:
+                                               0.0 - 100.0  (%)
+                                           FM:
+                                               0.0 - 100.0  (kHz)
+                                           PM:
+                                               0.0 - 10.0   (RAD)
+
+                            Default Value: 3.0
+
+                       Ext Mod Signal Level
+
+                            Description:   Indicates the level of the
+                                           external modulating signal.
+
+                            Variable Type: Double
+
+                            Valid Range:   0.0 - 0.5
+
+                            Default Value: 0.0
+
+                            Note:  If the level of the external modulating
+                                   signal is equal to 0.5, this signal
+                                   provides 1/3 of the desired modulation
+                                   depth or deviation. If the level is less
+                                   than 0.5, this signal provides less than
+                                   1/3 of the desired depth or deviation.
+
+                       Value To Set Modul
+
+                            Description:   Returns the depth or deviation
+                                           value to set for the specified
+                                           modulation's Level. It holds the
+                                           percent depth (AM), deviation
+                                           (FM), or the deviation (PM).
+
+                            Variable Type: Double
+
+                            Note:  This control returns an AM (% depth),
+                                   FM (kHz Deviation), or PM (RAD Deviation)
+                                   value dependent on the level of the
+                                   external modulating signal. Using the
+                                   following abbreviations:
+
+                                   D = Desired Modulation Level
+                                   E = External Source Level
+                                   S = Setting for the Modulation Level
+
+                                   If E = 0.5
+                                       S = 2/3 * D
+
+                                   If E < 0.5
+                                       S = D / (1 + E)
+
+  Error Codes         :        0   Success
+
+                              -1   Selected Modulation out of range
+                              -2   Desired Modulation Level out of range
+                              -3   Ext Modulating Signl Levl out of range
+
+
+________________________________________________________________________________
+
+  Function Name      : hp8647a_gen_signl
+
+  C Syntax           : int hp8647a_gen_signl(Instrument_ID, Modulation_OFF,
+                                RF_Output_Signal);
+                       int Instrument_ID;
+                       int Modulation_OFF;
+                       int RF_Output_Signal;
+
+  QuickBASIC Syntax  : Error.Code% = hp8647a.gen.signl(Instrument.ID%, _
+                                Modulation.OFF%, RF.Output.Signal%)
+
+  Purpose            : Sets the instrument to generate the configured RF
+                       signal with or without the configured modulation.
+
+  Parameter List     : Instrument ID
+
+                            Description:   Accepts the Instrument ID returned
+                                           by the Initialize function to
+                                           select the desired instrument.
+
+                            Variable Type: Integer
+
+                            Valid Range:   1 to  Maximum Instances of
+                                                 this Instrument
+
+                                           The Maximum Instances of this
+                                           Instrument is the maximum number
+                                           of instruments that can be
+                                           controlled by this driver in a
+                                           single system. The value is set
+                                           internally in the driver. The
+                                           typical value is 10.
+
+                       Modulation OFF
+
+                            Description:   Select whether or not to disable
+                                           the Modulation.
+
+                            Variable Type: Integer
+
+                            Valid Range:   0 - No
+                                           1 - Yes
+
+                            Default Value: 0 - No
+
+                       RF Output Signal
+
+                            Description:   Turns the RF Output On or Off.
+
+                            Variable Type: Integer
+
+                            Valid Range:   0 - Off
+                                           1 - On
+
+                            Default Value: 0 - Off
+
+  Error Codes         :        0   Success
+
+                              -1   Instrument ID out of range
+                              -2   Modulation OFF out of range
+                              -3   RF Output Signal out of range
+
+                             230   Error writing to instrument
+                             232   Instrument not initialized
+
+
+________________________________________________________________________________
+
+  Function Name      : hp8647a_init
+
+  C Syntax           : int hp8647a_init(GPIB_Address, ID_Query, Reset_Device,
+                                Instrument_ID);
+                       int GPIB_Address;
+                       int ID_Query;
+                       int Reset_Device;
+                       int *Instrument_ID;
+
+  QuickBASIC Syntax  : Error.Code% = hp8647a.init(GPIB.Address%, ID.Query%, _
+                                Reset.Device%, Instrument.ID%)
+
+  Purpose            : Initializes the instrument in the following ways:
+
+                                       - opens the instrument and sets
+                                         its GPIB address to the speci-
+                                         fied value
+
+                                       - performs an identification query
+                                         on the instrument
+
+                                       - sets the instrument to a default
+                                         configuration
+
+                                       - returns an instrument ID which
+                                         is used to identify the
+                                         instrument in subsequent calls.
+
+  Parameter List     : GPIB Address
+
+                            Description:   Specifies the address on the GPIB
+                                           to be used to communicate
+                                           with the instrument.  This value
+                                           must correspond to the current
+                                           internal setting of the
+                                           instrument.
+
+                            Variable Type: Integer
+
+                            Valid Range:   0 to 30
+
+                            Default Value: 20
+
+                            NOTE:  The Default Value of this control should
+                                   be set to the factory default of the
+                                   instrument, however if your instrument's
+                                   actual setting is different this control's
+                                   default should be changed.
+
+                       ID Query
+
+                            Description:   Specifies if an ID Query is sent
+                                           to the instrument during the
+                                           initialization procedure.
+
+                            Variable Type: Integer
+
+                            Valid Range:   1 = Do Query
+                                           0 = Skip Query
+
+                            Default Value: 1 - Do Query
+
+                            NOTE:  Under normal circumstances the ID Query
+                                   insures that the instrument initialized
+                                   over the GPIB is the type supported by
+                                   this driver.  However circumstances may
+                                   arise where it is undesirable to send an
+                                   ID Query to the instrument.  In those
+                                   cases; set this control to "Skip Query"
+                                   and this function will initialize the
+                                   GPIB and the Command arrays in the driver,
+                                   without doing an ID Query.
+
+                       Reset Device
+
+                            Description:   Specifies if the instrument is to
+                                           be reset to its power-on settings
+                                           during the initialization
+                                           procedure.
+
+                            Variable Type: Integer
+
+                            Valid Range:   1 = Reset Device
+                                           0 = Don't Reset
+
+                            Default Value: 1 - Reset Device
+
+                            NOTE: If you do not want the instrument reset.
+                                  Set this control to "Don't Reset" while
+                                  initializing the instrument.
+
+                       Instrument ID
+
+                            Description:   Returns an Instrument ID that is
+                                           used in all subsequent function
+                                           calls to select the instrument at
+                                           the Address specified.
+
+                                           If more than one instrument of the
+                                           same type is used, this value will
+                                           be used to differentiate between
+                                           them. The first instrument
+                                           initialized will be assigned an
+                                           Instrument ID of 1.
+
+                            Variable Type: Integer
+
+  Error Codes         :        0   Success
+
+                              -1   GPIB Address out of range
+                              -2   ID Query out of range
+                              -3   Reset Device out of range
+
+                             220   Unable to open instrument
+                             221   Unable to close instrument
+                             223   Instrument identification query failed
+                             230   Error writing to instrument
+                             231   Error reading from instrument
+                             232   Instrument not initialized
+                             233   Error configuring GPIB address
+                             236   Error interpreting instrument response
+
+
+________________________________________________________________________________
+
+  Function Name      : hp8647a_mod_on_off
+
+  C Syntax           : int hp8647a_mod_on_off(Instrument_ID, Select_Modulation,
+                                Modulation);
+                       int Instrument_ID;
+                       int Select_Modulation;
+                       int Modulation;
+
+  QuickBASIC Syntax  : Error.Code% = hp8647a.mod.on.off(Instrument.ID%, _
+                                Select.Modulation%, Modulation%)
+
+  Purpose            : Turns the selected modulation On or Off.
+
+  Parameter List     : Instrument ID
+
+                            Description:   Accepts the Instrument ID returned
+                                           by the Initialize function to
+                                           select the desired instrument.
+
+                            Variable Type: Integer
+
+                            Valid Range:   1 to  Maximum Instances of
+                                                 this Instrument
+
+                                           The Maximum Instances of this
+                                           Instrument is the maximum number
+                                           of instruments that can be
+                                           controlled by this driver in a
+                                           single system. The value is set
+                                           internally in the driver. The
+                                           typical value is 10.
+
+                       Select Modulation
+
+                            Description:   Select the desired modulation to
+                                           enable or disable. If one
+                                           modulation is enabled, the other
+                                           two are disabled.
+
+                            Variable Type: Integer
+
+                            Valid Range:   0 - Amplitude Modulation
+                                           1 - Frequency Modulation
+                                           2 - Phase Modulation
+
+                            Default Value: 0 - Amplitude Modulation
+
+                       Modulation
+
+                            Description:   Disable/Enable the selected
+                                           modulation.
+
+                            Variable Type: Integer
+
+                            Valid Range:   0 - Disable
+                                           1 - Enable
+
+                            Default Value: 0 - Disable
+
+  Error Codes         :        0   Success
+
+                              -1   Instrument ID out of range
+                              -2   Select Modulation out of range
+                              -3   Modulation out of range
+
+
+                             230   Error writing to instrument
+                             232   Instrument not initialized
+
+
+________________________________________________________________________________
+
+  Function Name      : hp8647a_modulation
+
+  C Syntax           : int hp8647a_modulation(Instrument_ID, Modulation,
+                                Modulation_Level, Modulating_Signal,
+                                Internal_Frequency, External_Coupling);
+                       int Instrument_ID;
+                       int Modulation;
+                       double Modulation_Level;
+                       int Modulating_Signal;
+                       int Internal_Frequency;
+                       int External_Coupling;
+
+  QuickBASIC Syntax  : Error.Code% = hp8647a.modulation(Instrument.ID%, _
+                                Modulation%, Modulation.Level#, _
+                                Modulating.Signal%, Internal.Frequency%, _
+                                External.Coupling%)
+
+  Purpose            : Configures the instrument for Modulation. It selects
+                       the modulation type (AM, FM or PM) and the modulating
+                       signal.
+
+  Parameter List     : Instrument ID
+
+                            Description:   Accepts the Instrument ID returned
+                                           by the Initialize function to
+                                           select the desired instrument.
+
+                            Variable Type: Integer
+
+                            Valid Range:   1 to  Maximum Instances of
+                                                 this Instrument
+
+                                           The Maximum Instances of this
+                                           Instrument is the maximum number
+                                           of instruments that can be
+                                           controlled by this driver in a
+                                           single system. The value is set
+                                           internally in the driver. The
+                                           typical value is 10.
+
+                       Modulation
+
+                            Description:   Select the desired modulation to
+                                           modulate the RF signal.
+
+                            Variable Type: Integer
+
+                            Valid Range:   0 - Amplitude Modulation
+                                           1 - Frequency Modulation
+                                           2 - Phase Modulation
+
+                            Default Value: 0 - Amplitude Modulation
+
+                            Note (1)  The following restrictions apply to AM:
+                                      - AM is unspecified at or below 1.5 MHz
+                                      - AM is unspecified above 4 dBm
+                                      - No external DC coupling for AM
+
+                            Note (2)  No external DC coupling for PM.
+
+                       Modulation Level
+
+                            Description:   Sets the Modulation Level for the
+                                           selected modulation. If AM  is
+                                           selected, it sets the AM depth. If
+                                           FM is selected, it sets the FM
+                                           deviation. If PM is selected, it
+                                           sets the PM deviation.
+
+                            Variable Type: Double
+
+                            Valid Range:   The range of the Level is
+                                           dependent upon the selected
+                                           modulation.
+
+                                           AM:
+                                               0.0 - 100.0  (%)
+                                           FM:
+                                               0.0 - 100.0  (kHz)
+                                           PM:
+                                               0.0 - 10.0   (RAD)
+
+                            Default Value: 0.0
+
+                       Modulating Signal
+
+                            Description:   Select the modulating signal to
+                                           modulate the RF signal.
+
+                            Variable Type: Integer
+
+                            Valid Range:   0 - Internal
+                                           1 - External
+                                           2 - Internal & External
+
+                            Default Value: 0 - Internal
+
+                       Internal Frequency
+
+                            Description:   Sets the Internal Frequency to be
+                                           used as the frequency of the
+                                           internal modulating signal.
+
+                            Variable Type: Integer
+
+                            Valid Range:   0 - 400 kHz
+                                           1 - 1 kHz
+
+                            Default Value: 0 - 400 kHz
+
+                       External Coupling
+
+                            Description:   Sets the External Coupling to be
+                                           used with the external modulating
+                                           signal.
+
+                            Variable Type: Integer
+
+                            Valid Range:   0 - DC. Valid only with FM.
+                                           1 - AC
+
+                            Default Value: 0 - DC
+
+  Error Codes         :        0   Success
+
+                              -1   Instrument ID out of range
+                              -2   Modulation out of range
+                              -3   Modulation Level out of range
+                              -4   Modulating Signal out of range
+                              -5   Internal Frequency out of range
+                              -6   External Coupling out of range
+
+                             230   Error writing to instrument
+                             232   Instrument not initialized
+
+                             312   No external DC coupling for AM or PM
+________________________________________________________________________________
+
+  Function Name      : hp8647a_output_signal
+
+  C Syntax           : int hp8647a_output_signal(Instrument_ID,
+                                RF_Frequency_MHz, RF_Amplitude_dBm, Modulation,
+                                Modulation_Level, Modulating_Signal,
+                                Internal_Frequency, External_Coupling);
+                       int Instrument_ID;
+                       double RF_Frequency_MHz;
+                       double RF_Amplitude_dBm;
+                       int Modulation;
+                       double Modulation_Level;
+                       int Modulating_Signal;
+                       int Internal_Frequency;
+                       int External_Coupling;
+
+  QuickBASIC Syntax  : Error.Code% = hp8647a.output.signal(Instrument.ID%, _
+                                RF.Frequency.MHz#, RF.Amplitude.dBm#, _
+                                Modulation%, Modulation.Level#, _
+                                Modulating.Signal%, Internal.Frequency%, _
+                                External.Coupling%)
+
+  Purpose            : Configures the instrument to generate a Modulated
+                       RF Signal.
+
+                        Note:  This function disables the Amplitude
+                               Reference mode and enables both the
+                               Automatic Attenuator and the RF output.
+
+  Parameter List     : Instrument ID
+
+                            Description:   Accepts the Instrument ID returned
+                                           by the Initialize function to
+                                           select the desired instrument.
+
+                            Variable Type: Integer
+
+                            Valid Range:   1 to  Maximum Instances of
+                                                 this Instrument
+
+                                           The Maximum Instances of this
+                                           Instrument is the maximum number
+                                           of instruments that can be
+                                           controlled by this driver in a
+                                           single system. The value is set
+                                           internally in the driver. The
+                                           typical value is 10.
+
+                       RF Frequency (MHz)
+
+                            Description:   Set the Frequency in MHz for the
+                                           RF signal.
+
+                            Variable Type: Double
+
+                            Valid Range:   0.250 - 1000.0
+
+                            Default Value: 0.250
+
+                            Note:  AM is unspecified at or below 1.5 MHz.
+
+                       RF Amplitude (dBm)
+
+                            Description:   Set the Amplitude in dBm for the
+                                           RF signal. The value may be up to
+                                           4 digits plus a sign. The
+                                           reference mode is disabled in this
+                                           function.
+
+                            Variable Type: Double
+
+                            Valid Range:   -136.0 - +10.0
+
+                            Default Value: 0.0
+
+                            Note:  AM is unspecified above 4 dBm.
+
+                       Modulation
+
+                            Description:   Select the desired modulation to
+                                           modulate the RF signal.
+
+                            Variable Type: Integer
+
+                            Valid Range:   0 - Amplitude Modulation
+                                           1 - Frequency Modulation
+                                           2 - Phase Modulation
+
+                            Default Value: 0 - Amplitude Modulation
+
+                            Note (1)  The following restrictions apply to AM:
+                                      - AM is unspecified at or below 1.5 MHz
+                                      - AM is unspecified above 4 dBm
+                                      - No external DC coupling for AM
+
+                            Note (2)  No external DC coupling for PM.
+
+                       Modulation Level
+
+                            Description:   Sets the Modulation Level for the
+                                           selected modulation. If AM  is
+                                           selected, it sets the AM depth. If
+                                           FM is selected, it sets the FM
+                                           deviation. If PM is selected, it
+                                           sets the PM deviation.
+
+                            Variable Type: Double
+
+                            Valid Range:   The range of the Level is
+                                           dependent upon the selected
+                                           modulation.
+
+                                           AM:
+                                               0.0 - 100.0  (%)
+                                           FM:
+                                               0.0 - 100.0  (kHz)
+                                           PM:
+                                               0.0 - 10.0   (RAD)
+
+                            Default Value: 0.0
+
+                       Modulating Signal
+
+                            Description:   Select the modulating signal to
+                                           modulate the RF signal.
+
+                            Variable Type: Integer
+
+                            Valid Range:   0 - Internal
+                                           1 - External
+                                           2 - Internal & External
+
+                            Default Value: 0 - Internal
+
+                       Internal Frequency
+
+                            Description:   Sets the Internal Frequency to be
+                                           used as the frequency of the
+                                           internal modulating signal.
+
+                            Variable Type: Integer
+
+                            Valid Range:   0 - 400 kHz
+                                           1 - 1 kHz
+
+                            Default Value: 0 - 400 kHz
+
+                       External Coupling
+
+                            Description:   Sets the External Coupling to be
+                                           used with the external modulating
+                                           signal.
+
+                            Variable Type: Integer
+
+                            Valid Range:   0 - DC. Valid only with FM.
+                                           1 - AC
+
+                            Default Value: 0 - DC
+
+  Error Codes        :         0   Success
+
+                              -1   Instrument ID out of range
+                              -2   RF Frequency out of range
+                              -3   RF Amplitude out of range
+                              -4   Modulation out of range
+                              -5   Modulation Level out of range
+                              -6   Modulating Signal out of range
+                              -7   Internal Frequency out of range
+                              -8   External Coupling out of range
+
+                             230   Error writing to instrument
+                             232   Instrument not initialized
+
+                             312   No external DC coupling for AM or PM
+                             313   AM unspecified above 4 dBm
+                             314   AM unspecified at or below 1.5 MHz
+
+________________________________________________________________________________
+
+  Function Name      : hp8647a_read
+
+  C Syntax           : int hp8647a_read(Instrument_ID, Number_Bytes_To_Read,
+                                Read_Buffer, NumBytes_Read);
+                       int Instrument_ID;
+                       int Number_Bytes_To_Read;
+                       char *Read_Buffer;
+                       int *NumBytes_Read;
+
+  QuickBASIC Syntax  : Error.Code% = hp8647a.read(Instrument.ID%, _
+                                Number.Bytes.To.Read%, Read.Buffer$, _
+                                NumBytes.Read%)
+
+  Purpose            : Reads data from instrument buffer and returns it to
+                       the specified variable in memory.
+
+                        NOTES: (1) Because the instrument may return both
+                                   numeric and text data in response to
+                                   queries this function returns the data
+                                   in string format.
+
+                               (2) If valid data is NOT available at the
+                                   instrument's output buffer when this
+                                   function is called the instrument will
+                                   hang up and the function will not
+                                   return until it times out.  If the
+                                   time-out is disabled this function
+                                   will hang indefinitely and it may be
+                                   necessary to reboot the computer to
+                                   break out.
+
+  Parameter List     : Instrument ID
+
+                            Description:   Accepts the Instrument ID returned
+                                           by the Initialize function to
+                                           select the desired instrument.
+
+                            Variable Type: Integer
+
+                            Valid Range:   1 to  Maximum Instances of
+                                                 this Instrument
+
+                                           The Maximum Instances of this
+                                           Instrument is the maximum number
+                                           of instruments that can be
+                                           controlled by this driver in a
+                                           single system. The value is set
+                                           internally in the driver. The
+                                           typical value is 10.
+
+                       Number Bytes To Read
+
+                            Description:   The number of bytes specified by
+                                           this control should be greater
+                                           than or equal to the number of
+                                           bytes which are to be read from
+                                           the instrument. If the actual
+                                           number of bytes to be read is
+                                           greater than the number this
+                                           control specifies then multiple
+                                           reads will be necessary to empty
+                                           the instrument's output buffer.
+
+                                           If the instrument's output buffer
+                                           is not emptied the instrument may
+                                           return invalid data when future
+                                           reads are performed.
+
+                            Variable Type: Integer
+
+                            Default Value: 50 (See NOTE 2)
+
+                            NOTES: (1) If NO DATA is available at the
+                                       instrument's output buffer when this
+                                       function is called the instrument will
+                                       hang up and the function will not
+                                       return until it times out.  If the
+                                       time-out is disabled, this function
+                                       will hang indefinitely and it may be
+                                       necessary to reboot the computer.
+
+                                   (2) If the number of bytes expected is
+                                       greater than 50 the value of this
+                                       control may be increased. If the
+                                       actual number of bytes read is larger
+                                       than the declared size of the read
+                                       buffer a run-time error will be
+                                       generated.
+
+                       Read Buffer
+
+                            Description:   The incoming data from the
+                                           instrument is placed into this
+                                           variable.
+
+                            Variable Type: String
+
+                            NOTES: (1) Because the Instrument may return both
+                                       numeric and text data in response to
+                                       queries this function returns the data
+                                       in string form.
+
+                                   (2) This function does not overwrite any
+                                       old data left in the string variable
+                                       from the last time the function was
+                                       called. String data in LabWindows is
+                                       terminated with an ASCII null(Hex 0)
+                                       and string manipulation functions will
+                                       only recognize data before the ASCII
+                                       null.
+
+                                   (3) The declared size of the string
+                                       variable must be greater than the
+                                       actual number of bytes read from the
+                                       instrument if it is not a run-time
+                                       error will be generated.
+
+                       NumBytes Read
+
+                            Description:   This variable contains the actual
+                                           number of bytes read from the
+                                           instrument. This is the value
+                                           which is returned by ibrd in the
+                                           global variable ibcnt.
+
+                            Variable Type: Integer
+
+                            NOTE: If the actual number of bytes read is less
+                                  than the number of bytes specified in
+                                  number of bytes to read then the output
+                                  buffer is probably empty. If the number of
+                                  bytes read is 0 and the instrument returns
+                                  a 231 error code the read function failed.
+                                  The most probable cause for the read to
+                                  fail is because there was no data available
+                                  at the instrument's output buffer.
+
+  Error Codes         :        0   Success
+
+                              -1   Instrument ID out of range
+
+                             231   Error reading from instrument
+                             232   Instrument not initialized
+
+
+________________________________________________________________________________
+
+  Function Name      : hp8647a_reset
+
+  C Syntax           : int hp8647a_reset(Instrument_ID);
+                       int Instrument_ID;
+
+  QuickBASIC Syntax  : Error.Code% = hp8647a.reset(Instrument.ID%)
+
+  Purpose            : This function resets the instrument to its default
+                       state.
+
+  Parameter List     : Instrument ID
+
+                            Description:   Accepts the Instrument ID returned
+                                           by the Initialize function to
+                                           select the desired instrument.
+
+                            Variable Type: Integer
+
+                            Valid Range:   1 to  Maximum Instances of
+                                                 this Instrument
+
+                                           The Maximum Instances of this
+                                           Instrument is the maximum number
+                                           of instruments that can be
+                                           controlled by this driver in a
+                                           single system. The value is set
+                                           internally in the driver. The
+                                           typical value is 10.
+
+  Error Codes         :        0   Success
+
+                              -1   Instrument ID out of range
+
+                             230   Error writing to instrument
+                             232   Instrument not initialized
+
+
+________________________________________________________________________________
+
+  Function Name      : hp8647a_revision_query
+
+  C Syntax           : int hp8647a_revision_query(Instrument_ID,
+                                Driver_Revision, Firmware_Revision);
+                       int Instrument_ID;
+                       char *Driver_Revision;
+                       char *Firmware_Revision;
+
+  QuickBASIC Syntax  : Error.Code% = hp8647a.revision.query(Instrument.ID%, _
+                                Driver.Revision$, Firmware.Revision$)
+
+  Purpose            : This function returns the revision numbers of the
+                       instrument driver and instrument firmware, and tells
+                       the user what firmware the driver is compatible with,
+                       i.e., Driver Revision "A1.0" is compatible with
+                       Firmware Revision(s) "3.00".
+
+  Parameter List     : Instrument ID
+
+                            Description:   Accepts the Instrument ID returned
+                                           by the Initialize function to
+                                           select the desired instrument.
+
+                            Variable Type: Integer
+
+                            Valid Range:   1 to  Maximum Instances of
+                                                 this Instrument
+
+                                           The Maximum Instances of this
+                                           Instrument is the maximum number
+                                           of instruments that can be
+                                           controlled by this driver in a
+                                           single system. The value is set
+                                           internally in the driver. The
+                                           typical value is 10.
+
+                       Driver Revision
+
+                            Description:   This control returns the
+                                           Instrument Driver Revision.
+
+                            Variable Type: String (char *)
+
+                       Firmware Revision
+
+                            Description:   This control returns the
+                                           Instrument Driver's Firmware
+                                           Revision.
+
+                            Variable Type: String (char *)
+
+  Error Codes         :        0   Success
+
+                             230   Error writing to instrument
+                             231   Error reading from instrument
+                             232   Instrument not initialized
+                             236   Error interpreting instrument response
+
+
+________________________________________________________________________________
+
+  Function Name      : hp8647a_rf_signal
+
+  C Syntax           : int hp8647a_rf_signal(Instrument_ID, RF_Frequency_MHz,
+                                Amplitude_Reference, Reference_Value_dBm,
+                                RF_Amplitude_dBm, Automatic_Attenuator);
+                       int Instrument_ID;
+                       double RF_Frequency_MHz;
+                       int Amplitude_Reference;
+                       double Reference_Value_dBm;
+                       double RF_Amplitude_dBm;
+                       int Automatic_Attenuator;
+
+  QuickBASIC Syntax  : Error.Code% = hp8647a.rf.signal(Instrument.ID%, _
+                                RF.Frequency.MHz#, Amplitude.Reference%, _
+                                Reference.Value.dBm#, RF.Amplitude.dBm#, _
+                                Automatic.Attenuator%)
+
+  Purpose            : Configures the RF Signal. It sets the frequency and
+                       amplitude of the signal.
+
+  Parameter List     : Instrument ID
+
+                            Description:   Accepts the Instrument ID returned
+                                           by the Initialize function to
+                                           select the desired instrument.
+
+                            Variable Type: Integer
+
+                            Valid Range:   1 to  Maximum Instances of
+                                                 this Instrument
+
+                                           The Maximum Instances of this
+                                           Instrument is the maximum number
+                                           of instruments that can be
+                                           controlled by this driver in a
+                                           single system. The value is set
+                                           internally in the driver. The
+                                           typical value is 10.
+
+                       RF Frequency (MHz)
+
+                            Description:   Set the Frequency in MHz for the
+                                           RF signal.
+
+                            Variable Type: Double
+
+                            Valid Range:   0.250 - 1000.0
+
+                            Default Value: 0.250
+
+                            Note:  AM is unspecified at or below 1.5 MHz.
+
+                       Amplitude Reference
+
+                            Description:   Disable/Enable the Amplitude
+                                           Reference mode.
+
+                            Variable Type: Integer
+
+                            Valid Range:   0 - Disable
+                                           1 - Enable
+
+                            Default Value: 0 - Disable
+
+                       Reference Value dBm
+
+                            Description:   Holds the Reference value in dBm
+                                           to be used with the Amplitude
+                                           Reference mode.
+
+                            Variable Type: Double
+
+                            Valid Range:   -136.0 - +10.0
+
+                            Default Value: 0.0
+
+                       RF Amplitude (dBm)
+
+                            Description:   Set the Amplitude in dBm for the
+                                           RF signal. The value may be up to
+                                           4 digits plus a sign.
+
+                            Variable Type: Double
+
+                            Valid Range:   The range of the Amplitude is
+                                           dependent upon the reference mode.
+
+                                           Reference mode enabled:
+                                               (-136.0 - Reference) to
+                                               (+10.0  - Reference)
+                                           Reference mode disabled:
+                                               -136.0 - +10.0
+
+                            Default Value: 0.0
+
+                            Note:  AM is unspecified above 4 dBm.
+
+                       Automatic Attenuator
+
+                            Description:   Disable/Enable the Automatic
+                                           Attenuator control.
+
+                            Variable Type: Integer
+
+                            Valid Range:   0 - Disable
+                                           1 - Enable
+
+                            Default Value: 0 - Disable
+
+                            Note:  When Automatic Attenuator is disabled and
+                                   the amplitude is set to a level that
+                                   exceeds the vernier range limits by
+                                   greater than 5 dBm, the instrument
+                                   displays the message "011 Amplitude
+                                   exceeds ATTN HOLD limits". This message
+                                   does not indicate an error.
+
+
+  Error Codes         :        0   Success
+
+                              -1   Instrument ID out of range
+                              -2   RF Frequency out of range
+                              -3   Amplitude Reference out of range
+                              -4   Reference Value out of range
+                              -5   RF Amplitude out of range
+                              -6   Automatic Attenuator out of range
+
+                             230   Error writing to instrument
+                             232   Instrument not initialized
+
+
+________________________________________________________________________________
+
+  Function Name      : hp8647a_self_test
+
+  C Syntax           : int hp8647a_self_test(Instrument_ID, PassFail_Code,
+                                SelfTest_Message);
+                       int Instrument_ID;
+                       int *PassFail_Code;
+                       char *SelfTest_Message;
+
+  QuickBASIC Syntax  : Error.Code% = hp8647a.self.test(Instrument.ID%, _
+                                PassFail.Code%, SelfTest.Message$)
+
+  Purpose            : This function runs the instrument self test and
+                       returns the test code.
+
+  Parameter List     : Instrument ID
+
+                            Description:   Accepts the Instrument ID returned
+                                           by the Initialize function to
+                                           select the desired instrument.
+
+                            Variable Type: Integer
+
+                            Valid Range:   1 to  Maximum Instances of
+                                                 this Instrument
+
+                                           The Maximum Instances of this
+                                           Instrument is the maximum number
+                                           of instruments that can be
+                                           controlled by this driver in a
+                                           single system. The value is set
+                                           internally in the driver. The
+                                           typical value is 10.
+
+                       Pass/Fail Code
+
+                            Description:   This is the value returned by the
+                                           self test.  Zero means success.
+                                           For any other code, see the
+                                           Device's operator's manual.
+
+                            Variable Type: Integer *
+
+                       Self-Test Message
+
+                            Description:   This is the string returned by the
+                                           self test.  See the Device's
+                                           operation manual for an
+                                           explanation of the string's
+                                           contents.
+
+                            Variable Type: String (char *)
+
+  Error Codes         :        0   Success
+
+                             230   Error writing to instrument
+                             231   Error reading from instrument
+                             232   Instrument not initialized
+                             236   Error interpreting instrument response
+
+
+________________________________________________________________________________
+
+  Function Name      : hp8647a_set_ref_att
+
+  C Syntax           : int hp8647a_set_ref_att(Instrument_ID,
+                                Amplitude_Reference, Automatic_Attenuator);
+                       int Instrument_ID;
+                       int Amplitude_Reference;
+                       int Automatic_Attenuator;
+
+  QuickBASIC Syntax  : Error.Code% = hp8647a.set.ref.att(Instrument.ID%, _
+                                Amplitude.Reference%, Automatic.Attenuator%)
+
+  Purpose            : Disables/Enables the Amplitude Reference and the
+                       Automatic Attenuation modes.
+
+  Parameter List     : Instrument ID
+
+                            Description:   Accepts the Instrument ID returned
+                                           by the Initialize function to
+                                           select the desired instrument.
+
+                            Variable Type: Integer
+
+                            Valid Range:   1 to  Maximum Instances of
+                                                 this Instrument
+
+                                           The Maximum Instances of this
+                                           Instrument is the maximum number
+                                           of instruments that can be
+                                           controlled by this driver in a
+                                           single system. The value is set
+                                           internally in the driver. The
+                                           typical value is 10.
+
+                       Amplitude Reference
+
+                            Description:   Disable/Enable the Amplitude
+                                           Reference mode.
+
+                            Variable Type: Integer
+
+                            Valid Range:   0 - Disable
+                                           1 - Enable
+
+                            Default Value: 0 - Disable
+
+                       Automatic Attenuator
+
+                            Description:   Disable/Enable the Automatic
+                                           Attenuator control.
+
+                            Variable Type: Integer
+
+                            Valid Range:   0 - Disable
+                                           1 - Enable
+
+                            Default Value: 0 - Disable
+
+  Error Codes         :        0   Success
+
+                              -1   Instrument ID out of range
+                              -2   Amplitude Reference out of range
+                              -3   Automatic Attenuator out of range
+
+                             230   Error writing to instrument
+                             232   Instrument not initialized
+
+
+________________________________________________________________________________
+
+  Function Name      : hp8647a_write
+
+  C Syntax           : int hp8647a_write(Instrument_ID, Write_Buffer);
+                       int Instrument_ID;
+                       char *Write_Buffer;
+
+  QuickBASIC Syntax  : Error.Code% = hp8647a.write(Instrument.ID%, _
+                                Write.Buffer$)
+
+  Purpose            : Writes commands and queries to the instrument to
+                       modify parameters and query device settings.
+
+  Parameter List     : Instrument ID
+
+                            Description:   Accepts the Instrument ID returned
+                                           by the Initialize function to
+                                           select the desired instrument.
+
+                            Variable Type: Integer
+
+                            Valid Range:   1 to  Maximum Instances of
+                                                 this Instrument
+
+                                           The Maximum Instances of this
+                                           Instrument is the maximum number
+                                           of instruments that can be
+                                           controlled by this driver in a
+                                           single system. The value is set
+                                           internally in the driver. The
+                                           typical value is 10.
+
+                       Write Buffer
+
+                            Description:   The user can use this control to
+                                           send common commands and queries
+                                           to the instrument. This control
+                                           can also be used to write any
+                                           valid command to the instrument.
+
+                            Variable Type: String
+
+                            Default Value: "*RST"
+
+                            NOTES: (1) The command or query to be sent to the
+                                       instrument may be a literal enclosed
+                                       in double quotes i.e. "*RST" or may be
+                                       contained in a variable of type
+                                       string.
+
+                                   (2) If the number of bytes to be written
+                                       is greater than the size of "cmd" in
+                                       the source code then the size of cmd
+                                       must be increased. The original size
+                                       of cmd is 200 bytes (cmd[200]) the
+                                       largest cmd may be declared as is
+                                       32,767 bytes.
+
+  Error Codes         :        0   Success
+
+                              -1   Instrument ID out of range
+
+                             230   Error writing to instrument
+                             232   Instrument not initialized

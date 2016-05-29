@@ -1,0 +1,1094 @@
+[Project Header]
+Version = 1500
+Pathname = "/d/src/INFRA_DRIVERs__DynamicDriverManager/MAIN_DriversManager.prj"
+CVI Dir = "/c/program files (x86)/national instruments/cvi2015"
+CVI Shared Dir = "/C/Program Files (x86)/National Instruments/Shared/CVI"
+CVI Pub Local Dir = "/C/ProgramData/National Instruments/CVI2015"
+CVI Pub Global Dir = "/C/ProgramData/National Instruments/CVI"
+IVI Standard Root Dir = "/C/Program Files (x86)/IVI Foundation/IVI"
+VXIplug&play Framework Dir = "/C/Program Files (x86)/IVI Foundation/VISA/winnt"
+IVI Standard Root 64-bit Dir = "/C/Program Files/IVI Foundation/IVI"
+VXIplug&play Framework 64-bit Dir = "/C/Program Files/IVI Foundation/VISA/win64"
+Number of Files = 49
+Target Type = "Dynamic Link Library"
+Flags = 2064
+Copied From Locked InstrDrv Directory = False
+Copied from VXIPNP Directory = False
+Locked InstrDrv Name = ""
+Don't Display Deploy InstrDrv Dialog = False
+
+[Folders]
+Instrument Files Folder Not Added Yet = True
+Library Files Folder Not Added Yet = True
+Folder 0 = "Source Files"
+FolderEx 0 = "Source Files"
+Folder 1 = "Include Files"
+FolderEx 1 = "Include Files"
+Folder 2 = "DriversManagers"
+FolderEx 2 = "DriversManagers"
+Folder 3 = "Pictures"
+FolderEx 3 = "Pictures"
+Folder 4 = "User Interface Files"
+FolderEx 4 = "User Interface Files"
+
+[File 0001]
+File Type = "CSource"
+Res Id = 1
+Path Is Rel = True
+Path Rel To = "Project"
+Path Rel Path = "EQUIP_FileSupport.c"
+Path = "/d/src/INFRA_DRIVERs__DynamicDriverManager/EQUIP_FileSupport.c"
+Exclude = False
+Compile Into Object File = False
+Project Flags = 0
+Folder = "Source Files"
+Folder Id = 0
+
+[File 0002]
+File Type = "CSource"
+Res Id = 2
+Path Is Rel = True
+Path Rel To = "Project"
+Path Rel Path = "GBL_CommonSection.c"
+Path = "/d/src/INFRA_DRIVERs__DynamicDriverManager/GBL_CommonSection.c"
+Exclude = False
+Compile Into Object File = False
+Project Flags = 0
+Folder = "Source Files"
+Folder Id = 0
+
+[File 0003]
+File Type = "CSource"
+Res Id = 3
+Path Is Rel = True
+Path Rel To = "Project"
+Path Rel Path = "MAIN_DriversManager.c"
+Path = "/d/src/INFRA_DRIVERs__DynamicDriverManager/MAIN_DriversManager.c"
+Exclude = False
+Compile Into Object File = False
+Project Flags = 0
+Folder = "Source Files"
+Folder Id = 0
+
+[File 0004]
+File Type = "CSource"
+Res Id = 4
+Path Is Rel = True
+Path Rel To = "Project"
+Path Rel Path = "MathLibrary.c"
+Path = "/d/src/INFRA_DRIVERs__DynamicDriverManager/MathLibrary.c"
+Exclude = False
+Compile Into Object File = False
+Project Flags = 0
+Folder = "Source Files"
+Folder Id = 0
+
+[File 0005]
+File Type = "CSource"
+Res Id = 5
+Path Is Rel = True
+Path Rel To = "Project"
+Path Rel Path = "StringParsing.c"
+Path = "/d/src/INFRA_DRIVERs__DynamicDriverManager/StringParsing.c"
+Exclude = False
+Compile Into Object File = False
+Project Flags = 0
+Folder = "Source Files"
+Folder Id = 0
+
+[File 0006]
+File Type = "Include"
+Res Id = 6
+Path Is Rel = True
+Path Rel To = "Project"
+Path Rel Path = "DriversManagerGUI.h"
+Path = "/d/src/INFRA_DRIVERs__DynamicDriverManager/DriversManagerGUI.h"
+Exclude = False
+Project Flags = 0
+Folder = "Include Files"
+Folder Id = 1
+
+[File 0007]
+File Type = "Include"
+Res Id = 7
+Path Is Rel = True
+Path Rel To = "Project"
+Path Rel Path = "EQUIP_FileSupport.h"
+Path = "/d/src/INFRA_DRIVERs__DynamicDriverManager/EQUIP_FileSupport.h"
+Exclude = False
+Project Flags = 0
+Folder = "Include Files"
+Folder Id = 1
+
+[File 0008]
+File Type = "Include"
+Res Id = 8
+Path Is Rel = True
+Path Rel To = "Project"
+Path Rel Path = "GBL_CommonSection.h"
+Path = "/d/src/INFRA_DRIVERs__DynamicDriverManager/GBL_CommonSection.h"
+Exclude = False
+Project Flags = 0
+Folder = "Include Files"
+Folder Id = 1
+
+[File 0009]
+File Type = "Include"
+Res Id = 9
+Path Is Rel = True
+Path Rel To = "Project"
+Path Rel Path = "../CommonHeaders/GlobalDefines.h"
+Path = "/d/src/CommonHeaders/GlobalDefines.h"
+Exclude = False
+Project Flags = 0
+Folder = "Include Files"
+Folder Id = 1
+
+[File 0010]
+File Type = "Include"
+Res Id = 10
+Path Is Rel = True
+Path Rel To = "Project"
+Path Rel Path = "MAIN_DriversManager.h"
+Path = "/d/src/INFRA_DRIVERs__DynamicDriverManager/MAIN_DriversManager.h"
+Exclude = False
+Project Flags = 0
+Folder = "Include Files"
+Folder Id = 1
+
+[File 0011]
+File Type = "Include"
+Res Id = 11
+Path Is Rel = True
+Path Rel To = "Project"
+Path Rel Path = "MathLibrary.h"
+Path = "/d/src/INFRA_DRIVERs__DynamicDriverManager/MathLibrary.h"
+Exclude = False
+Project Flags = 0
+Folder = "Include Files"
+Folder Id = 1
+
+[File 0012]
+File Type = "Include"
+Res Id = 12
+Path Is Rel = True
+Path Rel To = "Project"
+Path Rel Path = "StringParsing.h"
+Path = "/d/src/INFRA_DRIVERs__DynamicDriverManager/StringParsing.h"
+Exclude = False
+Project Flags = 0
+Folder = "Include Files"
+Folder Id = 1
+
+[File 0013]
+File Type = "CSource"
+Res Id = 13
+Path Is Rel = True
+Path Rel To = "Project"
+Path Rel Path = "DriversManagers/FG_DriversManager.c"
+Path = "/d/src/INFRA_DRIVERs__DynamicDriverManager/DriversManagers/FG_DriversManager.c"
+Exclude = False
+Compile Into Object File = False
+Project Flags = 0
+Folder = "DriversManagers"
+Folder Id = 2
+
+[File 0014]
+File Type = "Include"
+Res Id = 14
+Path Is Rel = True
+Path Rel To = "Project"
+Path Rel Path = "DriversManagers/FG_DriversManager.h"
+Path = "/d/src/INFRA_DRIVERs__DynamicDriverManager/DriversManagers/FG_DriversManager.h"
+Exclude = False
+Project Flags = 0
+Folder = "DriversManagers"
+Folder Id = 2
+
+[File 0015]
+File Type = "CSource"
+Res Id = 15
+Path Is Rel = True
+Path Rel To = "Project"
+Path Rel Path = "DriversManagers/MM_DriversManager.c"
+Path = "/d/src/INFRA_DRIVERs__DynamicDriverManager/DriversManagers/MM_DriversManager.c"
+Exclude = False
+Compile Into Object File = False
+Project Flags = 0
+Folder = "DriversManagers"
+Folder Id = 2
+
+[File 0016]
+File Type = "Include"
+Res Id = 16
+Path Is Rel = True
+Path Rel To = "Project"
+Path Rel Path = "DriversManagers/MM_DriversManager.h"
+Path = "/d/src/INFRA_DRIVERs__DynamicDriverManager/DriversManagers/MM_DriversManager.h"
+Exclude = False
+Project Flags = 0
+Folder = "DriversManagers"
+Folder Id = 2
+
+[File 0017]
+File Type = "CSource"
+Res Id = 17
+Path Is Rel = True
+Path Rel To = "Project"
+Path Rel Path = "DriversManagers/NA_DriversManager.c"
+Path = "/d/src/INFRA_DRIVERs__DynamicDriverManager/DriversManagers/NA_DriversManager.c"
+Exclude = False
+Compile Into Object File = False
+Project Flags = 0
+Folder = "DriversManagers"
+Folder Id = 2
+
+[File 0018]
+File Type = "Include"
+Res Id = 18
+Path Is Rel = True
+Path Rel To = "Project"
+Path Rel Path = "DriversManagers/NA_DriversManager.h"
+Path = "/d/src/INFRA_DRIVERs__DynamicDriverManager/DriversManagers/NA_DriversManager.h"
+Exclude = False
+Project Flags = 0
+Folder = "DriversManagers"
+Folder Id = 2
+
+[File 0019]
+File Type = "CSource"
+Res Id = 19
+Path Is Rel = True
+Path Rel To = "Project"
+Path Rel Path = "DriversManagers/NF_DriversManager.c"
+Path = "/d/src/INFRA_DRIVERs__DynamicDriverManager/DriversManagers/NF_DriversManager.c"
+Exclude = False
+Compile Into Object File = False
+Project Flags = 0
+Folder = "DriversManagers"
+Folder Id = 2
+
+[File 0020]
+File Type = "Include"
+Res Id = 20
+Path Is Rel = True
+Path Rel To = "Project"
+Path Rel Path = "DriversManagers/NF_DriversManager.h"
+Path = "/d/src/INFRA_DRIVERs__DynamicDriverManager/DriversManagers/NF_DriversManager.h"
+Exclude = False
+Project Flags = 0
+Folder = "DriversManagers"
+Folder Id = 2
+
+[File 0021]
+File Type = "CSource"
+Res Id = 21
+Path Is Rel = True
+Path Rel To = "Project"
+Path Rel Path = "DriversManagers/PM_DriversManager.c"
+Path = "/d/src/INFRA_DRIVERs__DynamicDriverManager/DriversManagers/PM_DriversManager.c"
+Exclude = False
+Compile Into Object File = False
+Project Flags = 0
+Folder = "DriversManagers"
+Folder Id = 2
+
+[File 0022]
+File Type = "Include"
+Res Id = 22
+Path Is Rel = True
+Path Rel To = "Project"
+Path Rel Path = "DriversManagers/PM_DriversManager.h"
+Path = "/d/src/INFRA_DRIVERs__DynamicDriverManager/DriversManagers/PM_DriversManager.h"
+Exclude = False
+Project Flags = 0
+Folder = "DriversManagers"
+Folder Id = 2
+
+[File 0023]
+File Type = "CSource"
+Res Id = 23
+Path Is Rel = True
+Path Rel To = "Project"
+Path Rel Path = "DriversManagers/PS_DriversManager.c"
+Path = "/d/src/INFRA_DRIVERs__DynamicDriverManager/DriversManagers/PS_DriversManager.c"
+Exclude = False
+Compile Into Object File = False
+Project Flags = 0
+Folder = "DriversManagers"
+Folder Id = 2
+
+[File 0024]
+File Type = "Include"
+Res Id = 24
+Path Is Rel = True
+Path Rel To = "Project"
+Path Rel Path = "DriversManagers/PS_DriversManager.h"
+Path = "/d/src/INFRA_DRIVERs__DynamicDriverManager/DriversManagers/PS_DriversManager.h"
+Exclude = False
+Project Flags = 0
+Folder = "DriversManagers"
+Folder Id = 2
+
+[File 0025]
+File Type = "CSource"
+Res Id = 25
+Path Is Rel = True
+Path Rel To = "Project"
+Path Rel Path = "DriversManagers/SA_DriversManager.c"
+Path = "/d/src/INFRA_DRIVERs__DynamicDriverManager/DriversManagers/SA_DriversManager.c"
+Exclude = False
+Compile Into Object File = False
+Project Flags = 0
+Folder = "DriversManagers"
+Folder Id = 2
+
+[File 0026]
+File Type = "Include"
+Res Id = 26
+Path Is Rel = True
+Path Rel To = "Project"
+Path Rel Path = "DriversManagers/SA_DriversManager.h"
+Path = "/d/src/INFRA_DRIVERs__DynamicDriverManager/DriversManagers/SA_DriversManager.h"
+Exclude = False
+Project Flags = 0
+Folder = "DriversManagers"
+Folder Id = 2
+
+[File 0027]
+File Type = "CSource"
+Res Id = 27
+Path Is Rel = True
+Path Rel To = "Project"
+Path Rel Path = "DriversManagers/SC_DriversManager.c"
+Path = "/d/src/INFRA_DRIVERs__DynamicDriverManager/DriversManagers/SC_DriversManager.c"
+Exclude = False
+Compile Into Object File = False
+Project Flags = 0
+Folder = "DriversManagers"
+Folder Id = 2
+
+[File 0028]
+File Type = "Include"
+Res Id = 28
+Path Is Rel = True
+Path Rel To = "Project"
+Path Rel Path = "DriversManagers/SC_DriversManager.h"
+Path = "/d/src/INFRA_DRIVERs__DynamicDriverManager/DriversManagers/SC_DriversManager.h"
+Exclude = False
+Project Flags = 0
+Folder = "DriversManagers"
+Folder Id = 2
+
+[File 0029]
+File Type = "CSource"
+Res Id = 29
+Path Is Rel = True
+Path Rel To = "Project"
+Path Rel Path = "DriversManagers/SG_DriversManager.c"
+Path = "/d/src/INFRA_DRIVERs__DynamicDriverManager/DriversManagers/SG_DriversManager.c"
+Exclude = False
+Compile Into Object File = False
+Project Flags = 0
+Folder = "DriversManagers"
+Folder Id = 2
+
+[File 0030]
+File Type = "Include"
+Res Id = 30
+Path Is Rel = True
+Path Rel To = "Project"
+Path Rel Path = "DriversManagers/SG_DriversManager.h"
+Path = "/d/src/INFRA_DRIVERs__DynamicDriverManager/DriversManagers/SG_DriversManager.h"
+Exclude = False
+Project Flags = 0
+Folder = "DriversManagers"
+Folder Id = 2
+
+[File 0031]
+File Type = "CSource"
+Res Id = 31
+Path Is Rel = True
+Path Rel To = "Project"
+Path Rel Path = "DriversManagers/STD_DriversManager.c"
+Path = "/d/src/INFRA_DRIVERs__DynamicDriverManager/DriversManagers/STD_DriversManager.c"
+Exclude = False
+Compile Into Object File = False
+Project Flags = 0
+Folder = "DriversManagers"
+Folder Id = 2
+
+[File 0032]
+File Type = "Include"
+Res Id = 32
+Path Is Rel = True
+Path Rel To = "Project"
+Path Rel Path = "DriversManagers/STD_DriversManager.h"
+Path = "/d/src/INFRA_DRIVERs__DynamicDriverManager/DriversManagers/STD_DriversManager.h"
+Exclude = False
+Project Flags = 0
+Folder = "DriversManagers"
+Folder Id = 2
+
+[File 0033]
+File Type = "CSource"
+Res Id = 33
+Path Is Rel = True
+Path Rel To = "Project"
+Path Rel Path = "DriversManagers/WA_DriversManager.c"
+Path = "/d/src/INFRA_DRIVERs__DynamicDriverManager/DriversManagers/WA_DriversManager.c"
+Exclude = False
+Compile Into Object File = False
+Project Flags = 0
+Folder = "DriversManagers"
+Folder Id = 2
+
+[File 0034]
+File Type = "Include"
+Res Id = 34
+Path Is Rel = True
+Path Rel To = "Project"
+Path Rel Path = "DriversManagers/WA_DriversManager.h"
+Path = "/d/src/INFRA_DRIVERs__DynamicDriverManager/DriversManagers/WA_DriversManager.h"
+Exclude = False
+Project Flags = 0
+Folder = "DriversManagers"
+Folder Id = 2
+
+[File 0035]
+File Type = "Unknown"
+Res Id = 35
+Path Is Rel = True
+Path Rel To = "Project"
+Path Rel Path = "../CommonHeaders/Equipment Pictures/2000X_3000X_lg.png"
+Path = "/d/src/CommonHeaders/Equipment Pictures/2000X_3000X_lg.png"
+Exclude = False
+Project Flags = 0
+Folder = "Pictures"
+Folder Id = 3
+
+[File 0036]
+File Type = "Unknown"
+Res Id = 36
+Path Is Rel = True
+Path Rel To = "Project"
+Path Rel Path = "../CommonHeaders/Equipment Pictures/510841_BB_00_FB.EPS_1000.jpg"
+Path = "/d/src/CommonHeaders/Equipment Pictures/510841_BB_00_FB.EPS_1000.jpg"
+Exclude = False
+Project Flags = 0
+Folder = "Pictures"
+Folder Id = 3
+
+[File 0037]
+File Type = "Unknown"
+Res Id = 37
+Path Is Rel = True
+Path Rel To = "Project"
+Path Rel Path = "../CommonHeaders/Equipment Pictures/Agilent8753E.png"
+Path = "/d/src/CommonHeaders/Equipment Pictures/Agilent8753E.png"
+Exclude = False
+Project Flags = 0
+Folder = "Pictures"
+Folder Id = 3
+
+[File 0038]
+File Type = "Unknown"
+Res Id = 38
+Path Is Rel = True
+Path Rel To = "Project"
+Path Rel Path = "../CommonHeaders/Equipment Pictures/Agilent_Signal_Generator_E44XX.png"
+Path = "/d/src/CommonHeaders/Equipment Pictures/Agilent_Signal_Generator_E44XX.png"
+Exclude = False
+Project Flags = 0
+Folder = "Pictures"
+Folder Id = 3
+
+[File 0039]
+File Type = "Unknown"
+Res Id = 39
+Path Is Rel = True
+Path Rel To = "Project"
+Path Rel Path = "../CommonHeaders/Equipment Pictures/Agilent_Spectrum_Analyzer_N9XXX.png"
+Path = "/d/src/CommonHeaders/Equipment Pictures/Agilent_Spectrum_Analyzer_N9XXX.png"
+Exclude = False
+Project Flags = 0
+Folder = "Pictures"
+Folder Id = 3
+
+[File 0040]
+File Type = "Unknown"
+Res Id = 40
+Path Is Rel = True
+Path Rel To = "Project"
+Path Rel Path = "../CommonHeaders/Equipment Pictures/ANRITSU_MS2668.png"
+Path = "/d/src/CommonHeaders/Equipment Pictures/ANRITSU_MS2668.png"
+Exclude = False
+Project Flags = 0
+Folder = "Pictures"
+Folder Id = 3
+
+[File 0041]
+File Type = "Unknown"
+Res Id = 41
+Path Is Rel = True
+Path Rel To = "Project"
+Path Rel Path = "../CommonHeaders/Equipment Pictures/HP_E4402B.jpg"
+Path = "/d/src/CommonHeaders/Equipment Pictures/HP_E4402B.jpg"
+Exclude = False
+Project Flags = 0
+Folder = "Pictures"
+Folder Id = 3
+
+[File 0042]
+File Type = "Unknown"
+Res Id = 42
+Path Is Rel = True
+Path Rel To = "Project"
+Path Rel Path = "../CommonHeaders/Equipment Pictures/HP_E4402B.png"
+Path = "/d/src/CommonHeaders/Equipment Pictures/HP_E4402B.png"
+Exclude = False
+Project Flags = 0
+Folder = "Pictures"
+Folder Id = 3
+
+[File 0043]
+File Type = "Unknown"
+Res Id = 43
+Path Is Rel = True
+Path Rel To = "Project"
+Path Rel Path = "../CommonHeaders/Equipment Pictures/Lambds_Gen.png"
+Path = "/d/src/CommonHeaders/Equipment Pictures/Lambds_Gen.png"
+Exclude = False
+Project Flags = 0
+Folder = "Pictures"
+Folder Id = 3
+
+[File 0044]
+File Type = "Unknown"
+Res Id = 44
+Path Is Rel = True
+Path Rel To = "Project"
+Path Rel Path = "../CommonHeaders/Equipment Pictures/ml2437a012988.png"
+Path = "/d/src/CommonHeaders/Equipment Pictures/ml2437a012988.png"
+Exclude = False
+Project Flags = 0
+Folder = "Pictures"
+Folder Id = 3
+
+[File 0045]
+File Type = "Unknown"
+Res Id = 45
+Path Is Rel = True
+Path Rel To = "Project"
+Path Rel Path = "../CommonHeaders/Equipment Pictures/Tektronix-AFG3102-image.jpg"
+Path = "/d/src/CommonHeaders/Equipment Pictures/Tektronix-AFG3102-image.jpg"
+Exclude = False
+Project Flags = 0
+Folder = "Pictures"
+Folder Id = 3
+
+[File 0046]
+File Type = "Unknown"
+Res Id = 46
+Path Is Rel = True
+Path Rel To = "Project"
+Path Rel Path = "../CommonHeaders/Equipment Pictures/Tektronix-AFG3102-image.png"
+Path = "/d/src/CommonHeaders/Equipment Pictures/Tektronix-AFG3102-image.png"
+Exclude = False
+Project Flags = 0
+Folder = "Pictures"
+Folder Id = 3
+
+[File 0047]
+File Type = "Unknown"
+Res Id = 47
+Path Is Rel = True
+Path Rel To = "Project"
+Path Rel Path = "../CommonHeaders/Equipment Pictures/Tektronix_AFG3XX.png"
+Path = "/d/src/CommonHeaders/Equipment Pictures/Tektronix_AFG3XX.png"
+Exclude = False
+Project Flags = 0
+Folder = "Pictures"
+Folder Id = 3
+
+[File 0048]
+File Type = "Unknown"
+Res Id = 48
+Path Is Rel = True
+Path Rel To = "Project"
+Path Rel Path = "../CommonHeaders/Equipment Pictures/TTI_PLP.png"
+Path = "/d/src/CommonHeaders/Equipment Pictures/TTI_PLP.png"
+Exclude = False
+Project Flags = 0
+Folder = "Pictures"
+Folder Id = 3
+
+[File 0049]
+File Type = "User Interface Resource"
+Res Id = 49
+Path Is Rel = True
+Path Rel To = "Project"
+Path Rel Path = "DriversManagerGUI.uir"
+Path = "/d/src/INFRA_DRIVERs__DynamicDriverManager/DriversManagerGUI.uir"
+Exclude = False
+Project Flags = 0
+Folder = "User Interface Files"
+Folder Id = 4
+
+[Custom Build Configs]
+Num Custom Build Configs = 0
+
+[Default Build Config Debug]
+Config Name = "Debug"
+Is 64-Bit = False
+Is Release = False
+Default Calling Convention = "cdecl"
+Optimization Level = "No optimizations"
+Require Prototypes = True
+Show Warning IDs in Build Output = False
+Selected Warning Level = "None"
+Warning List None = "3,24"
+Warning List Common = ""
+Warning List Extended = ""
+Warning List All = "-73,-1,0"
+Warning Mode = 0
+Enable Unreferenced Identifiers Warning = True
+Enable Pointer Mismatch Warning = False
+Enable Unreachable Code Warning = False
+Enable Assignment In Conditional Warning = False
+Uninitialized Locals Compile Warning = "Disabled"
+Require Return Values = False
+Enable C99 Extensions = True
+Enable OpenMP Extensions = False
+Stack Size = 250000
+Stack Reserve = 1048576
+Stack Commit = 8192
+Image Base Address = 4194304
+Image Base Address x64 = 268435456
+Compiler Defines = "/DWIN32_LEAN_AND_MEAN"
+Sign = False
+Sign Store = ""
+Sign Certificate = ""
+Sign Timestamp URL = ""
+Sign URL = ""
+Manifest Embed = False
+Icon File Is Rel = False
+Icon File = ""
+Application Title = ""
+Use IVI Subdirectories for Import Libraries = False
+Use VXIPNP Subdirectories for Import Libraries = False
+Use Dflt Import Lib Base Name = True
+Where to Copy DLL = "Do not copy"
+Custom Directory to Copy DLL Is Rel = False
+Custom Directory to Copy DLL = ""
+Generate Source Documentation = "None"
+Runtime Support = "Full Runtime Support"
+Runtime Binding = "Shared"
+Embed Project .UIRs = True
+Generate Map File = False
+Embed Timestamp = True
+Create Console Application = False
+Using LoadExternalModule = False
+DLL Exports = "Symbols Marked As Export"
+Register ActiveX Server = False
+Numeric File Version = "1,8,5,0"
+Numeric Prod Version = "1,8,5,0"
+Increment Version Numbers = 136
+Comments = ""
+Comments Ex = ""
+Company Name = "Kratos GMI Eyal"
+Company Name Ex = "%company"
+File Description = "DynamicDriversManager (Debug x86)"
+File Description Ex = "%application (%rel_dbg %arch)"
+File Version = "1.8.5.0"
+File Version Ex = "%f1.%f2.%f3.%f4"
+Internal Name = "DynamicDriversManager"
+Internal Name Ex = "%basename"
+Legal Copyright = "Copyright © Kratos GMI Eyal 2016"
+Legal Copyright Ex = "Copyright © %company %Y"
+Legal Trademarks = ""
+Legal Trademarks Ex = ""
+Original Filename = "DynamicDriversManager.dll"
+Original Filename Ex = "%filename"
+Private Build = ""
+Private Build Ex = ""
+Product Name = "Kratos GMI Eyal DynamicDriversManager"
+Product Name Ex = "%company %application"
+Product Version = "1.8.5.0"
+Product Version Ex = "%p1.%p2.%p3.%p4"
+Special Build = ""
+Special Build Ex = ""
+Add Type Lib To DLL = False
+Include Type Lib Help Links = False
+TLB Help Style = "HLP"
+Type Lib FP File Is Rel = False
+Type Lib FP File = ""
+
+[Default Build Config Release]
+Config Name = "Release"
+Is 64-Bit = False
+Is Release = True
+Default Calling Convention = "cdecl"
+Optimization Level = "No optimizations"
+Require Prototypes = True
+Show Warning IDs in Build Output = False
+Selected Warning Level = "None"
+Warning List None = "3,24"
+Warning List Common = ""
+Warning List Extended = ""
+Warning List All = ""
+Warning Mode = 0
+Enable Unreferenced Identifiers Warning = True
+Enable Pointer Mismatch Warning = False
+Enable Unreachable Code Warning = False
+Enable Assignment In Conditional Warning = False
+Uninitialized Locals Compile Warning = "Disabled"
+Require Return Values = False
+Enable C99 Extensions = True
+Enable OpenMP Extensions = False
+Stack Size = 250000
+Stack Reserve = 1048576
+Stack Commit = 8192
+Image Base Address = 4194304
+Image Base Address x64 = 268435456
+Compiler Defines = "/DWIN32_LEAN_AND_MEAN"
+Sign = False
+Sign Store = ""
+Sign Certificate = ""
+Sign Timestamp URL = ""
+Sign URL = ""
+Manifest Embed = False
+Icon File Is Rel = False
+Icon File = ""
+Application Title = ""
+Use IVI Subdirectories for Import Libraries = False
+Use VXIPNP Subdirectories for Import Libraries = False
+Use Dflt Import Lib Base Name = True
+Where to Copy DLL = "Do not copy"
+Custom Directory to Copy DLL Is Rel = False
+Custom Directory to Copy DLL = ""
+Generate Source Documentation = "None"
+Runtime Support = "Full Runtime Support"
+Runtime Binding = "Shared"
+Embed Project .UIRs = True
+Generate Map File = False
+Embed Timestamp = True
+Create Console Application = False
+Using LoadExternalModule = False
+DLL Exports = "Symbols Marked As Export"
+Register ActiveX Server = False
+Numeric File Version = "1,8,5,23"
+Numeric Prod Version = "1,8,5,23"
+Increment Version Numbers = 136
+Comments = ""
+Comments Ex = ""
+Company Name = "Kratos GMI Eyal"
+Company Name Ex = "%company"
+File Description = "DynamicDriversManager (Release x86)"
+File Description Ex = "%application (%rel_dbg %arch)"
+File Version = "1.8.5.23"
+File Version Ex = "%f1.%f2.%f3.%f4"
+Internal Name = "DynamicDriversManager"
+Internal Name Ex = "%basename"
+Legal Copyright = "Copyright © Kratos GMI Eyal 2016"
+Legal Copyright Ex = "Copyright © %company %Y"
+Legal Trademarks = ""
+Legal Trademarks Ex = ""
+Original Filename = "DynamicDriversManager.dll"
+Original Filename Ex = "%filename"
+Private Build = ""
+Private Build Ex = ""
+Product Name = "Kratos GMI Eyal DynamicDriversManager"
+Product Name Ex = "%company %application"
+Product Version = "1.8.5.23"
+Product Version Ex = "%p1.%p2.%p3.%p4"
+Special Build = ""
+Special Build Ex = ""
+Add Type Lib To DLL = False
+Include Type Lib Help Links = False
+TLB Help Style = "HLP"
+Type Lib FP File Is Rel = False
+Type Lib FP File = ""
+
+[Default Build Config Debug64]
+Config Name = "Debug64"
+Is 64-Bit = True
+Is Release = False
+Default Calling Convention = "cdecl"
+Optimization Level = "No optimizations"
+Require Prototypes = True
+Show Warning IDs in Build Output = False
+Selected Warning Level = "None"
+Warning List None = ""
+Warning List Common = ""
+Warning List Extended = ""
+Warning List All = ""
+Warning Mode = 0
+Enable Unreferenced Identifiers Warning = False
+Enable Pointer Mismatch Warning = False
+Enable Unreachable Code Warning = False
+Enable Assignment In Conditional Warning = False
+Uninitialized Locals Compile Warning = "Disabled"
+Require Return Values = False
+Enable C99 Extensions = True
+Enable OpenMP Extensions = False
+Stack Size = 250000
+Stack Reserve = 1048576
+Stack Commit = 8192
+Image Base Address = 4194304
+Image Base Address x64 = 268435456
+Compiler Defines = "/DWIN32_LEAN_AND_MEAN"
+Sign = False
+Sign Store = ""
+Sign Certificate = ""
+Sign Timestamp URL = ""
+Sign URL = ""
+Manifest Embed = False
+Icon File Is Rel = False
+Icon File = ""
+Application Title = ""
+Use IVI Subdirectories for Import Libraries = False
+Use VXIPNP Subdirectories for Import Libraries = False
+Use Dflt Import Lib Base Name = True
+Where to Copy DLL = "Do not copy"
+Custom Directory to Copy DLL Is Rel = False
+Custom Directory to Copy DLL = ""
+Generate Source Documentation = "None"
+Runtime Support = "Full Runtime Support"
+Runtime Binding = "Shared"
+Embed Project .UIRs = True
+Generate Map File = False
+Embed Timestamp = True
+Create Console Application = False
+Using LoadExternalModule = False
+DLL Exports = "Symbols Marked As Export"
+Register ActiveX Server = False
+Numeric File Version = "1,8,5,0"
+Numeric Prod Version = "1,8,5,0"
+Increment Version Numbers = 136
+Comments = ""
+Comments Ex = ""
+Company Name = "Kratos GMI Eyal"
+Company Name Ex = "%company"
+File Version = "1.8.5.0"
+File Version Ex = "%f1.%f2.%f3.%f4"
+Legal Copyright = "Copyright © Kratos GMI Eyal 2016"
+Legal Copyright Ex = "Copyright © %company %Y"
+Legal Trademarks = ""
+Legal Trademarks Ex = ""
+Private Build = ""
+Private Build Ex = ""
+Product Version = "1.8.5.0"
+Product Version Ex = "%p1.%p2.%p3.%p4"
+Special Build = ""
+Special Build Ex = ""
+Add Type Lib To DLL = False
+Include Type Lib Help Links = False
+TLB Help Style = "HLP"
+Type Lib FP File Is Rel = False
+Type Lib FP File = ""
+
+[Default Build Config Release64]
+Config Name = "Release64"
+Is 64-Bit = True
+Is Release = True
+Default Calling Convention = "cdecl"
+Optimization Level = "No optimizations"
+Require Prototypes = True
+Show Warning IDs in Build Output = False
+Selected Warning Level = "None"
+Warning List None = ""
+Warning List Common = ""
+Warning List Extended = ""
+Warning List All = ""
+Warning Mode = 0
+Enable Unreferenced Identifiers Warning = False
+Enable Pointer Mismatch Warning = False
+Enable Unreachable Code Warning = False
+Enable Assignment In Conditional Warning = False
+Uninitialized Locals Compile Warning = "Disabled"
+Require Return Values = False
+Enable C99 Extensions = True
+Enable OpenMP Extensions = False
+Stack Size = 250000
+Stack Reserve = 1048576
+Stack Commit = 8192
+Image Base Address = 4194304
+Image Base Address x64 = 268435456
+Compiler Defines = "/DWIN32_LEAN_AND_MEAN"
+Sign = False
+Sign Store = ""
+Sign Certificate = ""
+Sign Timestamp URL = ""
+Sign URL = ""
+Manifest Embed = False
+Icon File Is Rel = False
+Icon File = ""
+Application Title = ""
+Use IVI Subdirectories for Import Libraries = False
+Use VXIPNP Subdirectories for Import Libraries = False
+Use Dflt Import Lib Base Name = True
+Where to Copy DLL = "Do not copy"
+Custom Directory to Copy DLL Is Rel = False
+Custom Directory to Copy DLL = ""
+Generate Source Documentation = "None"
+Runtime Support = "Full Runtime Support"
+Runtime Binding = "Shared"
+Embed Project .UIRs = True
+Generate Map File = False
+Embed Timestamp = True
+Create Console Application = False
+Using LoadExternalModule = False
+DLL Exports = "Symbols Marked As Export"
+Register ActiveX Server = False
+Numeric File Version = "1,8,5,0"
+Numeric Prod Version = "1,8,5,0"
+Increment Version Numbers = 136
+Comments = ""
+Comments Ex = ""
+Company Name = "Kratos GMI Eyal"
+Company Name Ex = "%company"
+File Version = "1.8.5.0"
+File Version Ex = "%f1.%f2.%f3.%f4"
+Legal Copyright = "Copyright © Kratos GMI Eyal 2016"
+Legal Copyright Ex = "Copyright © %company %Y"
+Legal Trademarks = ""
+Legal Trademarks Ex = ""
+Private Build = ""
+Private Build Ex = ""
+Product Version = "1.8.5.0"
+Product Version Ex = "%p1.%p2.%p3.%p4"
+Special Build = ""
+Special Build Ex = ""
+Add Type Lib To DLL = False
+Include Type Lib Help Links = False
+TLB Help Style = "HLP"
+Type Lib FP File Is Rel = False
+Type Lib FP File = ""
+
+[Compiler Options]
+Default Calling Convention = "cdecl"
+Require Prototypes = True
+Require Return Values = False
+Enable Pointer Mismatch Warning = False
+Enable Unreachable Code Warning = False
+Enable Unreferenced Identifiers Warning = True
+Enable Assignment In Conditional Warning = False
+O Option Compatible With 5.0 = False
+Enable C99 Extensions = True
+Uninitialized Locals Compile Warning = "Disabled"
+Precompile Prefix Header = False
+Prefix Header File = ""
+
+[Run Options]
+Stack Size = 250000
+Stack Commit = 8192
+Image Base Address = 4194304
+Image Base Address x64 = 268435456
+
+[Compiler Defines]
+Compiler Defines = "/DWIN32_LEAN_AND_MEAN"
+
+[Include Paths]
+Include Path 1 Is Rel = True
+Include Path 1 Rel To = "Project"
+Include Path 1 Rel Path = "../ETS/HEADERS_Globals"
+Include Path 1 = "/d/src/ETS/HEADERS_Globals"
+
+[Create Executable]
+Executable File_Debug Is Rel = False
+Executable File_Debug = "/c/emi/WorkSpace/DynamicDriversManager.dll"
+Executable File_Release Is Rel = False
+Executable File_Release = "/c/emi/WorkSpace/DynamicDriversManager.dll"
+Executable File_Debug64 Is Rel = False
+Executable File_Debug64 = "/c/emi/WorkSpace/DynamicDriversManager.dll"
+Executable File_Release64 Is Rel = False
+Executable File_Release64 = "/c/emi/WorkSpace/DynamicDriversManager.dll"
+Icon File Is Rel = False
+Icon File = ""
+Application Title = ""
+Numeric File Version = "1,8,5,23"
+Numeric Prod Version = "1,8,5,23"
+Increment Version Numbers = 136
+Comments = ""
+Comments Ex = ""
+Company Name = "Kratos GMI Eyal"
+Company Name Ex = "%company"
+File Description = "DynamicDriversManager (Release x86)"
+File Description Ex = "%application (%rel_dbg %arch)"
+File Version = "1.8.5.23"
+File Version Ex = "%f1.%f2.%f3.%f4"
+Internal Name = "DynamicDriversManager"
+Internal Name Ex = "%basename"
+Legal Copyright = "Copyright © Kratos GMI Eyal 2016"
+Legal Copyright Ex = "Copyright © %company %Y"
+Legal Trademarks = ""
+Legal Trademarks Ex = ""
+Original Filename = "DynamicDriversManager.dll"
+Original Filename Ex = "%filename"
+Private Build = ""
+Private Build Ex = ""
+Product Name = "Kratos GMI Eyal DynamicDriversManager"
+Product Name Ex = "%company %application"
+Product Version = "1.8.5.23"
+Product Version Ex = "%p1.%p2.%p3.%p4"
+Special Build = ""
+Special Build Ex = ""
+DLL Exports = "Symbols Marked As Export"
+Use IVI Subdirectories for Import Libraries = False
+Use VXIPNP Subdirectories for Import Libraries = False
+Use Dflt Import Lib Base Name = True
+Where to Copy DLL = "Do not copy"
+Custom Directory to Copy DLL Is Rel = False
+Custom Directory to Copy DLL = ""
+Generate Source Documentation = "None"
+Add Type Lib To DLL = False
+Include Type Lib Help Links = False
+TLB Help Style = "HLP"
+Type Lib FP File Is Rel = False
+Type Lib FP File = ""
+Type Lib Guid = ""
+Runtime Support = "Full Runtime Support"
+Instrument Driver Support Only = False
+Embed Project .UIRs = True
+Generate Map File = False
+
+[External Compiler Support]
+UIR Callbacks File Option = 0
+Using LoadExternalModule = False
+Create Project Symbols File = True
+UIR Callbacks Obj File Is Rel = False
+UIR Callbacks Obj File = ""
+Project Symbols H File Is Rel = False
+Project Symbols H File = ""
+Project Symbols Obj File Is Rel = False
+Project Symbols Obj File = ""
+
+[ActiveX Server Options]
+Specification File Is Rel = False
+Specification File = ""
+Source File Is Rel = False
+Source File = ""
+Include File Is Rel = False
+Include File = ""
+IDL File Is Rel = False
+IDL File = ""
+Register ActiveX Server = False
+
+[Signing Info]
+Sign = False
+Sign Debug Build = False
+Store = ""
+Certificate = ""
+Timestamp URL = ""
+URL = ""
+
+[Manifest Info]
+Embed = False
+
+[tpcSection]
+tpcEnabled = 0
+tpcOverrideEnvironment = 0
+tpcEnabled x64 = 0
+tpcOverrideEnvironment x64 = 0
+
