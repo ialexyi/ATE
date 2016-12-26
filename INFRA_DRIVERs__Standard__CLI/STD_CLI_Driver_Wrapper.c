@@ -55,10 +55,11 @@ void*	DLLEXPORT		Equipment_GetLowLevelHandle( int hHandle , int *phLowLevelHandl
 {
 	STD_ERROR						StdError									=	{0};
 	
-	if ( phLowLevelHandle )
-		*phLowLevelHandle = hHandle;
+	FREE_STDERR_COPY_ERR( STD_CLI_GetLowLevelHandle( hHandle , phLowLevelHandle ));
+
+Error:
 	
-	RETURN_STDERR_POINTER;	
+	RETURN_STDERR_POINTER;
 }
 
 void*	DLLEXPORT		Equipment_IsSupported ( int hLowLevelHandle , char *pAddress , char *pID_String , char *pIdentificationText , int *pbSupporting , void **pLocalData )
@@ -334,32 +335,101 @@ void main( void )
 {
  	int					hHandle				=	0;
 	
-//	char				*pGetCommandName	=	0;
-	
 	void				*pGetValue			=	0;
 	
 	int					iDataLength			=	0,
-						iDataSize			=	0;
+						iDataSize			=	0;																						 
 	
 	int					iFrequencyIndex		=	0,
 						iPowerIndex			=	0;
 	
-	StandardDevice_Init( DEVICE_ID , "RFM" , "ASRL1" , &hHandle ) ;
+	char				szMessage[64]		=	{"ABCD"};
 	
-	StandardDevice_LoadConfigFile( hHandle , "C:\\emi\\WorkSpace\\RFM_UUT_Control.clicnf" ); 
+	int 				iValueLength		=	0,
+						iValueSize	  		=	0;
 	
-	StandardDevice_SetValue( hHandle , "START_DEBUGING" , NULL , 0 , 0 ); 
+	char				szTextValue[512]	=  {0};  	 //for test
+	char				szTextValue2[512]	=  {0}; 	 // for test
 	
-	StandardDevice_SetValue( hHandle , "WAKEUP" ,  NULL , 0 , 0 );      
+	char                *pszGetCommandName  =	NULL;
 	
-	iFrequencyIndex = 16;
-	StandardDevice_SetValue( hHandle , "SET_TX_FREQUENCY" , &iFrequencyIndex , 1 , sizeof(iFrequencyIndex) ); 
 	
-	iPowerIndex = 0;
-	StandardDevice_SetValue( hHandle , "SET_TX_LEVEL" , &iPowerIndex , 1 , sizeof(iPowerIndex) ); 
 	
-	StandardDevice_Close( &hHandle );    
-		
+	
+	
+/*	
+	StandardDevice_Init( DEVICE_ID , "HPS" , "ASRL4" , &hHandle ) ;
+	StandardDevice_LoadConfigFile( hHandle , "C:\\emi\\WorkSpace\\B3I_MCU_TerminalControl.clicnf" ); 
+	
+	StandardDevice_SetValue( hHandle , "WAKE_UP_SIGNAL" , NULL , 0 , 0 ); 
+	
+	StandardDevice_SetValue( hHandle , "TEST_WAKE_UP_SIGNAL" , NULL , 0 , 0 );
+	StandardDevice_GetValue( hHandle , &pszGetCommandName , (void**)&pGetValue , &iValueLength , &iValueSize ); 
+*/	
+	
+	
+	
+	
+	
+	StandardDevice_Init( DEVICE_ID , "HPS" , "ASRL16" , &hHandle ) ;
+	
+	StandardDevice_LoadConfigFile( hHandle , "C:\\emi\\WorkSpace\\B3I_HPS_TerminalControl.clicnf" ); 
+	
+	StandardDevice_SetValue( hHandle , "UART_CLEAN" , NULL , 0 , 0 );
+	
+	StandardDevice_SetValue( hHandle , "START_RECEIVE_UART" , NULL , 0 , 0 );
+	
+	StandardDevice_SetValue( hHandle , "SEND_UART" , szMessage , strlen(szMessage) , sizeof(char) ); 
+	
+	StandardDevice_SetValue( hHandle , "UART_GET_DATA" , NULL , 0 , 0 );   
+	StandardDevice_GetValue( hHandle , &pszGetCommandName , (void**)&pGetValue , &iValueLength , &iValueSize ); 
+	
+	StandardDevice_SetValue( hHandle , "UART_CLEAN" , NULL , 0 , 0 );
+	
+	//StandardDevice_SetValue( hHandle , "ROOT" , NULL , 0 , 0 ); 
+	
+	//StandardDevice_SetValue( hHandle , "USB_DEVICE_LIST" , NULL , 0, 0 );											 //for test
+	//StandardDevice_GetValue( hHandle , &pszGetCommandName , (void**)&pGetValue , &iValueLength , &iValueSize ); 	 //for test
+	
+	//memset( szTextValue , 0 , sizeof(szTextValue) );
+	//memcpy( szTextValue , pGetValue , ( iValueLength*iValueSize ));
+	
+//	StandardDevice_SetValue( hHandle , "PING" , NULL , 0, 0 );														 //for test
+//	StandardDevice_GetValue( hHandle , &pszGetCommandName , (void**)&pGetValue , &iValueLength , &iValueSize );		 //for test
+	
+//	memset( szTextValue2 , 0 , sizeof(szTextValue2) );
+//	memcpy( szTextValue2 , pGetValue , ( iValueLength*iValueSize ));
+	
+/*	
+	StandardDevice_SetValue( hHandle , "START_RECEIVE_UART" , NULL , 0 , 0 );
+	
+	StandardDevice_SetValue( hHandle , "SEND_UART" , szMessage , strlen(szMessage) , sizeof(char) ); 
+	
+	StandardDevice_SetValue( hHandle , "UART_GET_DATA" , NULL , 0 , 0 );   
+	StandardDevice_GetValue( hHandle , &pszGetCommandName , (void**)&pGetValue , &iValueLength , &iValueSize ); 
+	
+	StandardDevice_SetValue( hHandle , "UART_CLEAN" , NULL , 0 , 0 );    */
+
+
+//  Another commands
+
+//	StandardDevice_SetValue( hHandle , "REBOOT" , NULL , 0 , 0 );  
+//	StandardDevice_GetValue_Ex ( hHandle , "USB_DEVICE_LIST" , (void**)&pGetValue , &iValueLength , &iValueSize );  //for test
+//	StandardDevice_SetValue( hHandle , "DUMMY" , NULL , 0, 0 );											 //for test   
+	StandardDevice_Close( &hHandle );   
+	
+	
+	StandardDevice_Init( DEVICE_ID , "HPS" , "ASRL3" , &hHandle ) ;
+	
+	StandardDevice_LoadConfigFile( hHandle , "C:\\emi\\WorkSpace\\B3I_HPS_TerminalControl.clicnf" ); 
+	
+	StandardDevice_SetValue( hHandle , "ROOT" , NULL , 0 , 0 ); 
+	
+	StandardDevice_SetValue( hHandle , "USB_DEVICE_LIST" , NULL , 0, 0 );											 //for test
+	StandardDevice_GetValue( hHandle , &pszGetCommandName , (void**)&pGetValue , &iValueLength , &iValueSize );
+	
+	StandardDevice_Close( &hHandle ); 
+	
 	return;
 }
 

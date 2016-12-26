@@ -13,7 +13,6 @@
 #include <userint.h>
 #include <ansi_c.h>
 #include "GlobalDefines.h"
-#include "Communication_Low_Level.h"
 
 //==============================================================================
 // Constants
@@ -54,6 +53,8 @@ void*   DLLEXPORT   STD_CLI_Driver_EnablePlugInAutomatically( int hHandle , int 
 
 void*   DLLEXPORT   STD_CLI_Driver_Check_Connection( int hHandle , char *pCommandName , int *piStatus );
 void*	DLLEXPORT	STD_CLI_Driver_Get_Commands_List( int hHandle , char ***pCommandsList , int *piNumberOfCommands );     
+
+void*	DLLEXPORT	STD_CLI_GetLowLevelHandle( int hHandle , int *phLowLevelHandle );
 
 #ifdef __cplusplus
     }

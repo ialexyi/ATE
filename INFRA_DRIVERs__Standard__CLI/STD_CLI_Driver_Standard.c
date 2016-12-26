@@ -26,7 +26,7 @@ typedef union
 	
 	struct
 	{  
-		int				iParametersType;								// 1 - int , 2 - long , 3 - double , 4 - string       
+		int				iParametersType;								// 1 - int , 2 - long , 3 - double , 4 - string , 5 - Binary       
 		
 		char			szParamName[12];
 		
@@ -42,7 +42,7 @@ typedef union
 	
 	struct
 	{  
-		int				iParametersType;								// 1 - int , 2 - long , 3 - double , 4 - string  
+		int				iParametersType;								// 1 - int , 2 - long , 3 - double , 4 - string  , 5 - Binary     
 
 		char			szParamName[12];
 		
@@ -81,6 +81,10 @@ typedef struct
 {
 	int							hCommunicationHandle;
 	
+	int							viOpenDefaultRM;
+	
+	int							hFileHandle;
+	
 	//------------- Communication ---------------//
 	unsigned char 				*pBuffer;
 	unsigned int				iBufferLength;
@@ -88,11 +92,20 @@ typedef struct
 	unsigned char 				*pSourceBuffer;
 	unsigned int				iSourceBufferLength;
 	
+	char						*pszAddress;
+	
 	int							bDataUpdated,
 								bDataUpdateFailed,
 								iNumberOfCommunicationTry;
 
 	int							iLastSentCommandIndex;
+	
+	double						lfLowLevelSendTimeOut,
+								lfLowLevelReceiveTimeOut;
+	
+	int 						iReceiveLowLevelTryNumber;
+	
+	double						lfDelaySendingCommands;	
 	
 	double						lfSendTimeOut,
 								lfReceiveTimeOut;
@@ -111,6 +124,9 @@ typedef struct
 	
 	int							hCallbackFunctionThreadId;
 	
+	char						*pszTerminatingPattern;
+	int                         iTerminatingPatternLength;
+	
 	STD_ERROR					*pLastError; 
 	
 } tsLocalStorage;
@@ -121,14 +137,40 @@ typedef struct
 
 //==============================================================================
 // Static functions
-void*   DLLEXPORT       STD_CLI_Driver_Send_Patern( int hCommunicationHandle , tsSTD_CLI_CommandItem tCommandItem , void *pValue , int iValueLength , int iValueSize );
+void*   DLLEXPORT       STD_CLI_Driver_Send_Patern( int hCommunicationHandle , int hFileHandle, tsSTD_CLI_CommandItem tCommandItem , void *pValue , int iValueLength , int iValueSize , double lfDelaySendingCommands ,  *pbSentStatus);
+
+int		Send( int hCommunicationHandle , int hFileHandle , char *pBuffer , int iCount , double lfDelaySendingCommands ,  *pbSentSuccessfully);
+
+char*		Receive( int hCommunicationHandle , int iTryNumber , int hFileHandle , int iExactSize , int *piCount );
 
 void	STD_CLI_Driver_ReceiveCallBack( void *pData );
+
+void* DLLEXPORT	SetTerminatingPattern( int hHandle , char *pszTerminatingPattern , int iLength );
 //==============================================================================
 // Global variables
 
 //==============================================================================
 // Global functions
+
+void*	DLLEXPORT	STD_CLI_GetLowLevelHandle( int hHandle , int *phLowLevelHandle ) 
+{
+	STD_ERROR						StdError									=	{0};
+	
+	tsLocalStorage					*pLocalStorage								=	NULL;			
+	
+	IF (( hHandle == 0 ) , "handle can't be zero." );
+	
+	CHK_CMT( CmtGetTSVPtr ( hHandle , &pLocalStorage ));
+
+	*phLowLevelHandle = pLocalStorage->hCommunicationHandle;
+	
+Error:
+	
+	if ( hHandle )
+		CmtReleaseTSVPtr (hHandle);
+	
+	RETURN_STDERR_POINTER;
+}
 
 void*	DLLEXPORT	STD_CLI_Driver_Config_Copy_STD_CallBackSet ( int *pHandle , void *pCallBackSet )
 {
@@ -357,12 +399,12 @@ void   DLLEXPORT   STD_CLI_Driver_Error_CallBack ( int hCommHandle , void *pStdE
 				if ( StdError.error ) //== -1073807360 )
 				{
 					OutputDebugString("\t\tUUT Driver Error : Unplugging communication.");   
-					FREE_STDERR_COPY_ERR( Communication_Unplug( pLocalStorage->hCommunicationHandle , 10.0 ));
+			//		FREE_STDERR_COPY_ERR( Communication_Unplug( pLocalStorage->hCommunicationHandle , 10.0 ));					//by Max
 					
 					if ( pLocalStorage->bEnableAutoPlugIn )
 					{
 						OutputDebugString("\t\tUUT Driver       : Plugging back communication.");   
-						FREE_STDERR_COPY_ERR( Communication_PlugIn( pLocalStorage->hCommunicationHandle , 10.0 )); 
+				//		FREE_STDERR_COPY_ERR( Communication_PlugIn( pLocalStorage->hCommunicationHandle , 10.0 )); 			//by Max
 					}
 					else
 						OutputDebugString("\t\tUUT Driver       : Plugging back is disable.");   
@@ -392,27 +434,38 @@ Error:
 
 //====================================================================================================//
 //typedef void (*pfReceiveCallBack) ( char *buffer , unsigned int count , void *data ); 
-void	DLLEXPORT	STD_CLI_Driver_Receive_CallBack( unsigned char *pBuffer , unsigned int iBufferLen , void *pData )
+
+/***********************************************************************************
+ *(CLI Driver) Driver_Receive                                                      *
+ ***********************************************************************************/
+
+void	DLLEXPORT	STD_CLI_Driver_Receive_CallBack( int handle )
 {
 	STD_ERROR						StdError									=	{0};
 	
 	tsLocalStorage					*pLocalStorage								=	NULL;			
-
-	int								*pHandle									=	0,
-									handle										=	0;
 	
-	int								iLastSentCommandIndex						=	0;
+	int								iLastSentCommandIndex						=	0,
+									iReceiveMinimumLength						=	0;
+	
+	unsigned char					*pBuffer									=	NULL;
+	
+	int								*pHandle									=	0;
+	
+	int								iBufferLen									=	0;
 	
 	int								bDataUpdateFailed							=	0;
 	
 	char							*pReceiveCheck								=	NULL,
 									*pTemp										=	NULL;
-	pHandle = pData;
 	
-	IF (( pHandle == NULL ) , "Pointer to handle can't be NULL." );
-	IF (( pBuffer == NULL ) , "Receive NULL pointer buffer." );   
+	void							*pData 										=	NULL;
 	
-	handle = *pHandle;
+	char							*pExpectedRespond							=	NULL,
+									*pStatus									=	NULL;
+	
+	
+	IF (( handle == NULL ) , "Pointer to handle can't be NULL." );
 	
 	if ( CmtGetTSVPtr ( handle , &pLocalStorage ) == 0 )
 	{
@@ -427,16 +480,23 @@ void	DLLEXPORT	STD_CLI_Driver_Receive_CallBack( unsigned char *pBuffer , unsigne
 			GET_STDERR_CLEAR( pLocalStorage->pLastError );
 	
 			iLastSentCommandIndex = pLocalStorage->iLastSentCommandIndex;
+			
+			//receive
+			pBuffer = Receive( pLocalStorage->hCommunicationHandle , pLocalStorage->iReceiveLowLevelTryNumber , pLocalStorage->hFileHandle , iReceiveMinimumLength ,  &iBufferLen ); 
 	
 			pReceiveCheck = StringReplaceAll( pBuffer  , "\n" , "\\n" , NULL );
 	
 			pTemp = pReceiveCheck;
 		
 			pReceiveCheck = StringReplaceAll( pTemp , "\r" , "\\r" , NULL ); 
+			
+			//CALLOC_COPY_STRING( pExpectedRespond , pLocalStorage->pSTD_CLI_CommandList[iLastSentCommandIndex].szRespondsFormated ); 	   //added by max
+			//pStatus = strstr(pReceiveCheck, pExpectedRespond);																					//added by max
 	
+			//compare expected command with receive command
 			do  
 			{ 
-				if ( pReceiveCheck && ( strstr( pReceiveCheck , pLocalStorage->pSTD_CLI_CommandList[iLastSentCommandIndex].szRespondsFormated ) == NULL ))  
+				if ( pReceiveCheck && ( strstr( pReceiveCheck , pLocalStorage->pSTD_CLI_CommandList[iLastSentCommandIndex].szRespondsFormated ) == NULL ))  	   
 				{
 					bDataUpdateFailed = 1;
 					
@@ -466,18 +526,23 @@ Error:
 	
 	if ( handle )
 	{
+		FREE(pLocalStorage->pBuffer);
+		pLocalStorage->iBufferLength = iBufferLen; 
+		pLocalStorage->pBuffer = pBuffer; 
 		pLocalStorage->bDataUpdated = 1;
 		pLocalStorage->bDataUpdateFailed = bDataUpdateFailed;
 		GET_STDERR_CLEAR( pLocalStorage->pLastError );
 		CmtReleaseTSVPtr ( handle );
 	}
 	
-	FREE(pBuffer);
 	FREE(pReceiveCheck); 
 	FREE(pTemp); 
 	
 	return;
 }
+
+
+
 
 void	STD_CLI_Driver_ReceiveCallBack( void *pData )
 {
@@ -610,6 +675,10 @@ Error:
 }
 
 
+
+/***********************************************************************************
+ *(CLI Driver) INIT                                                                *
+ ***********************************************************************************/
 void*	DLLEXPORT		STD_CLI_Driver_Init( char *pszConnectionName , char *pszAddress , int *pHandle , ... )
 {
 	STD_ERROR						StdError									=	{0};
@@ -622,18 +691,33 @@ void*	DLLEXPORT		STD_CLI_Driver_Init( char *pszConnectionName , char *pszAddress
 	
 	int								hCommunicationHandle						=	0;
 	
+	double							lfLowLevelReceiveTimeOut					=	0.3,   //0.05		 
+									lfLowLevelSendTimeOut						=	0.1;   //0.1  
+	
 	double							lfReceiveTimeOut							=	5.0,
-									lfSendTimeOut								=	5.0; 
+									lfSendTimeOut								=	5.0;
+	
+	double							lfDelaySendingCommands						=	0.05;
+	
+	int								iLowLevelTimeout							=	0.2,
+									iReceiveLowLevelTryNumber					=	2;
 										
 	int								iNumberOfReTry								=	3;
 											 
-	int								*pShareHandle								=	NULL;
+	char							szFormatedLog[STD_STRING]					=	{0},
+									szLogFormated[STD_STRING]					=	{0},  
+									szLogFileName[STD_STRING]					=	{0};
 	
-	char							szFormatedLog[STD_STRING]					=	{0};
+	ViUInt32						iDB_BaudRate							  	=	115200,
+									iDB_DataBits							  	=	8,
+									iDB_Parity								  	=	0,
+									iDB_StopBits							  	=	10,
+									iDB_FlowCtrl							  	=	0;
 	
-	int								bDB_Ascii									=	1;
+	double							lfLogCurrentTime							=	0.0; 
 	
-	IF (( pHandle == NULL ) , "Pointer to handle can't be NULL." );
+	
+	IF ((( pHandle == NULL ) || ( pszAddress == NULL )  || ( pszConnectionName == NULL )), "Pointer to handle can't be NULL." );
 	
 	if ( *pHandle == 0 )
 	{
@@ -642,12 +726,6 @@ void*	DLLEXPORT		STD_CLI_Driver_Init( char *pszConnectionName , char *pszAddress
 	
 	handle = *pHandle;
 	
-	pShareHandle = calloc(1,sizeof(int));
-	
-	IF (( pShareHandle == NULL ) , "Can't allocate memory." );
-	
-	*pShareHandle = handle;
-	
 	CHK_CMT( CmtGetTSVPtr ( handle , &pLocalStorage ));
 	
 	if ( pLocalStorage->ptCallbacks == NULL )
@@ -655,27 +733,16 @@ void*	DLLEXPORT		STD_CLI_Driver_Init( char *pszConnectionName , char *pszAddress
 		CALLOC_ERR( pLocalStorage->ptCallbacks , 1 , sizeof(tsSTD_CallBackSet));  
 	}
 		
+	CALLOC_COPY_STRING(pLocalStorage->pszAddress , pszAddress );  //save address on Local storage 
+	
 	pLocalStorage->ptCallbacks->iInternalHandle = handle;
 	
 	strcpy( pLocalStorage->ptCallbacks->szName , pszConnectionName );
 	
 	pLocalStorage->iLastSentCommandIndex = -1;
 	
-	//listSize = GetCommandItemListSize(); 
-		
-	//CALLOC_ERR( pLocalStorage->pSTD_CLI_CommandList, listSize , sizeof(tsSTD_CLI_CommandItem));
-	
-	//IF (( pLocalStorage->pSTD_CLI_CommandList== NULL ) , "Can't allocate memory." ); 
-	
-	//for ( index = 0 ; index < ; index++ , listSize++ )
-	//	memcpy( &(pLocalStorage->pSTD_CLI_CommandList[index]) , &(tSTD_CommandList[index]) , sizeof(tsSTD_CLI_CommandItem) ); 	
-	
-	//pLocalStorage->listSize = listSize;
-	
-	//pLocalStorage->ptCallbacks->iMultiUsingIndex = tConfig.iSlotNumber;   
-	
-	STDF_SET_MODULE_NAME(pLocalStorage->ptCallbacks,pszConnectionName);
-	STDF_UPDATE_CALLBACK_DATA(pLocalStorage->ptCallbacks);
+	STDF_SET_MODULE_NAME(pLocalStorage->ptCallbacks,pszConnectionName);			   //what this
+	STDF_UPDATE_CALLBACK_DATA(pLocalStorage->ptCallbacks);						   //what this  
 	
 	if ( pszConnectionName )
 	{
@@ -683,57 +750,60 @@ void*	DLLEXPORT		STD_CLI_Driver_Init( char *pszConnectionName , char *pszAddress
 		STDF_COMMENT(0,szFormatedLog,"On Slot N%d");
 	}
 	
-	//if ( strlen(tConfig.szConnectionAddress) == 0 )
-	//{
-	//	STDF_CONFIG_VALUE("CommunicationAddress", VALUE_TYPE_STRING , CONFIG_COM_STRUCT_LEN , tConfig.szConnectionAddress , tConfig.szConnectionAddress );  
-	//}
-													 
 
+	STDF_CONFIG_VALUE("LowLevelReceiveTimeOut", VAL_DOUBLE , 1 , lfLowLevelReceiveTimeOut , lfLowLevelReceiveTimeOut );
+	STDF_CONFIG_VALUE("LowLevelSendTimeOut", VAL_DOUBLE , 1 , lfLowLevelSendTimeOut ,lfLowLevelSendTimeOut );   
 	STDF_CONFIG_VALUE("ReceiveTimeOut", VAL_DOUBLE , 1 , lfReceiveTimeOut , lfReceiveTimeOut );
+	STDF_CONFIG_VALUE("SendTimeOut", VAL_DOUBLE , 1 , lfSendTimeOut , lfSendTimeOut );   
 	STDF_CONFIG_VALUE("NumberOfReTry", VAL_INTEGER , 1 , iNumberOfReTry , iNumberOfReTry );
+	STDF_CONFIG_VALUE("DelaySendingCommands", VAL_DOUBLE , 1 , lfDelaySendingCommands , lfDelaySendingCommands );
+	STDF_CONFIG_VALUE("ReceiveLowLevelTryNumber", VAL_INTEGER , 1 , iReceiveLowLevelTryNumber , iReceiveLowLevelTryNumber );
 	
+	pLocalStorage->iReceiveLowLevelTryNumber = iReceiveLowLevelTryNumber;  
 	pLocalStorage->iNumberOfCommunicationTry = iNumberOfReTry;
+	pLocalStorage->lfLowLevelReceiveTimeOut = lfLowLevelReceiveTimeOut;
+	pLocalStorage->lfLowLevelSendTimeOut = lfLowLevelSendTimeOut;
+	pLocalStorage->lfDelaySendingCommands = lfDelaySendingCommands;
 	pLocalStorage->lfReceiveTimeOut = lfReceiveTimeOut;
 	pLocalStorage->lfSendTimeOut = lfSendTimeOut;
 	
-	//if ( tConfig.lfTimeout > 0 )
-	//	pLocalStorage->lfReceiveTimeOut = tConfig.lfTimeout;
-	
-	//if ( tConfig.iNumberOfRetries > 0 )
-	//	pLocalStorage->iNumberOfCommunicationTry = tConfig.iNumberOfRetries;
-		
-	//strcpy( (char*)tConfigCommunication.szAddress , tConfig.szConnectionAddress );
-	//tConfigCommunication.iType = tConfig.iConfigType;
-	
-	//memcpy( szConfigBuffer , &tConfigCommunication , sizeof(tsConfigCommunication));
-	
-	FREE_STDERR_COPY_ERR( Communication_Init( pszConnectionName , pszAddress , &hCommunicationHandle ));
+	CHK_VSA( viOpenDefaultRM (&pLocalStorage->viOpenDefaultRM));
+	CHK_VSA( viOpen ( pLocalStorage->viOpenDefaultRM , pszAddress , VI_NULL, VI_NULL, &hCommunicationHandle ));
 	
 	pLocalStorage->hCommunicationHandle = hCommunicationHandle;
 		
-	FREE_STDERR_COPY_ERR( Communication_InstallAttributeSetCallBack( hCommunicationHandle , (pfAttributeCallBack) STD_CLI_Driver_Set_Attributes_CallBack , (void *)pShareHandle ));
+	IF (( STD_CLI_Driver_Set_Attributes_CallBack( hCommunicationHandle , pHandle )) , "Failed to configurate attributes" );
 	
-	FREE_STDERR_COPY_ERR( Communication_InstallReceiveCallBack( hCommunicationHandle , (pfReceiveCallBack)STD_CLI_Driver_Receive_CallBack , (void *)pShareHandle ));
+	iLowLevelTimeout = lfLowLevelReceiveTimeOut * 1E3;
 	
-	FREE_STDERR_COPY_ERR( Communication_InstallCloseCallBack( hCommunicationHandle , (pfCloseCallBack)STD_CLI_Driver_Close_CallBack , (void *)pShareHandle ));
-	FREE_STDERR_COPY_ERR( Communication_InstallErrorCallBack( hCommunicationHandle , (pfErrorCallBack)STD_CLI_Driver_Error_CallBack , (void *)pShareHandle ));
-
-	FREE_STDERR_COPY_ERR( Communication_SetPluggedInInitFailDelay( hCommunicationHandle , 1.0 )); //tConfig.lfInitFailWaitForDelay ));
-		
-	if ( pszConnectionName )
+	if ( iLowLevelTimeout > 0 )
 	{
-		STDF_CONFIG_VALUE("Ascii", VAL_INTEGER , 1 , bDB_Ascii , bDB_Ascii ); 
-		
-		sprintf( szFormatedLog , "COM_%s.log" , pszConnectionName );
-		FREE_STDERR_COPY_ERR( Communication_EnableLoging( hCommunicationHandle , 1 , szFormatedLog , bDB_Ascii , 0 ));
+		CHK_VSA( viSetAttribute ( hCommunicationHandle , VI_ATTR_TMO_VALUE , iLowLevelTimeout )); 
 	}
 	
-	FREE_STDERR_COPY_ERR( Communication_EnableReceive( pLocalStorage->hCommunicationHandle , 1 )); 	
-		
-	FREE_STDERR_COPY_ERR( Communication_FlushReceiveBuffer( pLocalStorage->hCommunicationHandle , 1 )); 
 	
-	pLocalStorage->bEnableAutoPlugIn = 1; 
-		
+	
+	if ( pszConnectionName )
+	{
+		sprintf( szLogFileName , "COM_%s.log" , pszConnectionName );
+	}
+	else
+	{
+		if ( pszAddress )
+			sprintf( szLogFileName , "COM_%s.log" , pszAddress );
+	}
+	
+	pLocalStorage->hFileHandle = OpenFile ( szLogFileName , VAL_READ_WRITE, VAL_TRUNCATE , VAL_BINARY);
+	
+	GetCurrentDateTime(&lfLogCurrentTime);
+	
+	FormatDateTimeString ( lfLogCurrentTime , "\r\n%H:%M:%S.%3f    Open        :    \r\n" , szLogFormated , 1024 );
+	
+	if ( pLocalStorage->hFileHandle )
+		WriteFile ( pLocalStorage->hFileHandle , szLogFormated , strlen(szLogFormated) ); 
+				
+	ProcessSystemEvents();
+	
 	if ( pszConnectionName )
 	{
 		sprintf( szFormatedLog , "Initializing \"%s\" Success %%s" ,  pszConnectionName );
@@ -755,6 +825,11 @@ Error:
 }
 
 
+
+/***********************************************************************************
+ * (CLI Driver) Close                                                              *
+ ***********************************************************************************/
+
 void*	DLLEXPORT		STD_CLI_Driver_Close(int *pHandle)
 {
 	STD_ERROR						StdError									=	{0};
@@ -763,12 +838,10 @@ void*	DLLEXPORT		STD_CLI_Driver_Close(int *pHandle)
 	
 	int								handle										=	0;
 	
-	double							lfCurrentTime								=	0.0,
-									lfStartTime									=	0.0;
+	char							szFormatedLog[LOW_STRING]					=	{0},
+									szLogFormated[STD_STRING]					=	{0}; 
 	
-	int								bClosed										=	0;
-	
-	char							szFormatedLog[LOW_STRING]					=	{0};
+	double							lfLogCurrentTime							=	0.0; 
 
 	tsSTD_CallBackSet				tSTD_CallBackSet							=	{0};
 	
@@ -785,36 +858,18 @@ void*	DLLEXPORT		STD_CLI_Driver_Close(int *pHandle)
 	sprintf( szFormatedLog , "%s :: Close communication %%s" ,  pLocalStorage->ptCallbacks->szName );
 	STDF_COMMENT(0,szFormatedLog,"On Slot N%d");
 	
-	FREE_STDERR_COPY_ERR( Communication_Close( pLocalStorage->hCommunicationHandle ));
+	if ( pLocalStorage->hCommunicationHandle )
+		viClose ( pLocalStorage->hCommunicationHandle );
 
-	GetCurrentDateTime(&lfStartTime);
-	
-	do
-	{
-		GetCurrentDateTime(&lfCurrentTime);
-		
-		if (( lfCurrentTime - lfStartTime ) > 10.0 )
-			break;
-		
-		if ( CmtGetTSVPtr ( handle , &pLocalStorage ) == 0 )
-		{
-			bClosed = pLocalStorage->bClosed;
-		
-			CmtReleaseTSVPtr ( handle );
-		}
-		
-		if ( bClosed )
-			break;
-		
-		DelayWithEventProcessing(1.0);
-		
-	} while(!bClosed);
+	CHK_CMT( CmtReleaseTSVPtr ( handle ));
 	
 Error:
 	
-	if ( handle )
+	if ( handle && ( CmtGetTSVPtr ( handle , &pLocalStorage ) == 0 ))
 	{
 		*pHandle = 0;
+		
+		FREE(pLocalStorage->pszAddress);
 		
 		FREE(pLocalStorage->pSTD_CLI_CommandList);
 		
@@ -823,16 +878,30 @@ Error:
 		FREE(pLocalStorage->pBuffer);
 		
 		FREE(pLocalStorage->ptCallbacks);
+		
+		if ( pLocalStorage->hFileHandle )   
+		{
+			GetCurrentDateTime(&lfLogCurrentTime);
+			FormatDateTimeString ( lfLogCurrentTime , "\r\n\r\n%H:%M:%S.%3f    Close.\r\n\r\n" , szLogFormated , 1023 );
+		
+			WriteFile ( pLocalStorage->hFileHandle , szLogFormated , strlen(szLogFormated) );
 
-		CmtReleaseTSVPtr ( handle );
+			CloseFile( pLocalStorage->hFileHandle ); 
+		}
+		
+		CmtReleaseTSVPtr ( handle );	    
 	
 		CmtDiscardTSV ( handle );
-
 	}
 	
 	RETURN_STDERR_POINTER;
 }
 
+
+
+/***********************************************************************************
+ * (CLI Driver) GetConnectionAddress                                               *
+ ***********************************************************************************/
 
 void*   DLLEXPORT       STD_CLI_Driver_GetConnectionAddress( int hHandle , char	**szAddress )
 {
@@ -844,7 +913,7 @@ void*   DLLEXPORT       STD_CLI_Driver_GetConnectionAddress( int hHandle , char	
 	
 	CHK_CMT( CmtGetTSVPtr ( hHandle , &pLocalStorage ));
 	
-	FREE_STDERR_COPY_ERR( Communication_GetConnectionAddress( pLocalStorage->hCommunicationHandle , szAddress ));
+//	FREE_STDERR_COPY_ERR( Communication_GetConnectionAddress( pLocalStorage->hCommunicationHandle , szAddress ));
 	
 Error:
 	
@@ -855,20 +924,22 @@ Error:
 }
 
 
+/***********************************************************************************
+ *(CLI Driver) Send_Patern                                                         *
+ ***********************************************************************************/
 
-void*   DLLEXPORT       STD_CLI_Driver_Send_Patern( int hCommunicationHandle , tsSTD_CLI_CommandItem tCommandItem , void *pValue , int iValueLength , int iValueSize )
+void*   DLLEXPORT       STD_CLI_Driver_Send_Patern( int hCommunicationHandle , int hFileHandle , tsSTD_CLI_CommandItem tCommandItem , void *pValue , int iValueLength , int iValueSize ,double lfDelaySendingCommands ,  *pbSentStatus )
 {
 	STD_ERROR				StdError											=	{0};
 
-	char					*pPrepereSendBuffer									=	NULL,
+	char					*pPrepareSendBuffer									=	NULL,
 							*pSendBuffer										=	NULL;
 							
 	unsigned int			iMaxAllocationSize									=	0,
 							iCurrentAllocationSize								=	0,
 							index												=	0,
 							copy_index											=	0,
-							iContinuesCount										=	0, 
-							bParameterExists									=	0;
+							iContinuesCount										=	0;
 	
 	char					**pValuesArray										=	NULL;
 	
@@ -896,8 +967,6 @@ void*   DLLEXPORT       STD_CLI_Driver_Send_Patern( int hCommunicationHandle , t
 	{
 		iCurrentAllocationSize = strlen( tCommandItem.tSendParameters[index].szDefaultValue);
 		
-		tConvertValue.uqWord = atol( tCommandItem.tSendParameters[index].szDefaultValue );
-		
 		if ( pValue && iValueLength && iValueSize )
 		{
 			if ( iValueSize == sizeof(char))
@@ -922,97 +991,128 @@ void*   DLLEXPORT       STD_CLI_Driver_Send_Patern( int hCommunicationHandle , t
 				}
 			}
 			
-			bParameterExists = 1;
 		}
 		else
-			bParameterExists = 0;
-		
-		CALLOC_COPY_ERR( pValuesArray[index] , iCurrentAllocationSize + 100 , sizeof(char) , tCommandItem.tSendParameters[index].szDefaultValue , strlen(tCommandItem.tSendParameters[index].szDefaultValue)); 
-		
-		if ( bParameterExists )
 		{
-			switch( tCommandItem.tSendParameters[index].iParametersType ) // 1 - int , 2 - long , 3 - double , 4 - string    
+			switch( tCommandItem.tSendParameters[index].iParametersType )
 			{
 				case 1:
-					switch( iValueSize )
-					{
-						case 2:
-							sprintf( pValuesArray[index] , tCommandItem.tSendParameters[index].szFormatValue , tConvertValue.sWord );    
-							break;
-						
-						case 4:
-							sprintf( pValuesArray[index] , tCommandItem.tSendParameters[index].szFormatValue , tConvertValue.sdWord );    
-							break; 
-						
-						case 8:
-							sprintf( pValuesArray[index] , tCommandItem.tSendParameters[index].szFormatValue , tConvertValue.sqWord );    
-							break;
-							
-						default:
-							break;
-					}
+					sscanf( tCommandItem.tSendParameters[index].szDefaultValue , "%d" , &(tConvertValue.sdWord) );  
+					iValueSize = sizeof(int);
 					break;
-					
 				case 2:
-					switch( iValueSize )
-					{
-						case 2:
-							sprintf( pValuesArray[index] , tCommandItem.tSendParameters[index].szFormatValue , tConvertValue.sWord );    
-							break;
-						
-						case 4:
-							sprintf( pValuesArray[index] , tCommandItem.tSendParameters[index].szFormatValue , tConvertValue.sdWord );    
-							break; 
-						
-						case 8:
-							sprintf( pValuesArray[index] , tCommandItem.tSendParameters[index].szFormatValue , tConvertValue.sqWord );    
-							break;
-							
-						default:
-							break;
-					}
+					sscanf( tCommandItem.tSendParameters[index].szDefaultValue , "%lld" , &(tConvertValue.sqWord) );  
+					iValueSize = sizeof(long long);
 					break;
 				case 3:
-					switch( iValueSize )
-					{
-						case 8:
-							sprintf( pValuesArray[index] , tCommandItem.tSendParameters[index].szFormatValue , tConvertValue.lfWord );    
-							break;
-						default:
-							break;
-					}
+					sscanf( tCommandItem.tSendParameters[index].szDefaultValue , "%lf" , &(tConvertValue.lfWord) );  
+					iValueSize = sizeof(double);
 					break;
-					
 				case 4:
-					switch( iValueSize )
-					{
-						case 1:
-							
-							if ( pStringData && strlen( pStringData ))
-								sprintf( pValuesArray[index] , tCommandItem.tSendParameters[index].szFormatValue , pStringData );    
-							
-							break;
-						default:
-							break;
-					}
-					break;
+					pStringData = tCommandItem.tSendParameters[index].szDefaultValue;
+					iValueSize = iCurrentAllocationSize;
+					break;	
+				case 5:
+					sscanf( tCommandItem.tSendParameters[index].szDefaultValue , "%lld" , &(tConvertValue.sqWord) );  
+					iValueSize = sizeof(long long);
+					break;	
+					
 				default:
-					break;
+					pStringData = tCommandItem.tSendParameters[index].szDefaultValue;
+					iValueSize = iCurrentAllocationSize;
+					break;						
+					
 			}
 		}
+			
+		CALLOC_COPY_ERR( pValuesArray[index] , iCurrentAllocationSize + 100 , sizeof(char) , tCommandItem.tSendParameters[index].szDefaultValue , strlen(tCommandItem.tSendParameters[index].szDefaultValue)); 
 		
-		iMaxAllocationSize += iCurrentAllocationSize + strlen(pValuesArray[index]);
+		switch( tCommandItem.tSendParameters[index].iParametersType ) // 1 - int , 2 - long , 3 - double , 4 - string    
+		{
+			case 1:
+				switch( iValueSize )
+				{
+					case 2:
+						sprintf( pValuesArray[index] , tCommandItem.tSendParameters[index].szFormatValue , tConvertValue.sWord );    
+						break;
+					
+					case 4:
+						sprintf( pValuesArray[index] , tCommandItem.tSendParameters[index].szFormatValue , tConvertValue.sdWord );    
+						break; 
+					
+					case 8:
+						sprintf( pValuesArray[index] , tCommandItem.tSendParameters[index].szFormatValue , tConvertValue.sqWord );    
+						break;
+						
+					default:
+						break;
+				}
+				break;
+				
+			case 2:
+				switch( iValueSize )
+				{
+					case 2:
+						sprintf( pValuesArray[index] , tCommandItem.tSendParameters[index].szFormatValue , tConvertValue.sWord );    
+						break;
+					
+					case 4:
+						sprintf( pValuesArray[index] , tCommandItem.tSendParameters[index].szFormatValue , tConvertValue.sdWord );    
+						break; 
+					
+					case 8:
+						sprintf( pValuesArray[index] , tCommandItem.tSendParameters[index].szFormatValue , tConvertValue.sqWord );    
+						break;
+						
+					default:
+						break;
+				}
+				break;
+			case 3:
+				switch( iValueSize )
+				{
+					case 8:
+						sprintf( pValuesArray[index] , tCommandItem.tSendParameters[index].szFormatValue , tConvertValue.lfWord );    
+						break;
+					default:
+						break;
+				}
+				break;
+				
+			case 4:
+				switch( iValueSize )
+				{
+					case 1:
+						
+						if ( pStringData && strlen( pStringData ))
+							sprintf( pValuesArray[index] , tCommandItem.tSendParameters[index].szFormatValue , pStringData );    
+						
+						break;
+					default:
+						break;
+				}
+				break;
+			case 5:
+				
+				memcpy( pValuesArray[index] , &(tConvertValue) , iValueSize );
+				break;
+				
+			default:
+				break;
+		}
+		
+	//	iMaxAllocationSize += iCurrentAllocationSize + strlen(pValuesArray[index]);
 	}
 	
-	CALLOC_ERR( pPrepereSendBuffer , iMaxAllocationSize + 10 , 1 );
+	CALLOC_ERR( pPrepareSendBuffer , iMaxAllocationSize + 10 , 1 );
 	
-	strcpy((char*)pPrepereSendBuffer , tCommandItem.szSendCommandFormated );
+	strcpy((char*)pPrepareSendBuffer , tCommandItem.szSendCommandFormated );
 	
 	for ( index = 0; index < tCommandItem.iSendNumberOfParameters ; index++ ) 
 	{
 		iValueLength = strlen(pValuesArray[index]);
 			
-		pStartParam = strstr((char*) pPrepereSendBuffer , "%s" );
+		pStartParam = strstr((char*) pPrepareSendBuffer , "%s" );
 		
 		if ( pStartParam )
 		{
@@ -1035,24 +1135,25 @@ void*   DLLEXPORT       STD_CLI_Driver_Send_Patern( int hCommunicationHandle , t
 		}
 	}
 	
-	FREE_STDERR_COPY_ERR( Communication_SetTerminatingPattern( hCommunicationHandle, "\r" , 1 ));  
-	
-	pRespondsFormated = StringReplaceAll( tCommandItem.szRespondsFormated , "\\r" , "\r" , NULL ); 							   
+//	FREE_STDERR_COPY_ERR( SetTerminatingPattern( hCommunicationHandle, "\r" , 1 ));  		 
+																										   
+	pRespondsFormated = StringReplaceAll( tCommandItem.szRespondsFormated , "\\r" , "\r" , NULL ); 		// (how much bytes i expect to receive) may be not actual					   
 																															   
 	pResponds = StringReplaceAll( pRespondsFormated , "\\n" , "\n" , NULL );
 																															   
 	if ( pResponds )
 		iRespondsLength = strlen( pResponds );
 		
-	pSendBuffer = StringReplaceAll( pPrepereSendBuffer , "\\n" , "\n" , NULL );
+	pSendBuffer = StringReplaceAll( pPrepareSendBuffer , "\\n" , "\n" , NULL );
 	
-	FREE( pPrepereSendBuffer );
+	FREE( pPrepareSendBuffer );
 	
-	pPrepereSendBuffer = pSendBuffer;
+	pPrepareSendBuffer = pSendBuffer;
 	
-	pSendBuffer = StringReplaceAll( pPrepereSendBuffer , "\\r" , "\r" , NULL ); 
+	pSendBuffer = StringReplaceAll( pPrepareSendBuffer , "\\r" , "\r" , NULL ); 
 	
-	FREE_STDERR_COPY_ERR( Communication_Send( hCommunicationHandle , pSendBuffer , strlen(pSendBuffer) , iRespondsLength ));         
+	Send( hCommunicationHandle ,  hFileHandle , pSendBuffer , strlen(pSendBuffer) , lfDelaySendingCommands , pbSentStatus);
+	
 	
 Error:
 	
@@ -1060,7 +1161,7 @@ Error:
 	
 	FREE( pResponds );
 	
-	FREE( pPrepereSendBuffer );
+	FREE( pPrepareSendBuffer );
 	
 	FREE( pSendBuffer );
 	
@@ -1072,6 +1173,10 @@ Error:
 }
 
 ///--------------------- API ------------------------------//
+
+/***********************************************************************************
+ *(CLI Driver) Set Value                                                           *
+ ***********************************************************************************/
 
 void*   DLLEXPORT   STD_CLI_Driver_SetValue( int hHandle , char *pCommandName , void *pValue , int iValueLength , int iValueSize , ...  )
 {
@@ -1088,13 +1193,13 @@ void*   DLLEXPORT   STD_CLI_Driver_SetValue( int hHandle , char *pCommandName , 
 	double						lfStartTime											=	0.0,
 								lfCurrentTime										=	0.0;
 	
-	int							iTryCounter											=	0;
+	int							iTryCounter											=	0,
+							    iCommandLength										=	0;
 	
 	char						szLog[1024]											=	{0};
 	
 	int							bDataUpdated										=	0, 
 								bDataUpdateFailed									=	0, 
-								bPluggedInStatus									=	0,  
 								bSentSuccessfully									=	0; 
 									
 	double						lfWaitForConnectionTimeout							=	0.0;
@@ -1114,28 +1219,8 @@ void*   DLLEXPORT   STD_CLI_Driver_SetValue( int hHandle , char *pCommandName , 
 	
 	lfWaitForConnectionTimeout = (double)tLocalStorage.iNumberOfCommunicationTry * tLocalStorage.lfReceiveTimeOut;
 		
-	do
-	{
-		FREE_STDERR_COPY( Communication_GetPluggedInStatus( tLocalStorage.hCommunicationHandle , &bPluggedInStatus ));  
-
-		if ( bPluggedInStatus == 0 )
-			break;
-		
-		CHK_CMT( CmtReleaseTSVPtr ( hHandle ));
-					
-		DelayWithEventProcessing(0.2);
 	
-		CHK_CMT( CmtGetTSVPtr ( hHandle , &pLocalStorage ));
-			
-		GetCurrentDateTime(&lfCurrentTime);
-			
-	} while((lfCurrentTime-lfStartTime) < lfWaitForConnectionTimeout );
-
-	IF (( bPluggedInStatus ) , "Communication is not established");
-	
-	//STDF_UPDATE_CALLBACK_DATA(tLocalStorage.tCallbacks); 
-	
-	for ( iCommandIndex = 0 ; iCommandIndex < tLocalStorage.listSize ; iCommandIndex++ )
+	for ( iCommandIndex = 0 ; iCommandIndex < tLocalStorage.listSize ; iCommandIndex++ )								//find command
 		if ( strcmp( pCommandName , tLocalStorage.pSTD_CLI_CommandList[iCommandIndex].szCommandName ) == 0 )
 		{
 			bCommandFound = 1;
@@ -1151,14 +1236,20 @@ void*   DLLEXPORT   STD_CLI_Driver_SetValue( int hHandle , char *pCommandName , 
 	
 	for ( iTryCounter = 0 ; iTryCounter < tLocalStorage.iNumberOfCommunicationTry ; iTryCounter++ )
 	{
-		FREE_STDERR_COPY_ERR( STD_CLI_Driver_Send_Patern( tLocalStorage.hCommunicationHandle , tLocalStorage.pSTD_CLI_CommandList[iCommandIndex] , pValue , iValueLength , iValueSize )); 
+		iCommandLength = strlen ( tLocalStorage.pSTD_CLI_CommandList[iCommandIndex].szSendCommandFormated);
+		if ( strlen ( tLocalStorage.pSTD_CLI_CommandList[iCommandIndex].szSendCommandFormated) !=0 )
+		{
+		FREE_STDERR_COPY_ERR( STD_CLI_Driver_Send_Patern( tLocalStorage.hCommunicationHandle , tLocalStorage.hFileHandle, tLocalStorage.pSTD_CLI_CommandList[iCommandIndex] , pValue , iValueLength , iValueSize ,tLocalStorage.lfDelaySendingCommands , &bSentSuccessfully)); 
+		}
 		
-		FREE_STDERR_COPY( Communication_GetSendStatus ( tLocalStorage.hCommunicationHandle , &bSentSuccessfully ));   
+		else
+		{
+			bSentSuccessfully = 1; 	
+		}
 		
-		if ( bSentSuccessfully == 0 )
-			continue;
+		GetCurrentDateTime(&lfStartTime);  
 		
-		if ( IS_NOT_OK )
+		if ( IS_NOT_OK )	  //check the error
 		{
 			OutputDebugString("\t\tUUT Driver Error : Can't send command.");   
 			DelayWithEventProcessing(5.0);
@@ -1167,13 +1258,15 @@ void*   DLLEXPORT   STD_CLI_Driver_SetValue( int hHandle , char *pCommandName , 
 			continue;
 		}
 		
-		if (  IS_NOT_OK )
+		if (  IS_NOT_OK || ( bSentSuccessfully == 0 ))
 			continue;
 		
-		GetCurrentDateTime(&lfStartTime); 
+		//may be need to place delay 
 		
 		do
 		{
+			STD_CLI_Driver_Receive_CallBack( hHandle ); 	
+			
 			CHK_CMT( CmtGetTSVPtr ( hHandle , &pLocalStorage )); 
 		
 			if ( pLocalStorage->pLastError )
@@ -1182,7 +1275,7 @@ void*   DLLEXPORT   STD_CLI_Driver_SetValue( int hHandle , char *pCommandName , 
 			}
 			
 			bDataUpdated = pLocalStorage->bDataUpdated;
-			bDataUpdateFailed = pLocalStorage->bDataUpdated;
+			bDataUpdateFailed = pLocalStorage->bDataUpdateFailed;
 			
 			CHK_CMT(CmtReleaseTSVPtr ( hHandle ));            
 			
@@ -1193,10 +1286,11 @@ void*   DLLEXPORT   STD_CLI_Driver_SetValue( int hHandle , char *pCommandName , 
 			
 		} while((lfCurrentTime-lfStartTime) < tLocalStorage.lfReceiveTimeOut );
 		
-		if ((IS_OK) && bSentSuccessfully && ( bDataUpdateFailed == 0 ) ) 
+		if ((IS_OK) && bSentSuccessfully && ( bDataUpdateFailed == 0 )) 
 			break;
 	}
 	
+	IF ( bDataUpdateFailed , "Uncorrect answer received" );
 Error:
 
 	if ((IS_OK) && bSentSuccessfully ) 
@@ -1210,7 +1304,10 @@ Error:
 }
 
 
-
+/***********************************************************************************
+ * (CLI Driver) GetValue			                                               *
+ ***********************************************************************************/
+/*
 void*   DLLEXPORT   STD_CLI_Driver_GetValue( int hHandle , char **pGetCommandName , void **pGetValue , int *piValueLength , int *piValueSize, ...  )    
 {
 	STD_ERROR					StdError											=	{0};
@@ -1297,7 +1394,7 @@ void*   DLLEXPORT   STD_CLI_Driver_GetValue( int hHandle , char **pGetCommandNam
 	
 Error:
 
-	if ( StdError.error == 0 )
+/*	if ( StdError.error == 0 )
 	{
 		if ( CmtGetTSVPtr ( hHandle , &pLocalStorage ) == 0 )
 		{
@@ -1306,14 +1403,304 @@ Error:
 				UPDATERR( *pLocalStorage->pLastError );
 			}
 	
-			memset( &(pLocalStorage->pLastError) , 0 , sizeof(STD_ERROR)); 
+			memset( &(pLocalStorage->pLastError) , 0 , sizeof(STD_ERROR));   //kills tread
 			
 			CmtReleaseTSVPtr ( hHandle );
 		}
+	}	 */
+	
+/*	RETURN_STDERR_POINTER;
+}
+
+ */
+
+
+
+/***********************************************************************************
+ * (CLI Driver) GetValue			                                               *
+ ***********************************************************************************/
+
+void*   DLLEXPORT   STD_CLI_Driver_GetValue( int hHandle , char **pGetCommandName , void **pGetValue , int *piValueLength , int *piValueSize, ...  )    
+{
+	STD_ERROR					StdError											=	{0};
+	
+	tsLocalStorage				*pLocalStorage										=	NULL,			
+								tLocalStorage										=	{0};
+	
+	tsSTD_CLI_CommandItem		tCommandItem										=   {0};	 
+
+	tuConvert					tConvertValue;
+
+	char						szFormatedLog[LOW_STRING]							=	{0};
+								
+	double						lfStartTime											=	0.0,
+								lfCurrentTime										=	0.0;
+	
+	int							index												=	0;
+	
+	int							bSameType											=	0;
+	
+	int							iFirstType											=	0,
+								iValueSize											=	0,  
+								iLastSentCommandIndex								=	0;
+
+	int							*pGetIntValue										=   NULL;
+	
+	double						*pGetDoubleValue									=	NULL;
+	
+	long long					*pGetLongValue										=	NULL;
+	
+	char						*pGetStringValue									=	NULL;
+					
+	char						*pSourceBuffer										=	NULL; 
+		
+	void						*pData												=	NULL;
+	
+	void						**pParametersArray									=	NULL;
+	
+	tsSTD_CallBackSet			tSTD_CallBackSet									=	{0};
+
+	IF (( hHandle == 0 ) , "handle can't be zero." );
+	
+	CHK_CMT( CmtGetTSVPtr ( hHandle , &pLocalStorage ));
+	memcpy( &tLocalStorage , pLocalStorage , sizeof(tsLocalStorage));
+	CHK_CMT(CmtReleaseTSVPtr ( hHandle ));   
+	
+	if ( piValueLength )
+		*piValueLength = 0;
+						
+	STDF_UPDATE_CALLBACK_DATA(tLocalStorage.ptCallbacks);
+	
+	iLastSentCommandIndex = tLocalStorage.iLastSentCommandIndex;
+	
+	if ( pGetCommandName )
+	{
+		FREE_CALLOC_COPY_STRING( *pGetCommandName , tLocalStorage.pSTD_CLI_CommandList[iLastSentCommandIndex].szCommandName );
 	}
+		
+	GetCurrentDateTime(&lfStartTime);
+
+	do
+	{
+		ProcessSystemEvents();
+		
+		CHK_CMT( CmtGetTSVPtr ( hHandle , &pLocalStorage ));
+		memcpy( &tLocalStorage , pLocalStorage , sizeof(tsLocalStorage));
+		CHK_CMT(CmtReleaseTSVPtr ( hHandle ));   
+	
+		if ( tLocalStorage.bDataUpdated )
+			break;
+		
+		if ( tLocalStorage.pLastError->error ) 
+			break;
+		
+		GetCurrentDateTime(&lfCurrentTime);
+		
+	} while((lfCurrentTime-lfStartTime) < tLocalStorage.lfReceiveTimeOut );
+	
+	if ((lfCurrentTime-lfStartTime) >= tLocalStorage.lfReceiveTimeOut )
+		OutputDebugString("\t\tUUT Driver Error : Receive timeout."); 
+		
+	if ( tLocalStorage.bDataUpdated )
+	{
+		tCommandItem = tLocalStorage.pSTD_CLI_CommandList[iLastSentCommandIndex]; 
+		
+		if	( tCommandItem.iReceiveNumberOfParameters > 0 )
+		{
+			pSourceBuffer = tLocalStorage.pBuffer;
+		
+			bSameType = 1;
+			iFirstType = tCommandItem.tReceiveParameters[0].iParametersType;
+		
+			for ( index = 0; index <  tCommandItem.iReceiveNumberOfParameters; index++)  
+				if ( iFirstType != tCommandItem.tReceiveParameters[index].iParametersType )
+					bSameType = 0;
+		
+			if ( bSameType )
+			{   
+				switch( iFirstType )
+				{
+					case 1:
+						iValueSize = sizeof(int);
+						break;
+					case 2:
+						iValueSize = sizeof(long long);
+						break;
+					case 3:
+						iValueSize = sizeof(double);
+						break;
+					case 4:
+						iValueSize = tLocalStorage.iBufferLength;
+						break;	
+					case 5:
+						iValueSize = tLocalStorage.iBufferLength;
+						break;	
+					
+					default:
+						iValueSize = tLocalStorage.iBufferLength;
+						break;						
+					
+				}
+			
+				CALLOC_ERR( pParametersArray , tCommandItem.iReceiveNumberOfParameters , iValueSize );
+				
+				if ( piValueSize )
+					*piValueSize = iValueSize;
+				
+				if ( piValueLength )
+					*piValueLength = tCommandItem.iReceiveNumberOfParameters;
+				
+				if ( tCommandItem.iReceiveNumberOfParameters == 1 )
+				{
+					if ( iFirstType > 3 )
+					{
+						if ( piValueLength )
+							*piValueLength = iValueSize;	
+						
+						if ( piValueSize )
+							*piValueSize = 1;
+					}
+				}
+			}
+			else
+			{
+				CALLOC_ERR( pParametersArray , tCommandItem.iReceiveNumberOfParameters , sizeof(void*) );
+				
+				*piValueSize = 11;
+			}
+			
+			for ( index = 0; index <  tCommandItem.iReceiveNumberOfParameters; index++)
+			{
+				FREE(pData);
+				
+				pData = String_Parsing ( pSourceBuffer , tCommandItem.tReceiveParameters[index].szStartPatern , tCommandItem.tReceiveParameters[index].szStopPatern , &pSourceBuffer ); 
+				
+				if ( pData == NULL )
+					break;
+				
+				if ( tCommandItem.iReceiveNumberOfParameters > 1 )
+					if ( piValueLength )
+						*piValueLength = index + 1;
+								
+				switch( tCommandItem.tReceiveParameters[index].iParametersType ) // 1 - int , 2 - long , 3 - double , 4 - string 5 - Binary   
+				{
+					case 1:
+					
+						sscanf( pData , "%d" , &tConvertValue.udWord );    
+					
+						if ( bSameType )
+						{
+							((int*)pParametersArray)[index] = tConvertValue.udWord;
+						}
+						else
+						{
+							CALLOC_ERR( pGetIntValue , 1 , sizeof(int) );  	
+							pParametersArray[index] = pGetIntValue;
+							*pGetIntValue = tConvertValue.udWord;
+						}
+						
+						break;
+				
+					case 2:
+						sscanf( pData , "%lld" , &tConvertValue.sqWord );    
+					
+						if ( bSameType )
+						{
+							((long long*)pParametersArray)[index] = tConvertValue.sqWord;
+						}
+						else
+						{
+							CALLOC_ERR( pGetLongValue , 1 , sizeof(long long) );  	
+							pParametersArray[index] = pGetLongValue;
+							*pGetLongValue = tConvertValue.sqWord;
+						}
+						
+						break;
+						
+					case 3:
+						sscanf( pData , "%lf" , &tConvertValue.lfWord );    
+					
+						if ( bSameType )
+						{
+							((double*)pParametersArray)[index] = tConvertValue.lfWord;
+						}
+						else
+						{
+							CALLOC_ERR( pGetDoubleValue , 1 , sizeof(double) );  	
+							pParametersArray[index] = pGetDoubleValue;
+							*pGetDoubleValue = tConvertValue.lfWord;
+						}
+
+						break;
+				
+					case 4:
+						
+						if ( tCommandItem.iReceiveNumberOfParameters == 1 )
+						{
+							memcpy((char*)pParametersArray , pData, strlen(pData));
+						}
+						else
+						{
+							CALLOC_COPY_ERR( pGetStringValue , 1 , strlen(pData) , pData , strlen(pData) );  	
+							pParametersArray[index] = pGetStringValue;
+						}
+					
+						break;
+						
+					case 5:
+				
+						if ( tCommandItem.iReceiveNumberOfParameters == 1 )
+						{
+							memcpy ((char*)pParametersArray , pData, strlen(pData));
+						}
+						else
+						{
+							CALLOC_COPY_ERR( pGetStringValue , 1 , strlen(pData) , pData , strlen(pData) );  	
+							pParametersArray[index] = pGetStringValue;
+						}
+					
+						break;				
+					default:
+						break;
+				}		   
+			
+				
+			}
+		
+			*pGetValue = (void**)pParametersArray;
+		
+		}
+
+		CHK_CMT( CmtGetTSVPtr ( hHandle , &pLocalStorage )); 
+		pLocalStorage->bDataUpdated = 0;
+		CHK_CMT(CmtReleaseTSVPtr ( hHandle ));   
+		
+		sprintf( szFormatedLog , "%s :: Has Received respond of command [%s] %%s" ,  tLocalStorage.ptCallbacks->szName , tLocalStorage.pSTD_CLI_CommandList[iLastSentCommandIndex].szCommandName );
+	
+		STDF_COMMENT(0,szFormatedLog,"On Slot N%d");  
+	
+	}
+	else
+	{
+	
+		sprintf( szFormatedLog , "%s :: Hasn't Received respond of command [%s] %%s" ,  tLocalStorage.ptCallbacks->szName , tLocalStorage.pSTD_CLI_CommandList[iLastSentCommandIndex].szCommandName );
+	
+		STDF_COMMENT(0,szFormatedLog,"On Slot N%d");  
+	}
+	
+Error:
+
+	
+	FREE(pData);
 	
 	RETURN_STDERR_POINTER;
 }
+
+
+
+/***********************************************************************************
+ * (CLI Driver) GetValue Extended			                                       *
+ ***********************************************************************************/
 
 void*   DLLEXPORT   STD_CLI_Driver_GetValue_Ex( int hHandle , char *pCommandName , void **pGetValue , int *piValueLength , int *piValueSize, ...  )    
 {
@@ -1323,30 +1710,25 @@ void*   DLLEXPORT   STD_CLI_Driver_GetValue_Ex( int hHandle , char *pCommandName
 								tLocalStorage										=	{0};			
 
 	int							bCommandFound										=	0,
-								iCommandIndex										=	0,
-								iValueCounter										=	0,
-								index												=	0; 
+								iCommandIndex										=	0; 
 									
 	double						lfStartTime											=	0.0,
-								lfCurrentTime										=	0.0,
-								lfTimeout											=	0.0;
+								lfCurrentTime										=	0.0;
 									
-	int							iTryCounter											=	0,
-								bNotFound											=	0;
+	int							iTryCounter											=	0;
 	
 	char						szLog[1024]											=	{0};
+	char						szFormatedLog[LOW_STRING]							=	{0};
 	
-	int							bPluggedInStatus									=	0,  
-								bSentSuccessfully									=	0; 
+	int							bDataUpdated										=	0, 
+								bDataUpdateFailed									=	0, 
+								bSentSuccessfully									=	0;  
 									
 	double						lfWaitForConnectionTimeout							=	0.0;
+	int							iLastSentCommandIndex								=	0;
 	
 	tsSTD_CallBackSet			tSTD_CallBackSet									=	{0};
-	
-	char						*pNext												=	NULL,
-								*pValue												=	NULL,
-								*pSentCommand										=	NULL,
-								*pTemp												=	NULL;
+
 									
 	IF (( hHandle == 0 ) , "handle can't be zero." );
 	IF (( pCommandName == NULL ) , "CommandName can't be NULL." ); 
@@ -1363,25 +1745,7 @@ void*   DLLEXPORT   STD_CLI_Driver_GetValue_Ex( int hHandle , char *pCommandName
 	GetCurrentDateTime(&lfStartTime); 
 	
 	lfWaitForConnectionTimeout = (double)tLocalStorage.iNumberOfCommunicationTry * tLocalStorage.lfReceiveTimeOut;
-		
-	do
-	{
-		FREE_STDERR_COPY( Communication_GetPluggedInStatus( tLocalStorage.hCommunicationHandle , &bPluggedInStatus ));  
-
-		if ( bPluggedInStatus == 0 )
-			break;
-		
-		CHK_CMT( CmtReleaseTSVPtr ( hHandle ));
-					
-		DelayWithEventProcessing(0.2);
 	
-		CHK_CMT( CmtGetTSVPtr ( hHandle , &pLocalStorage ));
-			
-		GetCurrentDateTime(&lfCurrentTime);
-			
-	} while((lfCurrentTime-lfStartTime) < lfWaitForConnectionTimeout );
-
-	IF (( bPluggedInStatus ) , "Communication is not established");
 	
 	for ( iCommandIndex = 0 ; iCommandIndex < tLocalStorage.listSize ; iCommandIndex++ )
 		if ( strcmp( pCommandName , tLocalStorage.pSTD_CLI_CommandList[iCommandIndex].szCommandName ) == 0 )
@@ -1394,13 +1758,14 @@ void*   DLLEXPORT   STD_CLI_Driver_GetValue_Ex( int hHandle , char *pCommandName
 		
 	CHK_CMT( CmtGetTSVPtr ( hHandle , &pLocalStorage ));  
 	pLocalStorage->iLastSentCommandIndex = iCommandIndex;
+	pLocalStorage->bDataUpdated = 0;  
 	CHK_CMT(CmtReleaseTSVPtr ( hHandle )); 
 	
 	GetCurrentDateTime(&lfStartTime);
 		
 	for ( iTryCounter = 0 ; iTryCounter < tLocalStorage.iNumberOfCommunicationTry ; iTryCounter++ )
 	{
-		FREE_STDERR_COPY_ERR( STD_CLI_Driver_Send_Patern( tLocalStorage.hCommunicationHandle , tLocalStorage.pSTD_CLI_CommandList[iCommandIndex] , NULL , 0 , 0 )); 
+	FREE_STDERR_COPY_ERR( STD_CLI_Driver_Send_Patern( tLocalStorage.hCommunicationHandle , tLocalStorage.hFileHandle, tLocalStorage.pSTD_CLI_CommandList[iCommandIndex] , NULL , 0 , 0 ,tLocalStorage.lfDelaySendingCommands , &bSentSuccessfully));
 		
 		if ( IS_NOT_OK )
 		{
@@ -1411,17 +1776,14 @@ void*   DLLEXPORT   STD_CLI_Driver_GetValue_Ex( int hHandle , char *pCommandName
 			continue;
 		}
 		
-		if (  IS_NOT_OK )
+		if (  IS_NOT_OK || ( bSentSuccessfully == 0 ))
 			continue;
 		
 		do
 		{
-			ProcessSystemEvents();
+//			ProcessSystemEvents();
 			
-			FREE_STDERR_COPY( Communication_GetSendStatus ( tLocalStorage.hCommunicationHandle , &bSentSuccessfully ));
-			
-			if ( bSentSuccessfully )
-				break;
+			STD_CLI_Driver_Receive_CallBack( hHandle ); 
 			
 			CHK_CMT( CmtGetTSVPtr ( hHandle , &pLocalStorage )); 
 		
@@ -1430,117 +1792,81 @@ void*   DLLEXPORT   STD_CLI_Driver_GetValue_Ex( int hHandle , char *pCommandName
 				UPDATERR( *(pLocalStorage->pLastError) ); 
 			}
 			
+			bDataUpdated = pLocalStorage->bDataUpdated;
+			bDataUpdateFailed = pLocalStorage->bDataUpdateFailed;
+			
 			CHK_CMT(CmtReleaseTSVPtr ( hHandle ));            
 			
-			if ( IS_NOT_OK )
+			if ((IS_NOT_OK) || bDataUpdated ) 
 				break;
 			
 			GetCurrentDateTime(&lfCurrentTime);
 			
 		} while((lfCurrentTime-lfStartTime) < tLocalStorage.lfSendTimeOut );
 		
-		if ((IS_OK) && bSentSuccessfully ) 
+		if ((IS_OK) && bSentSuccessfully && ( bDataUpdateFailed == 0 ) ) 
 			break;
 	}
 	
-	IF (( tLocalStorage.pSourceBuffer == NULL ) , "No responds" );
-	
-	if ( tLocalStorage.pSTD_CLI_CommandList[bCommandFound].iReceiveNumberOfParameters )
+		
+	   GetCurrentDateTime(&lfStartTime);
+
+	do
 	{
-		iValueCounter = 0;
+		ProcessSystemEvents();
 		
-		pNext = tLocalStorage.pSourceBuffer;
+		CHK_CMT( CmtGetTSVPtr ( hHandle , &pLocalStorage ));
+		memcpy( &tLocalStorage , pLocalStorage , sizeof(tsLocalStorage));
+		CHK_CMT(CmtReleaseTSVPtr ( hHandle ));   
+	
+		if ( tLocalStorage.bDataUpdated )
+			break;
 		
-		/*
-		CALLOC_ERR( tReceiveValue.tParametersList.pList , tLocalStorage.pSTD_CLI_CommandList[bCommandFound].iReceiveNumberOfParameters , sizeof(tsSimpleParameterItem));
-		tReceiveValue.tParametersList.iNumberOfParameters = tLocalStorage.pSTD_CLI_CommandList[bCommandFound].iReceiveNumberOfParameters;
+		if ( tLocalStorage.pLastError->error ) 
+			break;
 		
-		for ( index = 0; index < tLocalStorage.pSTD_CLI_CommandList[bCommandFound].iReceiveNumberOfParameters; index++ )
+		GetCurrentDateTime(&lfCurrentTime);
+		
+	} while((lfCurrentTime-lfStartTime) < tLocalStorage.lfReceiveTimeOut );
+	
+	if ((lfCurrentTime-lfStartTime) >= tLocalStorage.lfReceiveTimeOut )
+		OutputDebugString("\t\tUUT Driver Error : Receive timeout."); 
+		
+	if ( tLocalStorage.bDataUpdated )
+	{
+		if ( pGetValue )
 		{
-			FREE(pValue);
-			
-			pTemp = strstr( tLocalStorage.pSTD_CLI_CommandList[bCommandFound].tReceiveParameters[index].szStopPatern , "\n" );
-			
-			if ( pTemp ) 
-			{
-				*pTemp = '\n';
-				pTemp++;
-				*pTemp = 0;
-			}
-			
-			pTemp = strstr( tLocalStorage.pSTD_CLI_CommandList[bCommandFound].tReceiveParameters[index].szStopPatern , "\r" );
-			
-			if ( pTemp ) 
-			{
-				*pTemp = '\r';
-				pTemp++;
-				*pTemp = 0;
-			}
-			
-			pValue = String_Parsing ( pNext , tLocalStorage.pSTD_CLI_CommandList[bCommandFound].tReceiveParameters[index].szStartPatern , tLocalStorage.pSTD_CLI_CommandList[bCommandFound].tReceiveParameters[index].szStopPatern , &pNext ); 
-			
-			if ( pValue )
-			{
-				RemoveSurroundingWhiteSpace ( pValue ); 
-				iValueCounter++;
-				
-				switch( tLocalStorage.pSTD_CLI_CommandList[bCommandFound].tReceiveParameters[index].iParametersType )
-				{
-					case RGGCOM_TYPE_INT:
-					
-						tReceiveValue.tParametersList.pList[index].type = CONVERT_TYPE_INT;
-						
-						if ( strchr( pValue , 'x' ) || strchr( pValue , 'X' ) )
-							sscanf( pValue , "%x" , &tReceiveValue.tParametersList.pList[index].tValue.udWord );
-						else
-							tReceiveValue.tParametersList.pList[index].tValue.sdWord = atoi(pValue);
-						
-						break;
-					case RGGCOM_TYPE_LONG:
-						
-						tReceiveValue.tParametersList.pList[index].type = CONVERT_TYPE_LONG;
-						
-						if ( strchr( pValue , 'x' ) || strchr( pValue , 'X' ) )
-							sscanf( pValue , "%x" , &tReceiveValue.tParametersList.pList[index].tValue.uqWord );
-						else
-							tReceiveValue.tParametersList.pList[index].tValue.sqWord = atol(pValue);
-						
-						break;
-						
-					case RGGCOM_TYPE_DOUBLE:
-						
-						tReceiveValue.tParametersList.pList[index].type = CONVERT_TYPE_DOUBLE;
-						sscanf( pValue , "%lf" , &tReceiveValue.tParametersList.pList[index].tValue.lfWord );
-						
-						break;
-						
-					case RGGCOM_TYPE_STRING:
-						
-						tReceiveValue.tParametersList.pList[index].type = CONVERT_TYPE_STRING;
-						
-						memcpy( tReceiveValue.tParametersList.pList[index].szString , pValue , 1024 );
-						
-						break;
-						
-					default:
-						break;
-				}
-			}
+			FREE_CALLOC_COPY_ERR( ((char*)(*pGetValue)), (tLocalStorage.iBufferLength + 1) , 1 , tLocalStorage.pBuffer , tLocalStorage.iBufferLength );
 		}
 		
-		*/
-	}
+		if ( piValueLength )
+			*piValueLength = tLocalStorage.iBufferLength;
+		
+		if ( piValueSize )
+			*piValueSize = 1;
+		
+		CHK_CMT( CmtGetTSVPtr ( hHandle , &pLocalStorage )); 
+		pLocalStorage->bDataUpdated = 0;
+		CHK_CMT(CmtReleaseTSVPtr ( hHandle ));   
+		
+		iLastSentCommandIndex =  tLocalStorage.iLastSentCommandIndex;
+		sprintf( szFormatedLog , "%s :: Has Received respond of command [%s] %%s" ,  tLocalStorage.ptCallbacks->szName , tLocalStorage.pSTD_CLI_CommandList[iLastSentCommandIndex].szCommandName );
 	
-	//IF (( iValueCounter != tLocalStorage.pSTD_CLI_CommandList[bCommandFound].iReceiveNumberOfParameters ) , "Wrong Responds" , MODULE_NAME );
-	
-	//sprintf( szLog , "CBS Unit %cs : %s" , '%' , ptValue->szParameter );
-	
-	//STDF_COMMENT(0,szLog,"N%d"); 
+		STDF_COMMENT(0,szFormatedLog,"On Slot N%d"); 
 
 Error:
 
-
+	if ((IS_OK) && bSentSuccessfully ) 
+		sprintf( szFormatedLog , "%s :: Sent command [%s] %%s" ,  tLocalStorage.ptCallbacks->szName , pCommandName );
+	else
+		sprintf( szFormatedLog , "%s :: Error sending command [%s] %%s" ,  tLocalStorage.ptCallbacks->szName , pCommandName );
+	
+	STDF_COMMENT(0,szFormatedLog,"On Slot N%d");  
+	
+	
 	RETURN_STDERR_POINTER;
+
+}
 }
 
 
@@ -1554,7 +1880,7 @@ void*   DLLEXPORT   STD_CLI_Driver_Unplug( int hHandle , double lfTimeOut )
 	
 	CHK_CMT( CmtGetTSVPtr ( hHandle , &pLocalStorage ));
 	
-	FREE_STDERR_COPY_ERR( Communication_Unplug( pLocalStorage->hCommunicationHandle , lfTimeOut )); 
+//	FREE_STDERR_COPY_ERR( Communication_Unplug( pLocalStorage->hCommunicationHandle , lfTimeOut )); 
 
 Error:
 
@@ -1575,7 +1901,7 @@ void*   DLLEXPORT   STD_CLI_Driver_PlugIn( int hHandle , double lfTimeOut )
 	
 	CHK_CMT( CmtGetTSVPtr ( hHandle , &pLocalStorage ));
 	
-	FREE_STDERR_COPY_ERR( Communication_PlugIn( pLocalStorage->hCommunicationHandle , lfTimeOut )); 
+//	FREE_STDERR_COPY_ERR( Communication_PlugIn( pLocalStorage->hCommunicationHandle , lfTimeOut )); 
 
 Error:
 
@@ -1627,6 +1953,11 @@ Error:
 	RETURN_STDERR_POINTER;
 }
 
+
+
+/***********************************************************************************
+ *(CLI Driver) LoadConfigFile                                                      *
+ ***********************************************************************************/
 
 void*   DLLEXPORT   STD_CLI_Driver_LoadConfigFile( int hHandle , char *pFileName )
 {
@@ -1690,6 +2021,11 @@ Error:
 			
 	RETURN_STDERR_POINTER;
 }
+
+
+/***********************************************************************************
+ *(CLI Driver) LoadConfigBuffer                                                    *
+ ***********************************************************************************/
 
 void*   DLLEXPORT   STD_CLI_Driver_LoadConfigBuffer( int hHandle , char *pBuffer , int iBufferSize )
 {
@@ -1775,10 +2111,11 @@ void*   DLLEXPORT   STD_CLI_Driver_Check_Connection( int hHandle , char *pComman
 		
 	IF (( bCommandFound == 0 ) , "Command was not found.");   
 		
-	//*piStatus = 1;
-		
 Error:
 
+	if ( piStatus )
+		*piStatus = bCommandFound;
+	
 	if ( hHandle )
 		CmtReleaseTSVPtr ( hHandle );  
 			
@@ -1802,7 +2139,7 @@ void*	DLLEXPORT		STD_CLI_Driver_Get_Commands_List( int hHandle , char ***pComman
 	
 	for ( iIndex = 0 ; iIndex < pLocalStorage->listSize; iIndex++ )
 	{
-		CALLOC_COPY_STRING_ERR( (*pCommandsList)[iIndex] , pLocalStorage->pSTD_CLI_CommandList[iIndex].max_size );
+		CALLOC_COPY_STRING_ERR( (*pCommandsList)[iIndex] , pLocalStorage->pSTD_CLI_CommandList[iIndex].szCommandName );
 		
 		if ( piNumberOfCommands )
 			(*piNumberOfCommands)++;
@@ -1814,4 +2151,218 @@ Error:
 		CmtReleaseTSVPtr ( hHandle );  
 			
 	RETURN_STDERR_POINTER;
+}
+
+
+
+/***********************************************************************************
+ *(CLI Driver) Receive                                                             *
+ ***********************************************************************************/
+
+char*		Receive( int hCommunicationHandle , int iTryNumber , int hFileHandle , int iExactSize , int *piCount )
+{
+	int							iIndex												=	0, 
+								iToRead												=	0, 
+								iReceiveCount										=	0,
+								iBufferLen											=	0;
+	
+	char						szBuffer[10000]										=	{0},
+								*pBuffer											=	NULL;
+	
+	double						lfLogCurrentTime									=	0.0;
+	
+	char						szLogFormated[LOW_STRING]							=	{0};
+		
+	int							iTryIndex											=	0;
+	
+	SetBreakOnLibraryErrors (0);
+	
+	if ( iExactSize > 10000 )
+		iExactSize = 9999;
+	
+	if ( iExactSize == 0 )
+		viGetAttribute ( hCommunicationHandle , VI_ATTR_ASRL_AVAIL_NUM, &iExactSize ); 
+	
+	iToRead = iExactSize;  
+	
+	iTryIndex = iTryNumber;
+	
+	do
+	{
+		if ( iToRead <= 0 )  
+			iToRead = 16;
+		
+		viRead ( hCommunicationHandle , szBuffer+iBufferLen , iToRead , &iReceiveCount );
+		
+		iBufferLen += iReceiveCount;
+		
+		if ( iExactSize > iBufferLen )
+			iToRead = (iExactSize-iBufferLen) ;
+		
+		if ( iReceiveCount == 0 )
+			iTryIndex--;
+		else	
+			iTryIndex = iTryNumber;	
+		
+	} while(( iTryIndex > 0 ) || ( iReceiveCount > 0 ));
+
+	SetBreakOnLibraryErrors (1);
+	
+	for( iIndex = 0; iIndex < iBufferLen; iIndex++ )
+		if ( szBuffer[iIndex] == 0 )
+			szBuffer[iIndex] = ' ';
+	
+	if ( iBufferLen )
+	{
+		GetCurrentDateTime( &lfLogCurrentTime ); 
+		
+		FormatDateTimeString ( lfLogCurrentTime , "\r\n%H:%M:%S.%3f    Received    :    \r\n" , szLogFormated , (LOW_STRING-1) );
+			
+		if ( hFileHandle )
+		{
+			WriteFile ( hFileHandle , szLogFormated , strlen(szLogFormated) ); 
+			WriteFile ( hFileHandle , szBuffer , iBufferLen );
+		}
+	}
+	
+Error:
+		
+	ProcessSystemEvents();
+	
+	if ( piCount )
+		*piCount = iBufferLen;
+	
+	pBuffer = calloc( iBufferLen+1 , sizeof(char));
+	
+	if (( pBuffer ) && ( iBufferLen > 0 ))
+		memcpy( pBuffer , szBuffer , iBufferLen ); 
+	
+	return pBuffer;
+}
+
+
+/***********************************************************************************
+ *(CLI Driver) Send                                                                 *
+ ***********************************************************************************/
+
+int		Send( int hCommunicationHandle , int hFileHandle , char *pBuffer , int iCount , double lfDelaySendingCommands ,  *pbSentSuccessfully )
+{
+	int							iToSend												=	0,
+								iOffset												=	0,
+								iTempCount											=	0,
+								iSentCount											=	0;
+
+	double						lfLogCurrentTime									=	0.0;
+	
+	char						szLogFormated[LOW_STRING]							=	{0};
+	
+	char						*pTemp 												=	NULL,
+								*pStart												=	NULL;
+	
+	int							bCommandDelay										=	0;
+	
+	ViStatus					ConnectionStatus									=	0; 
+	
+//	SetBreakOnLibraryErrors (0);
+	
+		do
+		{
+			iToSend = iCount - iSentCount;
+			
+			pStart = pBuffer+iOffset;
+			
+			pTemp = strchr( pStart , '\r' );
+			
+			if ( pTemp )
+			{
+				iToSend = pTemp - pStart;
+				
+				if (( iToSend == 0 ) && ( pStart[0] == '\r' ))
+				{
+					iToSend = 1;
+					bCommandDelay = 1;
+				}
+			}
+			
+			
+			ConnectionStatus = viWrite ( hCommunicationHandle , pBuffer+iOffset , iToSend , &iTempCount );
+			
+			if (  ConnectionStatus	>=	VI_SUCCESS) *pbSentSuccessfully = 1;
+			else  *pbSentSuccessfully = 0;
+			
+			
+			if ( bCommandDelay )
+			{
+				if ( lfDelaySendingCommands > 0.0 )
+					DelayWithEventProcessing(lfDelaySendingCommands);	  
+				
+				bCommandDelay = 0;
+			}
+			
+			iSentCount += iTempCount;
+			
+			iOffset = iSentCount;
+			
+			if ( iTempCount == 0 )
+				break;
+			
+		} while( iSentCount < iCount );
+	
+
+
+//	SetBreakOnLibraryErrors (1);
+	
+	GetCurrentDateTime( &lfLogCurrentTime ); 
+	
+	FormatDateTimeString ( lfLogCurrentTime , "\r\n\r\n%H:%M:%S.%3f    Sent        :    \r\n" , szLogFormated , (LOW_STRING-1) );
+			
+	if ( hFileHandle )
+	{
+		WriteFile ( hFileHandle , szLogFormated , strlen(szLogFormated) ); 
+		WriteFile ( hFileHandle , pBuffer , iSentCount );  	
+	}
+	
+Error:
+	
+	ProcessSystemEvents();
+	
+	return iSentCount;
+}
+
+
+
+/***********************************************************************************
+ *(CLI Driver) SetTerminatingPattern                                               *	Not in use meantime
+ ***********************************************************************************/
+
+void* DLLEXPORT	SetTerminatingPattern( int hHandle , char *pszTerminatingPattern , int iLength )
+{
+	
+	STD_ERROR						StdError						=	{0};
+
+	tsLocalStorage					*pLocalStorage					=	NULL;
+	
+	IF (( hHandle == 0 ) , "handle can't be zero." );   
+
+	SetBreakOnLibraryErrors (0);
+	
+	CHK_CMT( CmtGetTSVPtr ( hHandle , &pLocalStorage ));
+	
+	if ( pszTerminatingPattern && iLength )
+	{
+		CALLOC_ERR( pLocalStorage->pszTerminatingPattern , iLength+1 , sizeof(char));
+		
+		memcpy( pLocalStorage->pszTerminatingPattern , pszTerminatingPattern , (iLength*sizeof(char)));
+		
+		pLocalStorage->iTerminatingPatternLength = iLength;
+	}
+	
+Error:
+
+	if ( hHandle )
+		CmtReleaseTSVPtr ( hHandle );
+	
+	SetBreakOnLibraryErrors (1);
+	
+	RETURN_STDERR_POINTER;	
 }
