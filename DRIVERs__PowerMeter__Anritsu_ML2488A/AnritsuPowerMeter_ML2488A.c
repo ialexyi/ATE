@@ -10,7 +10,7 @@
 #include <utility.h>
 #include "GlobalDefines.h"
 #include <formatio.h>
-
+#include <PM_DriversManager.h>
 //==============================================================================
 // Constants
 
@@ -434,6 +434,48 @@ void* DLLEXPORT PowerMeter_InitSweep( int hInstrumentHandle , int iChannel )
 	CHK_ERR( auml24xx_Initiate ( hInstrumentHandle ));
 	
 	Delay_LastComplete( hInstrumentHandle , 60.0 );     
+	
+Error:	
+	
+	RETURN_STDERR_POINTER;  
+}
+
+void* DLLEXPORT PowerMeter_Set_Trigger_Source( int hInstrumentHandle, int iTriggerSource )
+{
+	STD_ERROR					StdError					=	{0};
+
+	char						szChannelName[LOW_STRING]   =	{0};
+
+	
+    switch ( iTriggerSource )
+	{
+		case BUS_TRIGGER_SOURCE:
+			
+			CHK_ERR(  auml24xx_ConfigureTriggerSource ( hInstrumentHandle , AUML24XX_VAL_CONT ));
+			break;
+
+ 		case EXT_TRIGGER_SOURCE:
+			CHK_ERR(  auml24xx_ConfigureTriggerSource ( hInstrumentHandle , AUML24XX_VAL_EXTERNAL ));
+			break;
+
+		case HOLD_TRIGGER_SOURCE:
+			CHK_ERR(  auml24xx_ConfigureTriggerSource ( hInstrumentHandle , AUML24XX_VAL_CONT ));
+			break;
+
+		case IMM_TRIGGER_SOURCE:
+			CHK_ERR(  auml24xx_ConfigureTriggerSource ( hInstrumentHandle , AUML24XX_VAL_IMMEDIATE ));
+			break;
+
+		case INT_TRIGGER_SOURCE:
+			CHK_ERR(  auml24xx_ConfigureTriggerSource ( hInstrumentHandle , AUML24XX_VAL_INTERNAL ));
+			break;
+
+		default:
+			CHK_ERR(  auml24xx_ConfigureTriggerSource ( hInstrumentHandle , AUML24XX_VAL_CONT ));
+
+	}
+
+	Delay_LastComplete( hInstrumentHandle , 10.0 );  
 	
 Error:	
 	
