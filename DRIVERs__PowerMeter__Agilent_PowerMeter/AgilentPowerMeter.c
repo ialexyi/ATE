@@ -68,7 +68,7 @@ void*	DLLEXPORT		Config_Copy_STD_CallBackSet ( int *pHandle , void *pCallBackSet
 {
 	STD_ERROR						StdError									=	{0};
 	
-	tsHandle						*pLocalHandle								=	NULL;			
+	tsHandle						*pLocalStorage								=	NULL;			
 	
 	int								handle										=	0;
 	
@@ -81,14 +81,19 @@ void*	DLLEXPORT		Config_Copy_STD_CallBackSet ( int *pHandle , void *pCallBackSet
 	
 	handle = *pHandle;
 	
-	CHK_CMT( CmtGetTSVPtr ( handle , &pLocalHandle ));
+	CHK_CMT( CmtGetTSVPtr ( handle , &pLocalStorage ));
 	
-	if ( pLocalHandle->ptCallbacks  == NULL )
+	if ( pLocalStorage->ptCallbacks )
 	{
-		CALLOC( pLocalHandle->ptCallbacks , 1 , sizeof(tsSTD_CallBackSet)); 
-	}
+		FREE(pLocalStorage->ptCallbacks->pCommentCallbackData);
+		FREE(pLocalStorage->ptCallbacks->pConfigValueCallbackData);
+		FREE(pLocalStorage->ptCallbacks->pCheckForBreakCallbackData);
+		FREE(pLocalStorage->ptCallbacks->pFileCallbackData);
 	
-	memcpy( pLocalHandle->ptCallbacks , pCallBackSet , sizeof(tsSTD_CallBackSet));  
+		FREE(pLocalStorage->ptCallbacks);	
+	}
+		
+	pLocalStorage->ptCallbacks = pCallBackSet;
 
 Error:
 	
@@ -103,7 +108,7 @@ Error:
 void* DLLEXPORT PowerMeter_GetErrorTextMessage ( int hInstrumentHandle , int iError , char *pErrorMessage )
 {
 	STD_ERROR		StdError							=	{0};
-	
+																			
 	tsHandle		*pLocalHandle						=	{0};
 
 	int				handle								=	0;
@@ -122,10 +127,13 @@ void* DLLEXPORT PowerMeter_GetErrorTextMessage ( int hInstrumentHandle , int iEr
 	handle = hInstrumentHandle;
 	
 	CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalHandle ));
-
-	WaitForOperationCompletion( pLocalHandle->sessionHandle , pLocalHandle->lfTimeout  ,  pLocalHandle->lfOpcLowLevelTimeout );  
 	
-	viPrintf( pLocalHandle->sessionHandle , ":SYST:ERR?\n" );
+	if( pLocalHandle->lfTimeout != 0 && pLocalHandle->lfOpcLowLevelTimeout != 0 ) 
+		WaitForOperationCompletion( pLocalHandle->sessionHandle , pLocalHandle->lfTimeout  ,  pLocalHandle->lfOpcLowLevelTimeout );  
+	else
+		DelayWithEventProcessing(0.1);
+								 
+	viPrintf( pLocalHandle->sessionHandle , ":SYST:ERR?\n" ); 
 	viRead( pLocalHandle->sessionHandle, szReadBuffer , LOW_STRING , &count );
 	
 	iError = atoi(szReadBuffer);
@@ -216,7 +224,7 @@ void*	DLLEXPORT		Equipment_Info ( int hLowLevelHandle , char *pAddress , char **
 	{
 		strcpy( szIdentificationUpperText , szIdentificationText );
 		
-		IF (( strstr( szIdentificationUpperText , "Agilent Technologies" ) == NULL ) , "Is not supported" );
+		IF ((( strstr( szIdentificationUpperText , "Agilent Technologies" ) == NULL )) && (( strstr( szIdentificationUpperText , "Keysight Technologies" ) == NULL ))  , "Is not supported" );
 	
 		pTemp = strrchr( szIdentificationText , ',' );
 
@@ -304,7 +312,7 @@ void*	DLLEXPORT		Equipment_IsSupported ( int hLowLevelHandle , char *pAddress , 
 	
 	char							szIdentificationText[LOW_STRING]			=	{0}; 
 
-	char							vszSupportedModels[][16]					=	{"N1912A","N1911A","N8262A","E9325A","E9326A","E9327A","N1921A","N1922A","U2000A","U2001A","U2002A","U2004A","U2001H","U2001B","U2000H","U2000B","U2002H","U2002B","E4416A","E4417A","E4418B","E4419B","8481A","8482A","8483A","8485A","8487A","8481B","8482B","8481H","8482H","8487D","8485D","8481D","N1913A","N1914A","N432A","U2021XA","U2022XA","U8481A", "U8485A", "U8487A", "U8488A" };
+	char							vszSupportedModels[][17]					=	{"N1912A","N1911A","N8262A","E9325A","E9326A","E9327A","N1921A","N1922A","U2000A","U2001A","U2002A","U2004A","U2001H","U2001B","U2000H","U2000B","U2002H","U2002B","E4416A","E4417A","E4418B","E4419B","8481A","8482A","8483A","8485A","8487A","8481B","8482B","8481H","8482H","8487D","8485D","8481D","N1913A","N1914A","N432A","U2021XA","U2022XA","U2042XA","U8481A", "U8485A", "U8487A", "U8488A" };
 			
 	if (( pIdentificationText == NULL ) || ( strlen(pIdentificationText) < 10 ))
 	{
@@ -349,7 +357,7 @@ void*	DLLEXPORT		Equipment_IsSupported ( int hLowLevelHandle , char *pAddress , 
 		
 	do
 	{
-		if ( strstr( szIdentificationText , "Agilent Technologies" ) == NULL ) 
+		if (( strstr( szIdentificationText , "Agilent Technologies" ) == NULL ) && ( strstr( szIdentificationText , "Keysight Technologies" ) == NULL )) 
 			break;
 	
 		for ( iIndex = 0; iIndex < (sizeof(vszSupportedModels) / sizeof(vszSupportedModels[0])); iIndex++ )
@@ -1152,7 +1160,7 @@ void* DLLEXPORT PowerMeter_ReadPower( int hInstrumentHandle , int iChannel , dou
 	int							handle								=	0;
 	
 	char						szReadBuffer[LOW_STRING]			=	{0};
-	
+																										
 	int							count								=	0;
 	
 	IF (( hInstrumentHandle == 0 ) , "Handle is empty" );
@@ -1195,8 +1203,10 @@ void* DLLEXPORT PowerMeter_FetchPower( int hInstrumentHandle , int iChannel , do
 	handle = hInstrumentHandle;
 	
 	CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalHandle ));
+
+	viPrintf( pLocalHandle->sessionHandle , "*CLS\n" );
 	
-	CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , "FETC?\n" ));
+	CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , "FETCh:SCALar:POWer:AC?\n" ));
 
 	viRead( pLocalHandle->sessionHandle, szReadBuffer , LOW_STRING , &count );    
 
@@ -1209,6 +1219,7 @@ Error:
 	
 	return PowerMeter_GetErrorTextMessage(hInstrumentHandle,StdError.error,NULL);
 }
+
 
 /***** ***** ***** ***** ***** ***** ***** ***** Measure Power ***** ***** ***** ***** ***** ***** ***** *****/ 
 
@@ -1483,6 +1494,94 @@ Error:
 	
 	return PowerMeter_GetErrorTextMessage(hInstrumentHandle,StdError.error,NULL);
 }
+ /***** ***** ***** ***** ***** ***** ***** ***** Abort ***** ***** ***** ***** ***** ***** ***** *****/ 
+
+void* DLLEXPORT PowerMeter_Abort( int hInstrumentHandle, int iChannel)
+{
+	STD_ERROR					StdError							=	{0};
+	
+	tsHandle					*pLocalHandle						=	{0};
+
+	int							handle								=	0; 
+	
+	char						szCommand[LOW_STRING]				=	{0}; 
+	
+	
+	IF (( hInstrumentHandle == 0 ) , "Handle is empty" );
+	
+	handle = hInstrumentHandle;
+	
+	CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalHandle ));
+	
+    //  Init  Measurement
+	sprintf( szCommand , "ABORt%d\n", iChannel);
+	CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , szCommand ));   
+	WaitForOperationCompletion( pLocalHandle->sessionHandle , pLocalHandle->lfTimeout  ,  pLocalHandle->lfOpcLowLevelTimeout ); 
+
+Error:
+	
+	if ( handle )
+		CmtReleaseTSVPtr ( handle );
+	
+	return PowerMeter_GetErrorTextMessage(hInstrumentHandle,StdError.error,NULL);
+}
+ /***** ***** ***** ***** ***** ***** ***** ***** Set Trigger ***** ***** ***** ***** ***** ***** ***** *****/ 
+
+void* DLLEXPORT PowerMeter_Set_Trigger_Source( int hInstrumentHandle, int iTriggerSorce )
+{
+	STD_ERROR					StdError							=	{0};
+	
+	tsHandle					*pLocalHandle						=	{0};
+
+	int							handle								=	0; 
+	
+	char						szCommand[LOW_STRING]				=	{0}; 
+	
+	
+	IF (( hInstrumentHandle == 0 ) , "Handle is empty" );
+	
+	handle = hInstrumentHandle;
+	
+	CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalHandle ));
+	
+    switch ( iTriggerSorce )
+	{
+		case BUS_TRIGGER_SOURCE:
+			
+			sprintf( szCommand , "TRIGger:SOURce BUS\n" );
+			break;
+
+ 		case EXT_TRIGGER_SOURCE:
+			sprintf( szCommand , "TRIGger:SOURce EXT\n" );
+			break;
+
+		case HOLD_TRIGGER_SOURCE:
+			sprintf( szCommand , "TRIGger:SOURce HOLD\n" );
+			break;
+
+		case IMM_TRIGGER_SOURCE:
+			sprintf( szCommand , "TRIGger:SOURce IMM\n" );
+			break;
+
+		case INT_TRIGGER_SOURCE:
+			sprintf( szCommand , "TRIGger:SOURce INT\n" );
+			break;
+
+		default:
+			sprintf( szCommand , "TRIGger:SOURce INT\n" );
+
+	}
+
+	CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , szCommand ));   
+	WaitForOperationCompletion( pLocalHandle->sessionHandle , pLocalHandle->lfTimeout  ,  pLocalHandle->lfOpcLowLevelTimeout ); 
+
+Error:
+	
+	if ( handle )
+		CmtReleaseTSVPtr ( handle );
+	
+	return PowerMeter_GetErrorTextMessage(hInstrumentHandle,StdError.error,NULL);
+}
 
  /***** ***** ***** ***** ***** ***** ***** ***** Gating Fetch Max Power ***** ***** ***** ***** ***** ***** ***** *****/ 
 
@@ -1511,7 +1610,7 @@ void* DLLEXPORT PowerMeter_Gating_FetchMaxPower( int hInstrumentHandle , int iCh
 	CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , szCommand ));
 	WaitForOperationCompletion( pLocalHandle->sessionHandle , pLocalHandle->lfTimeout  ,  pLocalHandle->lfOpcLowLevelTimeout );
 	
-	//DelayWithEventProcessing(1);       
+	DelayWithEventProcessing(0.1);       
 	
 	// Fetch Result
 	CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , "FETC?\n" ));
@@ -1557,7 +1656,7 @@ void* DLLEXPORT PowerMeter_Gating_FetchAveragePower( int hInstrumentHandle , int
 	CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , szCommand ));   
 	WaitForOperationCompletion( pLocalHandle->sessionHandle , pLocalHandle->lfTimeout  ,  pLocalHandle->lfOpcLowLevelTimeout );
 	
-	//DelayWithEventProcessing(1);       
+	DelayWithEventProcessing(0.1);       
 	
 	// Fetch Result
 	CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , "FETC?\n" ));
@@ -1567,7 +1666,7 @@ void* DLLEXPORT PowerMeter_Gating_FetchAveragePower( int hInstrumentHandle , int
 	
 	RemoveSurroundingWhiteSpace(szReadBuffer);
 
-	if ( value )
+	if ( value )									
 		*value = atof(szReadBuffer);
 Error:
 	
@@ -1604,7 +1703,7 @@ void* DLLEXPORT PowerMeter_Gating_FetchMinPower( int hInstrumentHandle , int iCh
 	CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , szCommand ));   
 	WaitForOperationCompletion( pLocalHandle->sessionHandle , pLocalHandle->lfTimeout  ,  pLocalHandle->lfOpcLowLevelTimeout );
 	
-	//DelayWithEventProcessing(1);       
+	DelayWithEventProcessing(0.1);       
 	
 	// Fetch Result
 	CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , "FETC?\n" ));
@@ -1708,7 +1807,7 @@ void* DLLEXPORT PowerMeter_SendFile( int hInstrumentHandle ,char *szLocalFileNam
 	CALLOC_ERR( pFileBuffer ,iFileSize , sizeof(char)); 
 	
 	iFileHandle = OpenFile ( szLocalFileName , VAL_READ_ONLY, VAL_TRUNCATE, VAL_BINARY);
-	
+																												
 	IF ( ( iFileHandle == 0 ) , "Can't open local file." );
 	
 	iReadSize = ReadFile ( iFileHandle , pFileBuffer , iFileSize );
@@ -2170,13 +2269,15 @@ void* DLLEXPORT PowerMeter_RecallState( int hInstrumentHandle ,char *szFileName 
 	for ( iTryIndex = 0; iTryIndex < 3; iTryIndex++ )
 	{
 		viPrintf( pLocalHandle->sessionHandle , "*CLS\n" );
+		
+		DelayWithEventProcessing(1); 
 	
 		sprintf( szLoadSpectrumState , "*RCL %s\n" , szFileName ); 
 		//sprintf( szLoadSpectrumState , ":MMEM:LOAD:STAT \"%s\"\n" , szFileName );
 
 		CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , szLoadSpectrumState ));
 	
-		DelayWithEventProcessing(pLocalHandle->lfStateFileDelay);
+		DelayWithEventProcessing(1);
 	
 		viPrintf( pLocalHandle->sessionHandle , ":SYST:ERR?\n" );
 
@@ -2287,7 +2388,7 @@ Error:
 
  /***** ***** ***** ***** ***** ***** ***** ***** Get Trace ***** ***** ***** ***** ***** ***** ***** *****/ 
 
-void* DLLEXPORT DRV_PowerMeter_GetTrace( int hInstrumentHandle, int iChannel, int timeout, double **pTime  , double **pTrace , int numberOfPoints , int *piNumberOfPoints )
+void* DLLEXPORT PowerMeter_GetTrace( int hInstrumentHandle, int iChannel, int timeout, double **pTime  , double **pTrace , int numberOfPoints , int *piNumberOfPoints )
 {
  	STD_ERROR				StdError						=	{0};   
 	
@@ -2590,7 +2691,7 @@ int		RecursiveMakeDirectory( int sessionHandle , char *pPath )
 }
 
   /***** ***** ***** ***** ***** ***** ***** ***** MAIN ***** ***** ***** ***** ***** ***** ***** *****/      
-
+/*
 
 int main(void)
 {
@@ -2607,21 +2708,30 @@ int main(void)
 						iMaximumIndex				=	0;
 	
 	double				lfMaximumValue				=	0.0,
-						lfMinimumValue				=	0.0; 
+						lfMinimumValue				=	0.0,
+						lfMaxPower		  			=	0.0,
+						lfAveragePower	  			=	0.0,
+						lfMinPower		  			=	0.0;
 	
 	
-	PowerMeter_Init( 0 , "USB0::0x0957::0x7F18::MY54120001::0::INSTR" , &InstrumentHandle , &InstrumentConnectStatus , &InstrumentChannelsQuantity );
+	PowerMeter_Init( 0 , "USB0::0x2A8D::0x1C01::MY55230008::INSTR" , &InstrumentHandle , &InstrumentConnectStatus , &InstrumentChannelsQuantity );
 	
+	PowerMeter_Reset ( InstrumentHandle ); 
+	PowerMeter_RecallState( InstrumentHandle, "1" ); 
+	PowerMeter_Gating_ConfigOffsetTime( InstrumentHandle , 1 , 1 , 60.0E-6 , -5.0E-6 , 45.0E-6, 2.5E-6 );
+	PowerMeter_SetFrequency ( InstrumentHandle , 0,  2.2E9 );
+	PowerMeter_InitSweep( InstrumentHandle, 1 );
 	
-	DRV_PowerMeter_GetTrace( InstrumentHandle, 1 , (10 * 1000), &(plfTime) , &(plfTrace) , (20 * 1000) , &iActualyPointsNumber );
+	PowerMeter_Gating_FetchMaxPower( InstrumentHandle, 1 , 1 , 5.0 , &lfMaxPower );
+	PowerMeter_Gating_FetchAveragePower( InstrumentHandle, 1 , 1 , 5.0 , &lfAveragePower );
+	PowerMeter_Gating_FetchMinPower( InstrumentHandle, 1 , 1 , 5.0 , &lfMinPower );
 	
-	
+	DRV_PowerMeter_GetTrace( InstrumentHandle, 1 , (10 * 1000), &(plfTime) , &(plfTrace) , (20 * 1000) , &iActualyPointsNumber ); 
 	iStatus = MaxMin1D (plfTrace, iActualyPointsNumber, &lfMaximumValue, &iMaximumIndex, &lfMinimumValue , &iMinimumIndex); 
-	iStatus = MaxMin1D (plfTime, iActualyPointsNumber, &lfMaximumValue, &iMaximumIndex, &lfMinimumValue , &iMinimumIndex);  
-
 
 	PowerMeter_Close( &InstrumentHandle );
 	
 	return 0;
 }
 
+*/
