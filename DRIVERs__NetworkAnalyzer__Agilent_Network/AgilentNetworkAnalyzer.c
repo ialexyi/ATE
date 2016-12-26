@@ -16,7 +16,7 @@
 
 //==============================================================================
 // Types
-typedef enum { FW_TYPE_DEFAULT , FW_TYPE_A_11_22 , FW_TYPE_A_11_02 , FW_TYPE_A_09_61 , FW_TYPE_A_09_42 , FW_TYPE_A_09_20 , FW_TYPE_A_09_10 , FW_TYPE_A_08_50 , FW_TYPE_A_07_50 , FW_TYPE_A_06_04 , FW_TYPE_A_06_01 , FW_TYPE_A_04_87 , FW_TYPE_SENTINEL} teFirmwareSupport;
+typedef enum { FW_TYPE_DEFAULT , FW_TYPE_A_11_70 , FW_TYPE_A_11_22 , FW_TYPE_A_11_02 , FW_TYPE_A_09_61 , FW_TYPE_A_09_42 , FW_TYPE_A_09_20 , FW_TYPE_A_09_10 , FW_TYPE_A_08_50 , FW_TYPE_A_07_50 , FW_TYPE_A_06_04 , FW_TYPE_A_06_01 , FW_TYPE_A_04_87 , FW_TYPE_SENTINEL} teFirmwareSupport;
 
 typedef struct
 {
@@ -94,6 +94,45 @@ int __stdcall DllEntryPoint (HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvRese
     return DllMain (hinstDLL, fdwReason, lpvReserved);
 }
 
+void*	DLLEXPORT		Config_Copy_STD_CallBackSet ( int *pHandle , void *pCallBackSet )
+{
+	STD_ERROR						StdError									=	{0};
+	
+	tsHandle						*pLocalStorage								=	NULL;			
+	
+	int								handle										=	0;
+	
+	IF (( pHandle == NULL ) , "Pointer to handle can't be NULL." );
+	
+	if ( *pHandle == 0 )
+	{
+		CHK_CMT(CmtNewTSV ( sizeof(tsHandle) , pHandle ));
+	}
+	
+	handle = *pHandle;
+	
+	CHK_CMT( CmtGetTSVPtr ( handle , &pLocalStorage ));
+	
+	if ( pLocalStorage->ptCallbacks )
+	{
+		FREE(pLocalStorage->ptCallbacks->pCommentCallbackData);
+		FREE(pLocalStorage->ptCallbacks->pConfigValueCallbackData);
+		FREE(pLocalStorage->ptCallbacks->pCheckForBreakCallbackData);
+		FREE(pLocalStorage->ptCallbacks->pFileCallbackData);
+	
+		FREE(pLocalStorage->ptCallbacks);	
+	}
+		
+	pLocalStorage->ptCallbacks = pCallBackSet;
+
+Error:
+	
+	if ( handle )
+		CmtReleaseTSVPtr (handle);
+	
+	RETURN_STDERR_POINTER;
+}
+
 void*	DLLEXPORT		Equipment_Info ( int hLowLevelHandle , char *pAddress , char **pVendor , char **pSerialNumber , char **pModel , char **pFirmware )
 {
 	STD_ERROR						StdError									=	{0};
@@ -143,7 +182,7 @@ void*	DLLEXPORT		Equipment_Info ( int hLowLevelHandle , char *pAddress , char **
 		strcpy( szIdentificationUpperText , szIdentificationText );
 		StringUpperCase (szIdentificationUpperText);
 		
-		IF ((( strstr( szIdentificationUpperText , "AGILENT TECHNOLOGIES" ) == NULL ) && ( strstr( szIdentificationUpperText ,"HEWLETT-PACKARD") == NULL )) , "Is not supported" );
+		IF ((( strstr( szIdentificationUpperText , "KEYSIGHT TECHNOLOGIES" ) == NULL ) && ( strstr( szIdentificationUpperText , "AGILENT TECHNOLOGIES" ) == NULL ) && ( strstr( szIdentificationUpperText ,"HEWLETT-PACKARD") == NULL )) , "Is not supported" );
 	
 		pTemp = strrchr( szIdentificationText , ',' );
 
@@ -235,11 +274,11 @@ void*	DLLEXPORT		Equipment_IsSupported ( int hLowLevelHandle , char *pAddress , 
 	char							szIdentificationText[LOW_STRING]			=	{0},
 									szIdentificationUpperText[LOW_STRING]		=	{0}; 
 	
-	int								vbEquipmentPNA[32]							=	{/*E5070B*/0,/*E5071B*/0,/*E5071C*/0,/*E5072A*/0,/*E5061A*/0,/*E5062A*/0,/*E5061B*/0,/*E8361A*/1,/*E8362B*/1,/*E8363B*/1,/*E8364B*/1,/*E8361C*/1,/*E8362C*/1,/*E8363C*/1,/*E8364C*/1,/*N5230A*/1,/*N5230C*/1,/*N5241A*/1,/*N5242A*/1,/*N5244A*/1,/*N5245A*/1,/*N5264A*/1,/*N5247A*/1,/*N5221A*/1,/*N5222A*/1,/*N5224A*/1,/*N5225A*/1,/*N5227A*/1,/*N5239A*/1,/*N5231A*/1,/*N5232A*/1,/*N5234A*/1,/*N5235A*/1};								
+	int								vbEquipmentPNA[32]							=	{/*E5080A*/1,/*E5070B*/0,/*E5071B*/0,/*E5071C*/0,/*E5072A*/0,/*E5061A*/0,/*E5062A*/0,/*E5061B*/0,/*E8361A*/1,/*E8362B*/1,/*E8363B*/1,/*E8364B*/1,/*E8361C*/1,/*E8362C*/1,/*E8363C*/1,/*E8364C*/1,/*N5230A*/1,/*N5230C*/1,/*N5241A*/1,/*N5242A*/1,/*N5244A*/1,/*N5245A*/1,/*N5264A*/1,/*N5247A*/1,/*N5221A*/1,/*N5222A*/1,/*N5224A*/1,/*N5225A*/1,/*N5227A*/1,/*N5239A*/1,/*N5231A*/1,/*N5232A*/1,/*N5234A*/1,/*N5235A*/1};								
 
-	char							vszSupportdedModels[][16]					=	{{"E5070B"}, {"E5071B"}, {"E5071C"}, {"E5072A"}, {"E5061A"}, {"E5062A"}, {"E5061B"}, {"E8361A"}, {"E8362B"}, {"E8363B"}, {"E8364B"}, {"E8361C"}, {"E8362C"}, {"E8363C"}, {"E8364C"}, {"N5230A"}, {"N5230C"}, {"N5241A"}, {"N5242A"}, {"N5244A"}, {"N5245A"}, {"N5264A"}, {"N5247A"}, {"N5221A"}, {"N5222A"}, {"N5224A"}, {"N5225A"}, {"N5227A"}, {"N5239A"}, {"N5231A"}, {"N5232A"}, {"N5234A"}, {"N5235A"}},
-																						//FW_TYPE_A_11_22 , FW_TYPE_A_11_02 , FW_TYPE_A_09_61 , FW_TYPE_A_09_42 , FW_TYPE_A_09_20 , FW_TYPE_A_09_10 , FW_TYPE_A_08_50 , FW_TYPE_A_07_50 , FW_TYPE_A_06_04 , FW_TYPE_A_06_01, FW_TYPE_A_04_87
-									vszSupportdedFirmwares[][16]				=	{{"0"},{"A.11.22"}    ,{"A.11.02"}    ,{"A.09.61"}      ,{"A.09.42"}     ,{"A.09.20"}      ,{"A.09.10"}      ,{"A.08.50"}      ,{"A.07.50"}       ,{"A.06.04"}      ,{"A.06.01"}		,{"A.04.87"}};
+	char							vszSupportdedModels[][16]					=	{{"E5080A"}, {"E5070B"}, {"E5071B"}, {"E5071C"}, {"E5072A"}, {"E5061A"}, {"E5062A"}, {"E5061B"}, {"E8361A"}, {"E8362B"}, {"E8363B"}, {"E8364B"}, {"E8361C"}, {"E8362C"}, {"E8363C"}, {"E8364C"}, {"N5230A"}, {"N5230C"}, {"N5241A"}, {"N5242A"}, {"N5244A"}, {"N5245A"}, {"N5264A"}, {"N5247A"}, {"N5221A"}, {"N5222A"}, {"N5224A"}, {"N5225A"}, {"N5227A"}, {"N5239A"}, {"N5231A"}, {"N5232A"}, {"N5234A"}, {"N5235A"}},
+																					//FW_TYPE_A_11_70 , FW_TYPE_A_11_70:case FW_TYPE_A_11_22 , FW_TYPE_A_11_02 , FW_TYPE_A_09_61 , FW_TYPE_A_09_42 , FW_TYPE_A_09_20 , FW_TYPE_A_09_10 , FW_TYPE_A_08_50 , FW_TYPE_A_07_50 , FW_TYPE_A_06_04 , FW_TYPE_A_06_01, FW_TYPE_A_04_87
+									vszSupportdedFirmwares[][16]				=	{{"0"},{"A.11.70"}    ,{"A.11.22"}    ,{"A.11.02"}    ,{"A.09.61"}      ,{"A.09.42"}     ,{"A.09.20"}      ,{"A.09.10"}      ,{"A.08.50"}      ,{"A.07.50"}       ,{"A.06.04"}      ,{"A.06.01"}		,{"A.04.87"}};
 
 	tsHandle						*pLocalHandle								=	{0};
 									
@@ -295,7 +334,7 @@ void*	DLLEXPORT		Equipment_IsSupported ( int hLowLevelHandle , char *pAddress , 
 		strcpy( szIdentificationUpperText , szIdentificationText );
 		StringUpperCase (szIdentificationUpperText);
 		
-		if (( strstr( szIdentificationUpperText , "AGILENT TECHNOLOGIES" ) == NULL ) && ( strstr( szIdentificationUpperText ,"HEWLETT-PACKARD") == NULL ))
+		if (( strstr( szIdentificationUpperText , "KEYSIGHT TECHNOLOGIES" ) == NULL ) && ( strstr( szIdentificationUpperText , "AGILENT TECHNOLOGIES" ) == NULL ) && ( strstr( szIdentificationUpperText ,"HEWLETT-PACKARD") == NULL ))
 			break;
 	
 		for ( iIndex = 0; iIndex < (sizeof(vszSupportdedModels) / sizeof(vszSupportdedModels[0])); iIndex++ )
@@ -326,40 +365,6 @@ void*	DLLEXPORT		Equipment_IsSupported ( int hLowLevelHandle , char *pAddress , 
 	RETURN_STDERR_POINTER;
 }
 
-void*	DLLEXPORT		Config_Copy_STD_CallBackSet ( int *pHandle , void *pCallBackSet )
-{
-	STD_ERROR						StdError									=	{0};
-	
-	tsHandle						*pLocalHandle								=	NULL;			
-	
-	int								handle										=	0;
-	
-	IF (( pHandle == NULL ) , "Pointer to handle can't be NULL." );
-	
-	if ( *pHandle == 0 )
-	{
-		CHK_CMT(CmtNewTSV ( sizeof(tsHandle) , pHandle ));
-	}
-	
-	handle = *pHandle;
-	
-	CHK_CMT( CmtGetTSVPtr ( handle , &pLocalHandle ));
-	
-	if ( pLocalHandle->ptCallbacks  == NULL )
-	{
-		CALLOC( pLocalHandle->ptCallbacks , 1 , sizeof(tsSTD_CallBackSet)); 
-	}
-	
-	memcpy( pLocalHandle->ptCallbacks , pCallBackSet , sizeof(tsSTD_CallBackSet));  
-
-Error:
-	
-	if ( handle )
-		CmtReleaseTSVPtr (handle);
-	
-	RETURN_STDERR_POINTER;
-}
-
 void* DLLEXPORT   NetworkAnalyzer_Init ( int hParentInstrumentHandle , ViRsrc szRsrcAddress , int *phInstrumentHandle , int *InstrumentConnectStatus , int *InstrumentChanelsQuantity )
 {
 	STD_ERROR						StdError										=	{0};
@@ -384,7 +389,7 @@ void* DLLEXPORT   NetworkAnalyzer_Init ( int hParentInstrumentHandle , ViRsrc sz
 									lfDefaultTimeout								=	0.5,
 									lfStateFileDelay								=	1.0,  
 									lfStateFileTimeout								=	10.0,         
-									lfReadingTraceDelay								=	0.0;
+									lfReadingTraceDelay								=	0.5;
 									
 	int								bSwapData										=	1;
 	
@@ -565,7 +570,7 @@ void* DLLEXPORT NetworkAnalyzer_GetErrorTextMessage ( int hInstrumentHandle , in
 	
 	switch ( pLocalHandle->tType )
 	{
-		case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
+		case FW_TYPE_A_11_70:case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
 			
 					strcpy( szCommand , ":SYST:ERR?\n" );
 					break;
@@ -641,7 +646,7 @@ void* DLLEXPORT   NetworkAnalyzer_Reset( int hInstrumentHandle )
 	
 	switch ( pLocalHandle->tType )
 	{
-		case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
+		case FW_TYPE_A_11_70:case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
 
 		default :
 				{
@@ -689,7 +694,7 @@ void* DLLEXPORT   NetworkAnalyzer_Calibration_SetFrequencyPlan ( int hInstrument
 			//=====****************************** PNA ******************************************=====//
 			switch ( pLocalHandle->tType )
 			{
-				case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
+				case FW_TYPE_A_11_70:case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
 				default :
 						{
 								CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , "SYST:ACT:CHAN?\n" ));
@@ -707,7 +712,7 @@ void* DLLEXPORT   NetworkAnalyzer_Calibration_SetFrequencyPlan ( int hInstrument
 			//=====****************************** ENA ******************************************=====//
 			switch ( pLocalHandle->tType )
 			{
-				case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
+				case FW_TYPE_A_11_70:case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
 				default :
 						{
 								CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , ":SERV:CHAN:ACT?\n" ));
@@ -726,7 +731,7 @@ void* DLLEXPORT   NetworkAnalyzer_Calibration_SetFrequencyPlan ( int hInstrument
 	//-------------------------------------------------------------------------------------//
 	switch ( pLocalHandle->tType )
 	{
-		case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
+		case FW_TYPE_A_11_70:case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
 		default :
 				{
 						CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , ":SENS%d:FREQ:STAR %E\n" , pLocalHandle->iCurrentChannel , lfStartFrequency ));
@@ -795,7 +800,7 @@ void* DLLEXPORT   NetworkAnalyzer_SetFrequency( int hInstrumentHandle , double l
 			//=====****************************** PNA ******************************************=====//
 			switch ( pLocalHandle->tType )
 			{
-				case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
+				case FW_TYPE_A_11_70:case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
 				default :
 						{
 								CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , "SYST:ACT:CHAN?\n" ));
@@ -813,7 +818,7 @@ void* DLLEXPORT   NetworkAnalyzer_SetFrequency( int hInstrumentHandle , double l
 			//=====****************************** ENA ******************************************=====//
 			switch ( pLocalHandle->tType )
 			{
-				case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
+				case FW_TYPE_A_11_70:case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
 				default :
 						{
 								CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , ":SERV:CHAN:ACT?\n" ));
@@ -834,7 +839,7 @@ void* DLLEXPORT   NetworkAnalyzer_SetFrequency( int hInstrumentHandle , double l
 	
 	switch ( pLocalHandle->tType )
 	{
-		case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
+		case FW_TYPE_A_11_70:case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
 
 		default :
 				{
@@ -886,7 +891,7 @@ void* DLLEXPORT   NetworkAnalyzer_GetFrequency( int hInstrumentHandle , double *
 			//=====****************************** PNA ******************************************=====//
 			switch ( pLocalHandle->tType )
 			{
-				case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
+				case FW_TYPE_A_11_70:case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
 				default :
 						{
 								CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , "SYST:ACT:CHAN?\n" ));
@@ -904,7 +909,7 @@ void* DLLEXPORT   NetworkAnalyzer_GetFrequency( int hInstrumentHandle , double *
 			//=====****************************** ENA ******************************************=====//
 			switch ( pLocalHandle->tType )
 			{
-				case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
+				case FW_TYPE_A_11_70:case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
 				default :
 						{
 								CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , ":SERV:CHAN:ACT?\n" ));
@@ -923,7 +928,7 @@ void* DLLEXPORT   NetworkAnalyzer_GetFrequency( int hInstrumentHandle , double *
 	//-------------------------------------------------------------------------------------//	
 	switch ( pLocalHandle->tType )
 	{
-		case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
+		case FW_TYPE_A_11_70:case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
 
 		default :
 				{
@@ -987,7 +992,7 @@ void* DLLEXPORT   NetworkAnalyzer_SetPointsNum( int hInstrumentHandle , int poin
 			
 			switch ( pLocalHandle->tType )
 			{
-				case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
+				case FW_TYPE_A_11_70:case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
 				default :
 						{
 								CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , "SYST:ACT:CHAN?\n" ));
@@ -1005,7 +1010,7 @@ void* DLLEXPORT   NetworkAnalyzer_SetPointsNum( int hInstrumentHandle , int poin
 			//=====****************************** ENA ******************************************=====//
 			switch ( pLocalHandle->tType )
 			{
-				case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
+				case FW_TYPE_A_11_70:case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
 				default :
 						{
 								CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , ":SERV:CHAN:ACT?\n" ));
@@ -1028,7 +1033,7 @@ void* DLLEXPORT   NetworkAnalyzer_SetPointsNum( int hInstrumentHandle , int poin
 		//=====****************************** PNA ******************************************=====//
 		switch ( pLocalHandle->tType )
 		{
-			case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
+			case FW_TYPE_A_11_70:case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
 
 			default :
 					{
@@ -1044,7 +1049,7 @@ void* DLLEXPORT   NetworkAnalyzer_SetPointsNum( int hInstrumentHandle , int poin
 		//=====****************************** ENA ******************************************=====//
 		switch ( pLocalHandle->tType )
 		{
-			case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
+			case FW_TYPE_A_11_70:case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
 
 			default :
 					{
@@ -1092,7 +1097,7 @@ void* DLLEXPORT   NetworkAnalyzer_GetPointsNum(int hInstrumentHandle, int *point
 			
 			switch ( pLocalHandle->tType )
 			{
-				case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
+				case FW_TYPE_A_11_70:case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
 				default :
 						{
 								CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , "SYST:ACT:CHAN?\n" ));
@@ -1110,7 +1115,7 @@ void* DLLEXPORT   NetworkAnalyzer_GetPointsNum(int hInstrumentHandle, int *point
 			//=====****************************** ENA ******************************************=====//
 			switch ( pLocalHandle->tType )
 			{
-				case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
+				case FW_TYPE_A_11_70:case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
 				default :
 						{
 								CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , ":SERV:CHAN:ACT?\n" ));
@@ -1133,7 +1138,7 @@ void* DLLEXPORT   NetworkAnalyzer_GetPointsNum(int hInstrumentHandle, int *point
 		//=====****************************** PNA ******************************************=====//
 		switch ( pLocalHandle->tType )
 		{
-			case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
+			case FW_TYPE_A_11_70:case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
 
 			default :
 					{
@@ -1155,7 +1160,7 @@ void* DLLEXPORT   NetworkAnalyzer_GetPointsNum(int hInstrumentHandle, int *point
 		//=====****************************** ENA ******************************************=====//
 		switch ( pLocalHandle->tType )
 		{
-			case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
+			case FW_TYPE_A_11_70:case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
 
 			default :
 					{
@@ -1208,7 +1213,7 @@ void* DLLEXPORT   NetworkAnalyzer_SelectChannel ( int hInstrumentHandle , int iC
 		/*
 		switch ( pLocalHandle->tType )
 		{
-			case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
+			case FW_TYPE_A_11_70:case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
 			default :
 					{
 							CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , "SYST:ACT:CHAN %d\n" , iChannel ));
@@ -1224,7 +1229,7 @@ void* DLLEXPORT   NetworkAnalyzer_SelectChannel ( int hInstrumentHandle , int iC
 		//=====****************************** ENA ******************************************=====//
 		switch ( pLocalHandle->tType )
 		{
-			case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
+			case FW_TYPE_A_11_70:case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
 			default :
 					{
 							CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , ":SERV:CHAN:ACT %d\n" , iChannel ));
@@ -1256,8 +1261,9 @@ void* DLLEXPORT   NetworkAnalyzer_SelectTrace ( int hInstrumentHandle , int iTra
 	
 	char					szReadFeedback[STD_STRING]			=	{0};
 															
-	int						count								=	0;
-
+	int						count								=	0,
+							iParametersListCount				=	0; 
+							
 	char					**pParametersList					=	NULL;
 	
 	int						iNumberOfTraces						=	0;
@@ -1285,7 +1291,7 @@ void* DLLEXPORT   NetworkAnalyzer_SelectTrace ( int hInstrumentHandle , int iTra
 			
 			switch ( pLocalHandle->tType )
 			{
-				case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
+				case FW_TYPE_A_11_70:case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
 				default :
 						{
 								CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , "SYST:ACT:CHAN?\n" ));
@@ -1303,7 +1309,7 @@ void* DLLEXPORT   NetworkAnalyzer_SelectTrace ( int hInstrumentHandle , int iTra
 			//=====****************************** ENA ******************************************=====//
 			switch ( pLocalHandle->tType )
 			{
-				case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
+				case FW_TYPE_A_11_70:case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
 				default :
 						{
 								CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , ":SERV:CHAN:ACT?\n" ));
@@ -1337,7 +1343,9 @@ void* DLLEXPORT   NetworkAnalyzer_SelectTrace ( int hInstrumentHandle , int iTra
 							viRead( pLocalHandle->sessionHandle, szReadFeedback , STD_STRING , &count );
 							SetBreakOnLibraryErrors (1); 
 						
-							CALLOC_ERR( pParametersList , ((count / 10)*2) , sizeof(char*));
+							iParametersListCount = ((count / 10)*2);
+							
+							CALLOC_ERR( pParametersList , iParametersListCount , sizeof(char*));
 							
 							pNext = szReadFeedback;
 							
@@ -1354,6 +1362,9 @@ void* DLLEXPORT   NetworkAnalyzer_SelectTrace ( int hInstrumentHandle , int iTra
 									*pTemp = 0;
 									
 									pNext = pTemp + 1;
+									
+									if ( iNumberOfTraces >= iParametersListCount )
+										break;
 									
 									CALLOC_COPY_STRING( pParametersList[iNumberOfTraces] , pCurrent );
 									
@@ -1373,7 +1384,7 @@ void* DLLEXPORT   NetworkAnalyzer_SelectTrace ( int hInstrumentHandle , int iTra
 							
 							//"CH1_S11_1,S11,CH1_S21_2,S21,CH1_S22_3,S22,CH1_S21_4,S21,CH1_S21_5,S21,CH1_S21_6,S21,CH1_S21_7,S21"
 
-							if ( iNumberOfTraces )
+							if ( iTrace <= iNumberOfTraces )
 							{
 								CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , "CALC%d:PAR:SEL '%s'\n" , pLocalHandle->iCurrentChannel , pParametersList[(iTrace-1)] ));   
 								DelayWithEventProcessing( pLocalHandle->lfDelay );
@@ -1384,7 +1395,7 @@ void* DLLEXPORT   NetworkAnalyzer_SelectTrace ( int hInstrumentHandle , int iTra
 							break;
 					}
 					
-			case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:
+			case FW_TYPE_A_11_70:case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:
 
 			default :
 					{
@@ -1400,7 +1411,7 @@ void* DLLEXPORT   NetworkAnalyzer_SelectTrace ( int hInstrumentHandle , int iTra
 		//=====****************************** ENA ******************************************=====//
 		switch ( pLocalHandle->tType )
 		{
-			case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
+			case FW_TYPE_A_11_70:case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
 
 			default :
 					{
@@ -1479,7 +1490,7 @@ void* DLLEXPORT   NetworkAnalyzer_SetElectricalDelayTime( int hInstrumentHandle 
 			//=====****************************** PNA ******************************************=====//
 			switch ( pLocalHandle->tType )
 			{
-				case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
+				case FW_TYPE_A_11_70:case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
 				default :
 						{
 								CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , "SYST:ACT:CHAN?\n" ));
@@ -1497,7 +1508,7 @@ void* DLLEXPORT   NetworkAnalyzer_SetElectricalDelayTime( int hInstrumentHandle 
 			//=====****************************** ENA ******************************************=====//
 			switch ( pLocalHandle->tType )
 			{
-				case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
+				case FW_TYPE_A_11_70:case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
 				default :
 						{
 								CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , ":SERV:CHAN:ACT?\n" ));
@@ -1520,7 +1531,7 @@ void* DLLEXPORT   NetworkAnalyzer_SetElectricalDelayTime( int hInstrumentHandle 
 		//=====****************************** PNA ******************************************=====//
 		switch ( pLocalHandle->tType )
 		{
-			case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
+			case FW_TYPE_A_11_70:case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
 			default :
 					{
 							CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , ":CALC%d:CORR:EDEL:TIME %E\n" , pLocalHandle->iCurrentChannel , lfTime ));
@@ -1537,7 +1548,7 @@ void* DLLEXPORT   NetworkAnalyzer_SetElectricalDelayTime( int hInstrumentHandle 
 		//=====****************************** ENA ******************************************=====//
 		switch ( pLocalHandle->tType )
 		{
-			case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
+			case FW_TYPE_A_11_70:case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
 			default :
 
 					{
@@ -1574,6 +1585,7 @@ void* DLLEXPORT   NetworkAnalyzer_SelectMathFunction ( int hInstrumentHandle , i
 
 	int						count								=	0;
 
+	
 	IF (( hInstrumentHandle == 0 ) , "Handle is empty" );
 	
 	handle = hInstrumentHandle;
@@ -1593,31 +1605,42 @@ void* DLLEXPORT   NetworkAnalyzer_SelectMathFunction ( int hInstrumentHandle , i
 		//=====****************************** PNA ******************************************=====//
 		switch ( pLocalHandle->tType )
 		{
-			case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
+			case FW_TYPE_A_11_70:case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
 
 			default :
 					{
 							switch(cFunction)
 							{
 								case '/':
-										CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , "CALC%d:MATH:FUNC DIV\n" , pLocalHandle->iCurrentChannel ));  
+										CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , ":CALC%d:MATH:FUNC DIV\n" , pLocalHandle->iCurrentChannel ));  
 										break;
 				
 								case '*':
-										CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , "CALC%d:MATH:FUNC MULT\n" , pLocalHandle->iCurrentChannel ));  
+										CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , ":CALC%d:MATH:FUNC MULT\n" , pLocalHandle->iCurrentChannel ));  
 										break;
 				
 								case '-':
-										CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , "CALC%d:MATH:FUNC SUBT\n" , pLocalHandle->iCurrentChannel ));  
+										CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , ":CALC%d:MATH:FUNC SUBT\n" , pLocalHandle->iCurrentChannel ));  
 										break;
 				
 								case '+':
-										CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , "CALC%d:MATH:FUNC ADD\n" , pLocalHandle->iCurrentChannel ));  
-										break;						
+										CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , ":CALC%d:MATH:FUNC ADD\n" , pLocalHandle->iCurrentChannel ));  
+										break;	
+										
+								case 'N':
+			
+										CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , ":CALC%d:MATH:MEM\n" , pLocalHandle->iCurrentChannel ));
+										DelayWithEventProcessing( pLocalHandle->lfDelay );
+						
+										viPrintf( pLocalHandle->sessionHandle , "*WAI;\n" ); 
+										DelayWithEventProcessing( pLocalHandle->lfDelay );
+							
+										WaitForOperationCompletion( pLocalHandle->sessionHandle , pLocalHandle->lfTimeout  ,  pLocalHandle->lfOpcLowLevelTimeout );
+							
+										CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , ":CALC%d:MATH:FUNC DIV\n" , pLocalHandle->iCurrentChannel ));  
+										break;		
 				
 								default:
-			
-										CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , "CALC%d:MATH:FUNC NORM\n" , pLocalHandle->iCurrentChannel ));  
 										break;
 							}
 						
@@ -1632,7 +1655,7 @@ void* DLLEXPORT   NetworkAnalyzer_SelectMathFunction ( int hInstrumentHandle , i
 		//=====****************************** ENA ******************************************=====//
 		switch ( pLocalHandle->tType )
 		{
-			case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
+			case FW_TYPE_A_11_70:case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
 
 			default :
 					{
@@ -1710,7 +1733,7 @@ void* DLLEXPORT   NetworkAnalyzer_SetTraceToMathMemory ( int hInstrumentHandle ,
 		//=====****************************** PNA ******************************************=====//
 		switch ( pLocalHandle->tType )
 		{
-			case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
+			case FW_TYPE_A_11_70:case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
 
 			default :
 					{
@@ -1729,7 +1752,7 @@ void* DLLEXPORT   NetworkAnalyzer_SetTraceToMathMemory ( int hInstrumentHandle ,
 		//=====****************************** ENA ******************************************=====//
 		switch ( pLocalHandle->tType )
 		{
-			case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
+			case FW_TYPE_A_11_70:case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
 
 			default :
 					{
@@ -1823,7 +1846,7 @@ void* DLLEXPORT   NetworkAnalyzer_GetTrace ( int hInstrumentHandle , int iTrace 
 		//=====****************************** PNA ******************************************=====//
 		switch ( pLocalHandle->tType )
 		{
-			case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
+			case FW_TYPE_A_11_70:case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
 
 			default :
 					{   
@@ -1906,11 +1929,13 @@ void* DLLEXPORT   NetworkAnalyzer_GetTrace ( int hInstrumentHandle , int iTrace 
 		//=====****************************** ENA ******************************************=====//
 		switch ( pLocalHandle->tType )
 		{
-			case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
+			case FW_TYPE_A_11_70:case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
 
 			default :
 					{   
 							CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , ":CALC%d:DATA:FDAT?\n" , pLocalHandle->iCurrentChannel )); 
+
+							DelayWithEventProcessing( pLocalHandle->lfReadingTraceDelay ); 
 	
 							do 
 							{
@@ -1929,7 +1954,7 @@ void* DLLEXPORT   NetworkAnalyzer_GetTrace ( int hInstrumentHandle , int iTrace 
 	
 							SetBreakOnLibraryErrors (0); 
 							viRead ( pLocalHandle->sessionHandle ,(ViPBuf)szReadFeedback , 1 , &uiCount );
-							SetBreakOnLibraryErrors (1); 
+							 SetBreakOnLibraryErrors (1); 
 	
 							IF (( uiCount == 0 ) , "Wrong trace reading format" );  
 	
@@ -2058,7 +2083,7 @@ void* DLLEXPORT   NetworkAnalyzer_WaitSweep(int hInstrumentHandle, int iChannel 
 			//=====****************************** PNA ******************************************=====//
 			switch ( pLocalHandle->tType )
 			{
-				case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
+				case FW_TYPE_A_11_70:case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
 				default :
 						{
 								CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , "SYST:ACT:CHAN?\n" ));
@@ -2076,7 +2101,7 @@ void* DLLEXPORT   NetworkAnalyzer_WaitSweep(int hInstrumentHandle, int iChannel 
 			//=====****************************** ENA ******************************************=====//
 			switch ( pLocalHandle->tType )
 			{
-				case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
+				case FW_TYPE_A_11_70:case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
 				default :
 						{
 								CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , ":SERV:CHAN:ACT?\n" ));
@@ -2099,7 +2124,7 @@ void* DLLEXPORT   NetworkAnalyzer_WaitSweep(int hInstrumentHandle, int iChannel 
 		//=====****************************** PNA ******************************************=====//
 		switch ( pLocalHandle->tType )
 		{
-			case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
+			case FW_TYPE_A_11_70:case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
 			default :
 					{
 							CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , "SENS%d:SWE:TIME?\n" , pLocalHandle->iCurrentChannel ));
@@ -2124,7 +2149,7 @@ void* DLLEXPORT   NetworkAnalyzer_WaitSweep(int hInstrumentHandle, int iChannel 
 		//=====****************************** ENA ******************************************=====//
 		switch ( pLocalHandle->tType )
 		{
-			case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
+			case FW_TYPE_A_11_70:case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
 			default :
 					{
 							CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , "SENS%d:SWE:TIME?\n" , pLocalHandle->iCurrentChannel ));
@@ -2180,7 +2205,7 @@ void* DLLEXPORT   NetworkAnalyzer_Avarage(int hInstrumentHandle, int iChannel, i
 			//=====****************************** PNA ******************************************=====//
 			switch ( pLocalHandle->tType )
 			{
-				case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
+				case FW_TYPE_A_11_70:case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
 				default :
 						{
 								CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , "SYST:ACT:CHAN?\n" ));
@@ -2198,7 +2223,7 @@ void* DLLEXPORT   NetworkAnalyzer_Avarage(int hInstrumentHandle, int iChannel, i
 			//=====****************************** ENA ******************************************=====//
 			switch ( pLocalHandle->tType )
 			{
-				case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
+				case FW_TYPE_A_11_70:case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
 				default :
 						{
 								CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , ":SERV:CHAN:ACT?\n" ));
@@ -2221,7 +2246,7 @@ void* DLLEXPORT   NetworkAnalyzer_Avarage(int hInstrumentHandle, int iChannel, i
 		//=====****************************** PNA ******************************************=====//
 		switch ( pLocalHandle->tType )
 		{
-			case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
+			case FW_TYPE_A_11_70:case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
 			default :
 					{
 							if ( bEnable )
@@ -2253,7 +2278,7 @@ void* DLLEXPORT   NetworkAnalyzer_Avarage(int hInstrumentHandle, int iChannel, i
 		//=====****************************** ENA ******************************************=====//
 		switch ( pLocalHandle->tType )
 		{
-			case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
+			case FW_TYPE_A_11_70:case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
 			default :
 					{
 							if ( bEnable )
@@ -2317,7 +2342,7 @@ void* DLLEXPORT   NetworkAnalyzer_ClearAvarage(int hInstrumentHandle, int iChann
 			//=====****************************** PNA ******************************************=====//
 			switch ( pLocalHandle->tType )
 			{
-				case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
+				case FW_TYPE_A_11_70:case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
 				default :
 						{
 								CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , "SYST:ACT:CHAN?\n" ));
@@ -2335,7 +2360,7 @@ void* DLLEXPORT   NetworkAnalyzer_ClearAvarage(int hInstrumentHandle, int iChann
 			//=====****************************** ENA ******************************************=====//
 			switch ( pLocalHandle->tType )
 			{
-				case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
+				case FW_TYPE_A_11_70:case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
 				default :
 						{
 								CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , ":SERV:CHAN:ACT?\n" ));
@@ -2358,7 +2383,7 @@ void* DLLEXPORT   NetworkAnalyzer_ClearAvarage(int hInstrumentHandle, int iChann
 		//=====****************************** PNA ******************************************=====//
 		switch ( pLocalHandle->tType )
 		{
-			case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
+			case FW_TYPE_A_11_70:case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
 			default :
 					{
 							CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , "SENS%d:AVER:CLE\n" , pLocalHandle->iCurrentChannel ));
@@ -2375,7 +2400,7 @@ void* DLLEXPORT   NetworkAnalyzer_ClearAvarage(int hInstrumentHandle, int iChann
 		//=====****************************** ENA ******************************************=====//
 		switch ( pLocalHandle->tType )
 		{
-			case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
+			case FW_TYPE_A_11_70:case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
 			default :
 					{
 							CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , "SENS%d:AVER:CLE\n" , pLocalHandle->iCurrentChannel ));
@@ -2423,14 +2448,86 @@ void* DLLEXPORT   NetworkAnalyzer_SetBandWidth(int hInstrumentHandle, int iChann
 	return NetworkAnalyzer_GetErrorTextMessage(hInstrumentHandle,StdError.error,NULL);
 }
 
-void* DLLEXPORT   NetworkAnalyzer_SetFrequencySweepType(int hInstrumentHandle, int iChannel , int iFrequencySweepType )
+/*  // Added by Max
+//Purpose: Turns ON and OFF point sweep mode. When enabled, the PNA measures both the forward and reverse parameters at each frequency point before stepping to the next frequency
+void* DLLEXPORT   NetworkAnalyzer_SetSweepSequenceMode(int hInstrumentHandle,  int iSweepSequenceMode )
 {			   
-	STD_ERROR				StdError				=	{0};
+	
+	STD_ERROR				StdError							=	{0};
+	
+	tsHandle				*pLocalHandle						=	{0};
 
-//Error: 
+	int						handle								=	0;
+	
+	char					szReadFeedback[STD_STRING]			=	{0};
+
+	int						count								=	0;
+	
+	IF (( hInstrumentHandle == 0 ) , "Handle is empty" );
+	
+	handle = hInstrumentHandle;												  
+	
+	CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalHandle ));
+
+	CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , ":SENS:SWE:GEN:POIN %d\n"   , iSweepSequenceMode ));   
+
+	DelayWithEventProcessing( pLocalHandle->lfDelay );
+						
+	WaitForOperationCompletion( pLocalHandle->sessionHandle , pLocalHandle->lfTimeout  ,  pLocalHandle->lfOpcLowLevelTimeout );
+	
+Error: 
+	
+	if ( handle )
+		CmtReleaseTSVPtr ( handle );
 	
 	return NetworkAnalyzer_GetErrorTextMessage(hInstrumentHandle,StdError.error,NULL);
 }
+
+*/
+
+void* DLLEXPORT   NetworkAnalyzer_SetFrequencySweepType(int hInstrumentHandle, int iChannel , int iFrequencySweepType )	   
+{			   
+	STD_ERROR				StdError							=	{0};
+	
+	tsHandle				*pLocalHandle						=	{0};
+
+	int						handle								=	0;
+	
+	char					szReadFeedback[STD_STRING]			=	{0};
+
+	int						count								=	0;
+	
+	IF (( hInstrumentHandle == 0 ) , "Handle is empty" );
+	
+	handle = hInstrumentHandle;												  
+	
+	CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalHandle ));
+	
+	switch (iFrequencySweepType)
+	{
+		case 1:  CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , ":SENS:SWE:MODE HOLD\n"));break; 
+
+		case 2:  CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , ":SENS:SWE:MODE CONT\n"));break;
+		
+		case 3:  CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , ":SENS:SWE:MODE GRO\n"));break;
+
+		case 4:  CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , ":SENS:SWE:MODE SING\n"));break;
+		
+		default: break;
+	}
+	
+	DelayWithEventProcessing( pLocalHandle->lfDelay );
+						
+	WaitForOperationCompletion( pLocalHandle->sessionHandle , pLocalHandle->lfTimeout  ,  pLocalHandle->lfOpcLowLevelTimeout );
+	
+Error: 
+	
+	if ( handle )
+		CmtReleaseTSVPtr ( handle );
+	
+	return NetworkAnalyzer_GetErrorTextMessage(hInstrumentHandle,StdError.error,NULL);
+}
+
 
 void* DLLEXPORT   NetworkAnalyzer_SetPower(int hInstrumentHandle, int iChannel , double lfPower , char *szPowerRequest , int iPortNum )
 {			   
@@ -2466,14 +2563,43 @@ Error:
 	return NetworkAnalyzer_GetErrorTextMessage(hInstrumentHandle,StdError.error,NULL);
 }
 
+
 void* DLLEXPORT   NetworkAnalyzer_GetPower(int hInstrumentHandle, int iChannel , double *lfPower , int iPortNum )
 {			   
-	STD_ERROR				StdError				=	{0};
+	STD_ERROR				StdError							=	{0};
+	
+	int						iChannelNumber						=	0;
+	
+	tsHandle				*pLocalHandle						=	{0};
 
-//Error: 
+	int						handle								=	0;
+	
+	char					szReadFeedback[STD_STRING]			=	{0};
+
+	int						count								=	0;
+	
+	IF (( hInstrumentHandle == 0 ) , "Handle is empty" );
+	
+	handle = hInstrumentHandle;
+	
+	CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalHandle ));
+	
+	CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , ":SOUR%d:POW?\n" , pLocalHandle->iCurrentChannel ));
+	
+	SetBreakOnLibraryErrors (0); 
+	viRead( pLocalHandle->sessionHandle, szReadFeedback , LOW_STRING , &count );
+	SetBreakOnLibraryErrors (1); 
+							
+	*lfPower = atof(szReadFeedback);
+
+Error: 
+	
+	if ( handle )
+		CmtReleaseTSVPtr ( handle );
 	
 	return NetworkAnalyzer_GetErrorTextMessage(hInstrumentHandle,StdError.error,NULL);
 }
+
 
 void* DLLEXPORT   NetworkAnalyzer_SetPowerRange(int hInstrumentHandle, int iChannel , int iRange , char *szRangeRequest , int *iCurrentRange )
 {			   
@@ -2572,7 +2698,7 @@ void* DLLEXPORT NetworkAnalyzer_SendFile( int hInstrumentHandle ,char *szLocalFi
 		//=====****************************** PNA ******************************************=====//
 		switch ( pLocalHandle->tType )
 		{
-			case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
+			case FW_TYPE_A_11_70:case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
 
 			default :
 					{		
@@ -2611,7 +2737,7 @@ void* DLLEXPORT NetworkAnalyzer_SendFile( int hInstrumentHandle ,char *szLocalFi
 		//=====****************************** ENA ******************************************=====//
 		switch ( pLocalHandle->tType )
 		{
-			case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
+			case FW_TYPE_A_11_70:case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
 
 			default :
 					{
@@ -2703,7 +2829,7 @@ void* DLLEXPORT NetworkAnalyzer_ReceiveFile( int hInstrumentHandle ,char *szLoca
 		//=====****************************** PNA ******************************************=====//
 		switch ( pLocalHandle->tType )
 		{
-			case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
+			case FW_TYPE_A_11_70:case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
 
 			default :
 					{
@@ -2771,7 +2897,7 @@ void* DLLEXPORT NetworkAnalyzer_ReceiveFile( int hInstrumentHandle ,char *szLoca
 		//=====****************************** ENA ******************************************=====//
 		switch ( pLocalHandle->tType )
 		{
-			case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
+			case FW_TYPE_A_11_70:case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
 
 			default :
 					{
@@ -2899,7 +3025,7 @@ void* DLLEXPORT NetworkAnalyzer_GetFileCatalog ( int hInstrumentHandle , char *s
 		//=====****************************** PNA ******************************************=====//
 		switch ( pLocalHandle->tType )
 		{
-			case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
+			case FW_TYPE_A_11_70:case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
 
 			default :
 					{
@@ -3029,7 +3155,7 @@ void* DLLEXPORT NetworkAnalyzer_GetFileCatalog ( int hInstrumentHandle , char *s
 		//=====****************************** ENA ******************************************=====//
 		switch ( pLocalHandle->tType )
 		{
-			case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
+			case FW_TYPE_A_11_70:case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
 
 			default :
 						{
@@ -3195,7 +3321,7 @@ void* DLLEXPORT Equipment_MakeFileCatalog( int hInstrumentHandle , char *szPath 
 		//=====****************************** PNA ******************************************=====//
 		switch ( pLocalHandle->tType )
 		{
-			case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
+			case FW_TYPE_A_11_70:case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
 
 			default :
 						{
@@ -3208,7 +3334,7 @@ void* DLLEXPORT Equipment_MakeFileCatalog( int hInstrumentHandle , char *szPath 
 		//=====****************************** ENA ******************************************=====//
 		switch ( pLocalHandle->tType )
 		{
-			case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
+			case FW_TYPE_A_11_70:case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
 
 			default :
 						{
@@ -3247,7 +3373,7 @@ void* DLLEXPORT NetworkAnalyzer_DeleteFile( int hInstrumentHandle , char *szStat
 		//=====****************************** PNA ******************************************=====//
 		switch ( pLocalHandle->tType )
 		{
-			case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
+			case FW_TYPE_A_11_70:case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
 
 			default :
 						{
@@ -3269,7 +3395,7 @@ void* DLLEXPORT NetworkAnalyzer_DeleteFile( int hInstrumentHandle , char *szStat
 		//=====****************************** ENA ******************************************=====//
 		switch ( pLocalHandle->tType )
 		{
-			case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
+			case FW_TYPE_A_11_70:case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
 
 			default :
 						{
@@ -3322,7 +3448,7 @@ void* DLLEXPORT NetworkAnalyzer_DeleteFileCatalog( int hInstrumentHandle , char 
 		//=====****************************** PNA ******************************************=====//
 		switch ( pLocalHandle->tType )
 		{
-			case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
+			case FW_TYPE_A_11_70:case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
 
 			default :
 						{
@@ -3344,7 +3470,7 @@ void* DLLEXPORT NetworkAnalyzer_DeleteFileCatalog( int hInstrumentHandle , char 
 		//=====****************************** ENA ******************************************=====//
 		switch ( pLocalHandle->tType )
 		{
-			case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
+			case FW_TYPE_A_11_70:case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
 
 			default :
 						{
@@ -3416,7 +3542,7 @@ void* DLLEXPORT   NetworkAnalyzer_ReCallRegister(int hInstrumentHandle , char *s
 		//=====****************************** PNA ******************************************=====//
 		switch ( pLocalHandle->tType )
 		{
-			case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
+			case FW_TYPE_A_11_70:case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
 
 			default :
 					{
@@ -3479,7 +3605,7 @@ void* DLLEXPORT   NetworkAnalyzer_ReCallRegister(int hInstrumentHandle , char *s
 		//=====****************************** ENA ******************************************=====//
 		switch ( pLocalHandle->tType )
 		{
-			case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
+			case FW_TYPE_A_11_70:case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
 
 			default :
 					{
@@ -3540,7 +3666,8 @@ void* DLLEXPORT   NetworkAnalyzer_SaveToRegister(int hInstrumentHandle, char *ps
 	int				handle								=	0;
 	
 	char			szReadFeedback[STD_STRING]			=	{0},
-					szDirectoryPath[512]				=	{0};
+					szDirectoryPath[512]				=	{0},
+					szFormatedCommand[STD_STRING]		=	{0};
 	
 	char			*pTemp								=	NULL;
 	
@@ -3551,38 +3678,39 @@ void* DLLEXPORT   NetworkAnalyzer_SaveToRegister(int hInstrumentHandle, char *ps
 	
 	CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalHandle ));
 	
+	strcpy( szDirectoryPath , pszFile );
+
+	pTemp = strrchr( szDirectoryPath , '\\' );
+
+	if ( pTemp )
+	{
+		*pTemp = 0;
+	}
+
+	if ( strstr( szDirectoryPath , ":\\" ))
+	{
+		RecursiveMakeDirectory( pLocalHandle->sessionHandle , "\"0.0\"\n" , szDirectoryPath );
+	}
+
+	viPrintf( pLocalHandle->sessionHandle , "*CLS\n" );
+	
 	if ( pLocalHandle->bEquipmentIsApna )
 	{
 		//=====****************************** PNA ******************************************=====//
 		switch ( pLocalHandle->tType )
 		{
+			case FW_TYPE_A_11_70:  
+					{
+						sprintf( szFormatedCommand , ":MMEM:STOR \"%s\"\n" , pszFile );
+						break;
+					}	
+					
 			case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
 
 			default :
 					{
-							strcpy( szDirectoryPath , pszFile );
-			
-							pTemp = strrchr( szDirectoryPath , '\\' );
-			
-							if ( pTemp )
-							{
-								*pTemp = 0;
-							}
-			
-							if ( strstr( szDirectoryPath , ":\\" ))
-							{
-								RecursiveMakeDirectory( pLocalHandle->sessionHandle , "\"0.0\"\n" , szDirectoryPath );
-							}
-			
-							viPrintf( pLocalHandle->sessionHandle , "*CLS\n" );
-							
-							CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , ":MMEM:STOR:CSAR \"%s\"\n" , pszFile ));
-
-							DelayWithEventProcessing(pLocalHandle->lfStateFileDelay);
-							
-							WaitForOperationCompletion( pLocalHandle->sessionHandle , pLocalHandle->lfStateFileTimeout  ,  pLocalHandle->lfOpcLowLevelTimeout );  
-	
-							FREE_CALLOC_COPY_STRING(pLocalHandle->pLastStateFile,pszFile); 
+						sprintf( szFormatedCommand , ":MMEM:STOR:CSAR \"%s\"\n" , pszFile );
+						break;
 					}
 		}
 	}
@@ -3591,37 +3719,24 @@ void* DLLEXPORT   NetworkAnalyzer_SaveToRegister(int hInstrumentHandle, char *ps
 		//=====****************************** ENA ******************************************=====//
 		switch ( pLocalHandle->tType )
 		{
-			case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
+			case FW_TYPE_A_11_70:case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
 
 			default :
 					{
-							strcpy( szDirectoryPath , pszFile );
-			
-							pTemp = strrchr( szDirectoryPath , '\\' );
-			
-							if ( pTemp )
-							{
-								*pTemp = 0;
-							}
-			
-							if ( strstr( szDirectoryPath , ":\\" ))
-							{
-								RecursiveMakeDirectory( pLocalHandle->sessionHandle , "\"0.0\"\n" , szDirectoryPath );
-							}
-			
-							viPrintf( pLocalHandle->sessionHandle , "*CLS\n" );
-							
-							CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , ":MMEM:STOR \"%s\"\n" , pszFile ));
-
-							DelayWithEventProcessing(pLocalHandle->lfStateFileDelay);
-							
-							WaitForOperationCompletion( pLocalHandle->sessionHandle , pLocalHandle->lfStateFileTimeout  ,  pLocalHandle->lfOpcLowLevelTimeout );  
-	
-							FREE_CALLOC_COPY_STRING(pLocalHandle->pLastStateFile,pszFile); 
+						sprintf( szFormatedCommand , ":MMEM:STOR \"%s\"\n" , pszFile );
+						break;
 					}
 		}
 	}
 	
+	
+	CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , szFormatedCommand ));
+
+	DelayWithEventProcessing(pLocalHandle->lfStateFileDelay);
+	
+	WaitForOperationCompletion( pLocalHandle->sessionHandle , pLocalHandle->lfStateFileTimeout  ,  pLocalHandle->lfOpcLowLevelTimeout );  
+
+	FREE_CALLOC_COPY_STRING(pLocalHandle->pLastStateFile,pszFile); 
 Error:
 	
 	if ( handle )
@@ -3746,7 +3861,7 @@ void* DLLEXPORT   NetworkAnalyzer_ECAL_GetInformation(int hInstrumentHandle, cha
 		//=====****************************** PNA ******************************************=====//
 		switch ( pLocalHandle->tType )
 		{
-			case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
+			case FW_TYPE_A_11_70:case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
 
 			default :
 					{
@@ -3766,7 +3881,7 @@ void* DLLEXPORT   NetworkAnalyzer_ECAL_GetInformation(int hInstrumentHandle, cha
 		//=====****************************** ENA ******************************************=====//
 		switch ( pLocalHandle->tType )
 		{
-			case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
+			case FW_TYPE_A_11_70:case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
 
 			default :
 					{
@@ -3853,7 +3968,7 @@ void* DLLEXPORT   NetworkAnalyzer_ECAL_Calibrate(int hInstrumentHandle, char *ps
 			//=====****************************** PNA ******************************************=====//
 			switch ( pLocalHandle->tType )
 			{
-				case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
+				case FW_TYPE_A_11_70:case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
 				default :
 						{
 								CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , "SYST:ACT:CHAN?\n" ));
@@ -3871,7 +3986,7 @@ void* DLLEXPORT   NetworkAnalyzer_ECAL_Calibrate(int hInstrumentHandle, char *ps
 			//=====****************************** ENA ******************************************=====//
 			switch ( pLocalHandle->tType )
 			{
-				case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
+				case FW_TYPE_A_11_70:case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
 				default :
 						{
 								CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , ":SERV:CHAN:ACT?\n" ));
@@ -3894,7 +4009,7 @@ void* DLLEXPORT   NetworkAnalyzer_ECAL_Calibrate(int hInstrumentHandle, char *ps
 		//=====****************************** PNA ******************************************=====//
 		switch ( pLocalHandle->tType )
 		{
-			case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
+			case FW_TYPE_A_11_70:case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
 
 			default :															  
 				{		   
@@ -4063,7 +4178,7 @@ void* DLLEXPORT   NetworkAnalyzer_ECAL_Calibrate(int hInstrumentHandle, char *ps
 		//=====****************************** ENA ******************************************=====//
 		switch ( pLocalHandle->tType )
 		{
-			case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
+			case FW_TYPE_A_11_70:case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
 
 			default :															  
 				{
@@ -4162,7 +4277,7 @@ void* DLLEXPORT   NetworkAnalyzer_Reponse_OpenShortLoad_Calibrate(int hInstrumen
 			//=====****************************** PNA ******************************************=====//
 			switch ( pLocalHandle->tType )
 			{
-				case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
+				case FW_TYPE_A_11_70:case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
 				default :
 						{
 								CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , "SYST:ACT:CHAN?\n" ));
@@ -4180,7 +4295,7 @@ void* DLLEXPORT   NetworkAnalyzer_Reponse_OpenShortLoad_Calibrate(int hInstrumen
 			//=====****************************** ENA ******************************************=====//
 			switch ( pLocalHandle->tType )
 			{
-				case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
+				case FW_TYPE_A_11_70:case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
 				default :
 						{
 								CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , ":SERV:CHAN:ACT?\n" ));
@@ -4203,7 +4318,7 @@ void* DLLEXPORT   NetworkAnalyzer_Reponse_OpenShortLoad_Calibrate(int hInstrumen
 		//=====****************************** PNA ******************************************=====//
 		switch ( pLocalHandle->tType )
 		{
-			case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
+			case FW_TYPE_A_11_70:case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
 
 			default :															  
 				{		
@@ -4283,7 +4398,7 @@ void* DLLEXPORT   NetworkAnalyzer_Reponse_OpenShortLoad_Calibrate(int hInstrumen
 		//=====****************************** ENA ******************************************=====//
 		switch ( pLocalHandle->tType )
 		{
-			case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
+			case FW_TYPE_A_11_70:case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
 
 			default :															  
 					{
@@ -4413,7 +4528,7 @@ void* DLLEXPORT   NetworkAnalyzer_Reponse_Thru_Calibrate(int hInstrumentHandle, 
 			//=====****************************** PNA ******************************************=====//
 			switch ( pLocalHandle->tType )
 			{
-				case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
+				case FW_TYPE_A_11_70:case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
 				default :
 						{
 								CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , "SYST:ACT:CHAN?\n" ));
@@ -4431,7 +4546,7 @@ void* DLLEXPORT   NetworkAnalyzer_Reponse_Thru_Calibrate(int hInstrumentHandle, 
 			//=====****************************** ENA ******************************************=====//
 			switch ( pLocalHandle->tType )
 			{
-				case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
+				case FW_TYPE_A_11_70:case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
 				default :
 						{
 								CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , ":SERV:CHAN:ACT?\n" ));
@@ -4454,7 +4569,7 @@ void* DLLEXPORT   NetworkAnalyzer_Reponse_Thru_Calibrate(int hInstrumentHandle, 
 		//=====****************************** PNA ******************************************=====//
 		switch ( pLocalHandle->tType )
 		{
-			case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
+			case FW_TYPE_A_11_70:case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
 
 			default :															  
 				{
@@ -4495,7 +4610,7 @@ void* DLLEXPORT   NetworkAnalyzer_Reponse_Thru_Calibrate(int hInstrumentHandle, 
 		//=====****************************** ENA ******************************************=====//
 		switch ( pLocalHandle->tType )
 		{
-			case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
+			case FW_TYPE_A_11_70:case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
 
 			default :															  
 				{
@@ -4584,7 +4699,7 @@ void* DLLEXPORT   NetworkAnalyzer_Reponse_Done_Calibrate(int hInstrumentHandle )
 			//=====****************************** PNA ******************************************=====//
 			switch ( pLocalHandle->tType )
 			{
-				case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
+				case FW_TYPE_A_11_70:case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
 				default :
 						{
 								CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , "SYST:ACT:CHAN?\n" ));
@@ -4602,7 +4717,7 @@ void* DLLEXPORT   NetworkAnalyzer_Reponse_Done_Calibrate(int hInstrumentHandle )
 			//=====****************************** ENA ******************************************=====//
 			switch ( pLocalHandle->tType )
 			{
-				case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
+				case FW_TYPE_A_11_70:case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
 				default :
 						{
 								CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , ":SERV:CHAN:ACT?\n" ));
@@ -4625,7 +4740,7 @@ void* DLLEXPORT   NetworkAnalyzer_Reponse_Done_Calibrate(int hInstrumentHandle )
 		//=====****************************** PNA ******************************************=====//
 		switch ( pLocalHandle->tType )
 		{
-			case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
+			case FW_TYPE_A_11_70:case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
 
 			default :															  
 				{
@@ -4648,7 +4763,7 @@ void* DLLEXPORT   NetworkAnalyzer_Reponse_Done_Calibrate(int hInstrumentHandle )
 		//=====****************************** ENA ******************************************=====//
 		switch ( pLocalHandle->tType )
 		{
-			case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
+			case FW_TYPE_A_11_70:case FW_TYPE_A_11_22:case FW_TYPE_A_11_02:case FW_TYPE_A_09_61:case FW_TYPE_A_09_42:case FW_TYPE_A_09_20:case FW_TYPE_A_09_10:case FW_TYPE_A_08_50:case FW_TYPE_A_07_50:case FW_TYPE_A_06_04:case FW_TYPE_A_06_01:case FW_TYPE_A_04_87:
 
 			default :															  
 				{
@@ -4793,7 +4908,12 @@ int main (int argc, char *argv[])
 	
 	//TCPIP::10.0.0.19::5025::SOCKET
 	//visa://192.168.145.111/GPIB0::17::INSTR
-	NetworkAnalyzer_Init( 0 , "visa://BADAS-TEST7/GPIB::16" , &hInstrumentHandle, &iInstrumentConnectStatus, &iInstrumentChanelsQuantity);
+	NetworkAnalyzer_Init( 0 , "GPIB::16" , &hInstrumentHandle, &iInstrumentConnectStatus, &iInstrumentChanelsQuantity);
+	
+	NetworkAnalyzer_SelectTrace ( hInstrumentHandle , 3 );   
+	
+	NetworkAnalyzer_SelectMathFunction ( hInstrumentHandle , 3 , 'N' );
+	
 	
 	NetworkAnalyzer_GetTrace ( hInstrumentHandle , 1 , 0 , 0 , 60, &plfSecondVector , &plfFirstVector , &iNumberOfPoints );  
 	
@@ -4805,7 +4925,7 @@ int main (int argc, char *argv[])
 	NetworkAnalyzer_GetPointsNum( hInstrumentHandle, &iNumberOfPoints ); 
 	NetworkAnalyzer_SelectChannel ( hInstrumentHandle , 2 ); 
 	NetworkAnalyzer_SelectWindow ( hInstrumentHandle , 1 );  
-	NetworkAnalyzer_SelectTrace ( hInstrumentHandle , 3 );
+	
 	NetworkAnalyzer_SelectMathFunction ( hInstrumentHandle , 1 , '+' );  
 	NetworkAnalyzer_SetTraceToMathMemory( hInstrumentHandle , 1 );
 	
