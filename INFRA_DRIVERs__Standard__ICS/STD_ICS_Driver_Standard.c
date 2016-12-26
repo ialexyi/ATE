@@ -558,6 +558,12 @@ void*      ICS_STD_Driver_SetValue( int hHandle , char *pCommandName , void *pVa
 				iCommandFound++;		
 	}
 	
+	
+	if (( iCommandFound == 0 ) && ( strcmp( pCommandName , "SAVE_DEF" ) == 0 ))
+	{
+		FREE_STDERR_COPY_ERR( ICS_SaveDefaultState( pLocalStorage->hDriverHandle )); 
+	}
+	
 	IF (( iCommandFound == 0 ) , "Command was not found.");   
 		
 	pLocalStorage->iLastCommandIndex = iCommandIndex;
@@ -1026,7 +1032,7 @@ void*      ICS_STD_Driver_Check_Connection( int hHandle , char *pCommandName , i
 		}
 		
 	IF (( bCommandFound == 0 ) , "Command was not found.");   
-		
+	
 Error:
 
 	if ( piStatus )

@@ -36,4 +36,7 @@ void*	ICS_GetPortByBit( int Handle , unsigned char ucPortNumber , unsigned char 
 
 void* 	ICS_SPI(int Handle, unsigned char ucPortNumber, unsigned char ucEnableBitIndex, unsigned char ucEnableBitPolarity, unsigned char ucClockBitIndex, unsigned char ucClockBitPolarity, unsigned char ucClockBitPhase, unsigned char ucDataBitIndex, unsigned long long ullSetData, unsigned char ucSetNumberOfBits, unsigned char ucReadBitPortIndex, unsigned char ucReadBitIndex, unsigned long long *ullGetData, unsigned char ucGetNumberOfBits);
 
+void*   ICS_SaveDefaultState( int Handle );
+
+
 #endif  /* ndef __ICS_Driver_H__ */

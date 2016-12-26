@@ -931,3 +931,23 @@ Error:
 	RETURN_STDERR;	
 }
 
+
+void*	   ICS_SaveDefaultState( int Handle )
+{
+	STD_ERROR				StdError											=	{0};
+
+	tsHandle				*pLocalHandle										=	NULL; 
+
+	IF (( Handle == 0 ) , "Empty Handle" );
+	
+	CHK_CMT( CmtGetTSVPtr ( Handle , &pLocalHandle  ));
+	
+	CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , "*SAV 0\n" ));
+	
+Error:	
+	
+	if( Handle ) 
+		CmtReleaseTSVPtr ( Handle );
+		
+	return ICS_GetErrorTextMessage(Handle,StdError.error,NULL);	
+}
