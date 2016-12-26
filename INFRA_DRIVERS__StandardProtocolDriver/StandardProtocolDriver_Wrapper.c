@@ -12,20 +12,6 @@
 
 #define			DEVICE_ID						STANDARD_PROTOCOL_DRIVER_DEVICE_ID
 
-//==============================================================================
-// Types
-
-//==============================================================================
-// Static global variables
-
-//==============================================================================
-// Static functions
-
-//==============================================================================
-// Global variables
-
-//==============================================================================
-// Global functions
  //==============================================================================
 // DLL main entry-point functions
 
@@ -54,6 +40,10 @@ int __stdcall DllEntryPoint (HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvRese
     return DllMain (hinstDLL, fdwReason, lpvReserved);
 }
 
+
+//==============================================================================
+// Global functions
+
 void* DLLEXPORT		StandardDevice_GetErrorTextMessage ( int vhInstrumentHandle , int iError , char *pErrorMessage )
 {
 	STD_ERROR				StdError					=	{0};    
@@ -61,13 +51,15 @@ void* DLLEXPORT		StandardDevice_GetErrorTextMessage ( int vhInstrumentHandle , i
 Error: 
 	
 	RETURN_STDERR_POINTER;
-}
+} 
 
+/***** ***** ***** ***** ***** ***** ***** ***** Standard Device Get Identification Number ***** ***** ***** ***** ***** ***** ***** *****/     
 unsigned __int64	DLLEXPORT		StandardDevice_Get_IdentificationNumber( void )
 {
 	return (unsigned __int64)DEVICE_ID;
 }
 
+/***** ***** ***** ***** ***** ***** ***** ***** Equipment Info ***** ***** ***** ***** ***** ***** ***** *****/  
 void*	DLLEXPORT		Equipment_Info ( int hLowLevelHandle , char *pAddress , char **pVendor , char **pSerialNumber , char **pModel , char **pFirmware )
 {
 	STD_ERROR						StdError									=	{0};
@@ -84,20 +76,14 @@ void*	DLLEXPORT		Equipment_GetLowLevelHandle( int hHandle , int *phLowLevelHandl
 	RETURN_STDERR_POINTER;	
 }
 
+/***** ***** ***** ***** ***** ***** ***** ***** Equipment Is Supported ***** ***** ***** ***** ***** ***** ***** *****/   
 void*	DLLEXPORT		Equipment_IsSupported ( int hLowLevelHandle , char *pAddress , char *pID_String , char *pIdentificationText , int *pbSupporting , void **pLocalData )
 {
 	STD_ERROR						StdError									=	{0};
 	RETURN_STDERR_POINTER;
 }
 
-void*	DLLEXPORT		Config_Copy_STD_CallBackSet ( int *pHandle , void *pCallBackSet )
-{
-	STD_ERROR						StdError									=	{0};
-	
-	RETURN_STDERR_POINTER;
-}
-
-//typedef void* (*pfSTD_Config_Install_CommentCallback) ( int *pHandle , pfCommentCallback fFunction , void *pData , int type);
+/***** ***** ***** ***** ***** ***** ***** ***** Config Install Comment Callback ***** ***** ***** ***** ***** ***** ***** *****/ 
 void*	DLLEXPORT		Config_Install_CommentCallback( int *pHandle , pfCommentCallback fFunction , void *pData , int type) 
 {
 	STD_ERROR				StdError						=	{0};
@@ -109,7 +95,19 @@ Error:
 	RETURN_STDERR_POINTER;	
 }
 
-//typedef void* (*pfSTD_Config_Install_ConfigValueCallback) ( int *pHandle , pfConfigValueCallback fFunction , void *pData , int type);
+/***** ***** ***** ***** ***** ***** ***** ***** Config Install Comment Callback ***** ***** ***** ***** ***** ***** ***** *****/ 
+/*void*	DLLEXPORT		Config_Install_CommentCallback( int *pHandle , pfCommentCallback fFunction , void *pData , int type) 
+{
+	STD_ERROR				StdError						=	{0};
+						
+	FREE_STDERR_COPY_ERR( STD_Driver_Config_Install_CommentCallback( pHandle , fFunction , pData , type));
+
+Error: 	
+	
+	RETURN_STDERR_POINTER;	
+}*/
+
+/***** ***** ***** ***** ***** ***** ***** ***** Config Install Config Value Callback ***** ***** ***** ***** ***** ***** ***** *****/ 
 void*	DLLEXPORT		Config_Install_ConfigValueCallback( int *pHandle , pfConfigValueCallback fFunction , void *pData , int type) 
 {
 	STD_ERROR				StdError						=	{0};
@@ -122,7 +120,8 @@ Error:
 	RETURN_STDERR_POINTER;	
 }
 
-//typedef void* (*pfSTD_Config_Install_CheckForBreakCallback) ( int *pHandle , pfCheckForBreakCallback fFunction , void *pData , int type);
+
+/***** ***** ***** ***** ***** ***** ***** ***** Config Install Check For Break Callback ***** ***** ***** ***** ***** ***** ***** *****/ 
 void*	DLLEXPORT		Config_Install_CheckForBreakCallback( int *pHandle , pfCheckForBreakCallback fFunction , void *pData , int type) 
 {
 	STD_ERROR				StdError						=	{0};
@@ -135,7 +134,7 @@ Error:
 	RETURN_STDERR_POINTER;	
 }
 
-//typedef void* (*pfSTD_Config_LOG_SetAllowState) ( int iHandle , int bAllowLog ); 
+/***** ***** ***** ***** ***** ***** ***** ***** Config LOG Set Allow State ***** ***** ***** ***** ***** ***** ***** *****/     
 void*	DLLEXPORT		Config_LOG_SetAllowState( int iHandle , int bAllowLog ) 
 {
 	STD_ERROR				StdError						=	{0};
@@ -147,12 +146,24 @@ Error:
 	RETURN_STDERR_POINTER;	
 }
 
+/***** ***** ***** ***** ***** ***** ***** ***** Config Set Attribute ***** ***** ***** ***** ***** ***** ***** *****/  
+void* DLLEXPORT Config_SetAttribute( int hHandle , char *pAttributeName , char *pAttributeValue )
+{
+	STD_ERROR				StdError						=	{0};
+	
+	FREE_STDERR_COPY_ERR( STD_Config_SetAttribute( hHandle , pAttributeName , pAttributeValue ));
+	
+Error: 
+	
+	RETURN_STDERR_POINTER;	
+}
+
+/***** ***** ***** ***** ***** ***** ***** ***** Standard Device Init ***** ***** ***** ***** ***** ***** ***** *****/     
 void*	DLLEXPORT		StandardDevice_Init( int iDeviceID , char *pszConnectionName , char *pszAddress , int *pHandle , ... )
 {
 	STD_ERROR							StdError											=	{0};
 	
-	int									handle												=	0,
-										iLocalDeviceID										=	0;
+	int									iLocalDeviceID										=	0;
 	
 	iLocalDeviceID = DEVICE_ID;
 	
@@ -165,6 +176,7 @@ Error:
 	RETURN_STDERR_POINTER;	
 }
 
+/***** ***** ***** ***** ***** ***** ***** ***** Standard Device GetConnection Address ***** ***** ***** ***** ***** ***** ***** *****/    
 void*	DLLEXPORT		StandardDevice_GetConnectionAddress( int hHandle , char **pszAddress )
 {
 	STD_ERROR							StdError											=	{0};
@@ -178,17 +190,21 @@ Error:
 	RETURN_STDERR_POINTER;	
 }
 
+/***** ***** ***** ***** ***** ***** ***** ***** Standard Device Reset ***** ***** ***** ***** ***** ***** ***** *****/    
 void*	DLLEXPORT		StandardDevice_Reset( int hHandle )
 {
 	STD_ERROR							StdError											=	{0};
 	
 	IF (( hHandle == 0 ) , "Empty handle");
+	
+	FREE_STDERR_COPY_ERR( STD_Driver_Reset( hHandle ));  
 		
 Error:
 	
 	RETURN_STDERR_POINTER;	
 }
 
+/***** ***** ***** ***** ***** ***** ***** ***** Standard Device Set Value ***** ***** ***** ***** ***** ***** ***** *****/ 
 void*	DLLEXPORT		StandardDevice_SetValue( int hHandle , char *pCommandName , void *pValue , int iValueLength , int iValueSize , ...  )
 {
 	STD_ERROR							StdError											=	{0};
@@ -202,6 +218,7 @@ Error:
 	RETURN_STDERR_POINTER;	
 }
 
+/***** ***** ***** ***** ***** ***** ***** ***** Standard Device Get Value ***** ***** ***** ***** ***** ***** ***** *****/ 
 void*	DLLEXPORT		StandardDevice_GetValue( int hHandle , char **pGetCommandName , void **pGetValue , int *piValueLength , int *piValueSize , ...  )            
 {
 	STD_ERROR							StdError											=	{0};
@@ -215,7 +232,7 @@ Error:
 	RETURN_STDERR_POINTER;	
 }
 
-
+/***** ***** ***** ***** ***** ***** ***** ***** Standard Device Close ***** ***** ***** ***** ***** ***** ***** *****/  
 void*	DLLEXPORT		StandardDevice_Close( int *pHandle )
 {
 	STD_ERROR							StdError											=	{0};
@@ -229,7 +246,7 @@ Error:
 	RETURN_STDERR_POINTER;	
 }
 
-
+/***** ***** ***** ***** ***** ***** ***** ***** Standard Device Unplug ***** ***** ***** ***** ***** ***** ***** *****/
 void*	DLLEXPORT		StandardDevice_Unplug( int hHandle , double lfTimeOut )
 {
 	STD_ERROR							StdError											=	{0};
@@ -243,7 +260,7 @@ Error:
 	RETURN_STDERR_POINTER;	
 }
 
-
+/***** ***** ***** ***** ***** ***** ***** ***** Standard Device Plug In ***** ***** ***** ***** ***** ***** ***** *****/ 
 void*	DLLEXPORT		StandardDevice_PlugIn( int hHandle , double lfTimeOut )
 {
 	STD_ERROR							StdError											=	{0};
@@ -257,7 +274,7 @@ Error:
 	RETURN_STDERR_POINTER;	
 }
 
-
+/***** ***** ***** ***** ***** ***** ***** ***** Standard Device Enable Plug InAutomatically ***** ***** ***** ***** ***** ***** ***** *****/
 void*	DLLEXPORT		StandardDevice_EnablePlugInAutomatically( int hHandle , int bEnable )
 {
 	STD_ERROR							StdError											=	{0};
@@ -271,6 +288,7 @@ Error:
 	RETURN_STDERR_POINTER;	
 }
 
+/***** ***** ***** ***** ***** ***** ***** ***** Standard Device Install Receive Callback Function ***** ***** ***** ***** ***** ***** ***** *****/ 
 void*	DLLEXPORT		StandardDevice_InstallReceiveCallbackFunction( int hHandle , void *pfFunction , void *pData )  
 {
 	STD_ERROR							StdError											=	{0};
@@ -284,6 +302,7 @@ Error:
 	RETURN_STDERR_POINTER;	
 }
 
+/***** ***** ***** ***** ***** ***** ***** ***** Standard Device Load Config File ***** ***** ***** ***** ***** ***** ***** *****/ 
 void*	DLLEXPORT		StandardDevice_LoadConfigFile( int hHandle , char *pFileName )
 {
 	STD_ERROR							StdError											=	{0};
@@ -297,7 +316,7 @@ Error:
 	RETURN_STDERR_POINTER;	
 }
 
-
+/***** ***** ***** ***** ***** ***** ***** ***** Standard Device Load Config Buffer ***** ***** ***** ***** ***** ***** ***** *****/ 
 void*	DLLEXPORT		StandardDevice_LoadConfigBuffer( int hHandle , char *pBuffer , int iBufferSize )
 {
 	STD_ERROR							StdError											=	{0};
@@ -311,6 +330,7 @@ Error:
 	RETURN_STDERR_POINTER;	
 }
 
+/***** ***** ***** ***** ***** ***** ***** ***** Standard Device Check Connection ***** ***** ***** ***** ***** ***** ***** *****/ 
 void*	DLLEXPORT		StandardDevice_Check_Connection( int hHandle , char *pCommandName , int *piStatus )
 {
 	STD_ERROR							StdError											=	{0};
@@ -324,6 +344,7 @@ Error:
 	RETURN_STDERR_POINTER;	
 }
 
+/***** ***** ***** ***** ***** ***** ***** ***** Standard Device Get Commands List ***** ***** ***** ***** ***** ***** ***** *****/ 
 void*	DLLEXPORT		StandardDevice_Get_Commands_List( int hHandle , char ***pCommandsList , int *piNumberOfCommands )     
 {
 	STD_ERROR							StdError											=	{0};
@@ -336,6 +357,9 @@ Error:
 	
 	RETURN_STDERR_POINTER;	
 }
+
+ //==============================================================================
+// For debug only  
 
 void main( void )
 {
