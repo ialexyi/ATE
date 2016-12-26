@@ -65,8 +65,11 @@
 #define  MENUBAR_FILE_NEW                 3       /* callback function: clbMenuNewFile */
 #define  MENUBAR_FILE_OPEN                4       /* callback function: clbMenuOpenFile */
 #define  MENUBAR_FILE_SAVE                5       /* callback function: clbMenuSaveFile */
-#define  MENUBAR_FILE_SEPARATOR           6
-#define  MENUBAR_FILE_EXIT                7       /* callback function: clbMenuExit */
+#define  MENUBAR_FILE_SAVE_AS             6       /* callback function: clbMenuSaveAsFile */
+#define  MENUBAR_FILE_SEPARATOR           7
+#define  MENUBAR_FILE_EXIT                8       /* callback function: clbMenuExit */
+#define  MENUBAR_EDIT                     9
+#define  MENUBAR_EDIT_DELETE              10      /* callback function: clbMenuDeleteItem */
 
 
      /* Callback Prototypes: */
@@ -75,9 +78,11 @@ int  CVICALLBACK clbCommandNameChanged(int panel, int control, int event, void *
 int  CVICALLBACK clbCommandsList(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);
 int  CVICALLBACK clbExit(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);
 int  CVICALLBACK clbMeasureConfigValueChanged(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);
+void CVICALLBACK clbMenuDeleteItem(int menubar, int menuItem, void *callbackData, int panel);
 void CVICALLBACK clbMenuExit(int menubar, int menuItem, void *callbackData, int panel);
 void CVICALLBACK clbMenuNewFile(int menubar, int menuItem, void *callbackData, int panel);
 void CVICALLBACK clbMenuOpenFile(int menubar, int menuItem, void *callbackData, int panel);
+void CVICALLBACK clbMenuSaveAsFile(int menubar, int menuItem, void *callbackData, int panel);
 void CVICALLBACK clbMenuSaveFile(int menubar, int menuItem, void *callbackData, int panel);
 int  CVICALLBACK clbValueChanged(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);
 int  CVICALLBACK panelCB(int panel, int event, void *callbackData, int eventData1, int eventData2);
