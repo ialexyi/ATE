@@ -16,6 +16,13 @@
 #include "GlobalDefines.h" 
 //==============================================================================
 // Constants
+//                       PowerMeter_Set_Trigger_Source
+
+#define				BUS_TRIGGER_SOURCE								1//PowerMeter Trigger sorce
+#define				EXT_TRIGGER_SOURCE								2//PowerMeter Trigger sorce
+#define				HOLD_TRIGGER_SOURCE								3//PowerMeter Trigger sorce
+#define				IMM_TRIGGER_SOURCE								4//PowerMeter Trigger sorce
+#define				INT_TRIGGER_SOURCE								5//PowerMeter Trigger sorce
 
 //==============================================================================
 // Types
@@ -116,6 +123,12 @@ STD_ERROR   DLLEXPORT	DRV_PowerMeter_Read_Marker( int Handle , int iChannel , in
 STD_ERROR   DLLEXPORT	DRV_PowerMeter_Fetch_Marker( int Handle , int iChannel , int iMarkerNumber , double *vlfPosition , double *vlfPower );
 
 STD_ERROR   DLLEXPORT	DRV_PowerMeter_GetTrace( int Handle , int iChannel , double timeout, double **plfTime , double **plfTrace , int numberOfPoints , int *pCount );
+
+STD_ERROR	DLLEXPORT	DRV_PowerMeter_Set_Trigger_Source( int hInstrumentHandle, int iTriggerSource );
+
+STD_ERROR	DLLEXPORT	DRV_PowerMeter_Abort( int hInstrumentHandle, int iChannel);
+
+
 
 #ifdef __cplusplus
     }

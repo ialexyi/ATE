@@ -41,6 +41,9 @@ STD_ERROR   DLLEXPORT	DRIVER_MANAGER_Equipment_BrowseSelectStateFiles ( int hHan
 STD_ERROR   DLLEXPORT	DRV_Config_SetAttribute( int hHandle , char *pAttributeName , char *pAttributeValue );
 //==============================================================================
 // Global functions
+
+STD_ERROR   DLLEXPORT	DRV_StandardDevice_UpdateIgnoreDuplicationAddresses ( int hHandle );
+
 int			DLLEXPORT	DRV_StandardDevice_GetErrorTextMessage( int handle , int iError , char **pErrorMessage );
 
 STD_ERROR   DLLEXPORT	DRV_StandardDevice_GetIdentificationNumber( int Handle , unsigned __int64 *pullIDNumber );

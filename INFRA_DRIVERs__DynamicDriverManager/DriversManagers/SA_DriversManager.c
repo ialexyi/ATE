@@ -320,6 +320,7 @@ STD_ERROR   DLLEXPORT	DRV_SpectrumAnalyzer_Init ( char *pszDriverLocation , char
 			pDriverInfo->tInstrDB.spectrumAnalyzerDriverFunctions.SpectrumAnalyzer_RestartMeasure							= (pfSpectrumAnalyzer_RestartMeasure) GetProcAddress( pDriverInfo->LibraryHandle , "SpectrumAnalyzer_RestartMeasure");
 			pDriverInfo->tInstrDB.spectrumAnalyzerDriverFunctions.SpectrumAnalyzer_Read_SymbolStream						= (pfSpectrumAnalyzer_Read_SymbolStream) GetProcAddress( pDriverInfo->LibraryHandle , "SpectrumAnalyzer_Read_SymbolStream");
 			pDriverInfo->tInstrDB.spectrumAnalyzerDriverFunctions.SpectrumAnalyzer_PhaseNoise_GetMarker						= (pfSpectrumAnalyzer_PhaseNoise_GetMarker) GetProcAddress( pDriverInfo->LibraryHandle , "SpectrumAnalyzer_PhaseNoise_GetMarker");
+			pDriverInfo->tInstrDB.spectrumAnalyzerDriverFunctions.SpectrumAnalyzer_PhaseNoise_GetIntegratedMarker			= (pfSpectrumAnalyzer_PhaseNoise_GetIntegratedMarker) GetProcAddress( pDriverInfo->LibraryHandle , "SpectrumAnalyzer_PhaseNoise_GetIntegratedMarker");
 			pDriverInfo->tInstrDB.spectrumAnalyzerDriverFunctions.SpectrumAnalyzer_AutoTune									= (pfSpectrumAnalyzer_AutoTune) GetProcAddress( pDriverInfo->LibraryHandle , "SpectrumAnalyzer_AutoTune");
 			pDriverInfo->tInstrDB.spectrumAnalyzerDriverFunctions.SpectrumAnalyzer_SaveState								= (pfSpectrumAnalyzer_SaveState) GetProcAddress( pDriverInfo->LibraryHandle , "SpectrumAnalyzer_SaveState");
 			pDriverInfo->tInstrDB.spectrumAnalyzerDriverFunctions.SpectrumAnalyzer_GetLastStateFileName						= (pfSpectrumAnalyzer_GetLastStateFileName) GetProcAddress( pDriverInfo->LibraryHandle , "SpectrumAnalyzer_GetLastStateFileName");
@@ -333,7 +334,7 @@ STD_ERROR   DLLEXPORT	DRV_SpectrumAnalyzer_Init ( char *pszDriverLocation , char
 			pDriverInfo->tInstrDB.spectrumAnalyzerDriverFunctions.SpectrumAnalyzer_SetOffset								= (pfSpectrumAnalyzer_SetOffset) GetProcAddress( pDriverInfo->LibraryHandle , "SpectrumAnalyzer_SetOffset"); 
 			pDriverInfo->tInstrDB.spectrumAnalyzerDriverFunctions.SpectrumAnalyzer_GetMarkerFrequencyCounter				= (pfSpectrumAnalyzer_GetMarkerFrequencyCounter) GetProcAddress( pDriverInfo->LibraryHandle , "SpectrumAnalyzer_GetMarkerFrequencyCounter");
 			pDriverInfo->tInstrDB.spectrumAnalyzerDriverFunctions.SpectrumAnalyzer_MeasureMarkerFrequencyCounter			= (pfSpectrumAnalyzer_MeasureMarkerFrequencyCounter) GetProcAddress( pDriverInfo->LibraryHandle , "SpectrumAnalyzer_MeasureMarkerFrequencyCounter");
-			
+			pDriverInfo->tInstrDB.spectrumAnalyzerDriverFunctions.SpectrumAnalyzer_SetTriggerSource							= (pfSpectrumAnalyzer_SetTriggerSource) GetProcAddress( pDriverInfo->LibraryHandle , "SpectrumAnalyzer_SetTriggerSource");
 			pDriverInfo->tInstrDB.Equipment_Info      																		= (pfSTD_Equipment_Info) GetProcAddress( pDriverInfo->LibraryHandle , "Equipment_Info");      
 			pDriverInfo->tInstrDB.Equipment_IsSupported																		= (pfSTD_Equipment_IsSupported) GetProcAddress( pDriverInfo->LibraryHandle , "Equipment_IsSupported");   
 		
@@ -351,6 +352,9 @@ STD_ERROR   DLLEXPORT	DRV_SpectrumAnalyzer_Init ( char *pszDriverLocation , char
 			pDriverInfo->tInstrDB.Equipment_DeleteFileCatalog																= (pfSTD_Equipment_DeleteFileCatalog) GetProcAddress( pDriverInfo->LibraryHandle , "Equipment_DeleteFileCatalog");
 			pDriverInfo->tInstrDB.Equipment_DeleteStateFile																	= (pfSTD_Equipment_DeleteStateFile) GetProcAddress( pDriverInfo->LibraryHandle , "Equipment_DeleteStateFile");
 			
+			pDriverInfo->tInstrDB.spectrumAnalyzerDriverFunctions.SpectrumAnalyzer_PhaseNoise_SetIntegratedMarker_Start_Stop_Offsets	= (pfSpectrumAnalyzer_PhaseNoise_SetIntegratedMarker_Start_Stop_Offsets) GetProcAddress( pDriverInfo->LibraryHandle , "SpectrumAnalyzer_PhaseNoise_SetIntegratedMarker_Start_Stop_Offsets");	
+
+																																																															
 			pDriverInfo->tInstrDB.Config_SetAttribute																		= (pfSTD_Config_SetAttribute) GetProcAddress( pDriverInfo->LibraryHandle , "Config_SetAttribute"); 		
 			
 			pWrapperFunction = pDriverInfo->tInstrDB.spectrumAnalyzerDriverFunctions.SpectrumAnalyzer_Init;
@@ -367,7 +371,7 @@ STD_ERROR   DLLEXPORT	DRV_SpectrumAnalyzer_Init ( char *pszDriverLocation , char
 			}
 		
 			if ( !bHandleExists )
-				DRIVER_MANAGER_AddConnection( pszAddressString , &(pDriverInfo->InstrumentHandle) , &(pDriverInfo->InstrumentLockHandle) );
+				DRIVER_MANAGER_AddConnection( pszAddressString , &(pDriverInfo->InstrumentHandle) , DRIVER_TYPE_SPECTRUM_ANALYZER , &(pDriverInfo->InstrumentLockHandle) );
 		
 			LockHandle = pDriverInfo->InstrumentLockHandle;
 		
@@ -386,24 +390,28 @@ STD_ERROR   DLLEXPORT	DRV_SpectrumAnalyzer_Init ( char *pszDriverLocation , char
 		
 			DRIVER_MANAGER_GetCopyCallbacksStructure( VariableHandle , &(pDriverInfo->ptCallbacks) , 1 , pszAddressString ); 
 			
-			if ( pConfig_Install_CommentCallback && ( pDriverInfo->ptCallbacks ))
-			{
-				FREE_STDERR_COPY_ERR( pConfig_Install_CommentCallback( &pDriverInfo->InstrumentHandle , (pDriverInfo->ptCallbacks)->fCommentCallback , (pDriverInfo->ptCallbacks)->pCommentCallbackData , (pDriverInfo->ptCallbacks)->commentType ));
-			}
-				
-			if ( pConfig_Install_ConfigValueCallback && ( pDriverInfo->ptCallbacks ))
-			{
-				FREE_STDERR_COPY_ERR( pConfig_Install_ConfigValueCallback( &pDriverInfo->InstrumentHandle , (pDriverInfo->ptCallbacks)->fConfigValueCallback , (pDriverInfo->ptCallbacks)->pConfigValueCallbackData , (pDriverInfo->ptCallbacks)->configType ));
-			}
-		
-			if ( pConfig_Install_CheckForBreakCallback && ( pDriverInfo->ptCallbacks ))
-			{
-				FREE_STDERR_COPY_ERR( pConfig_Install_CheckForBreakCallback( &pDriverInfo->InstrumentHandle , (pDriverInfo->ptCallbacks)->fCheckForBreakCallback , (pDriverInfo->ptCallbacks)->pCheckForBreakCallbackData , (pDriverInfo->ptCallbacks)->breakType ));
-			}
-
 			if ( pConfig_Copy_STD_CallBackSet && ( pDriverInfo->ptCallbacks ))
 			{
 				FREE_STDERR_COPY_ERR( pConfig_Copy_STD_CallBackSet( &pDriverInfo->InstrumentHandle , pDriverInfo->ptCallbacks ));
+				
+				pDriverInfo->ptCallbacks = NULL;
+			}
+			else
+			{
+				if ( pConfig_Install_CommentCallback && ( pDriverInfo->ptCallbacks ))
+				{
+					FREE_STDERR_COPY_ERR( pConfig_Install_CommentCallback( &pDriverInfo->InstrumentHandle , (pDriverInfo->ptCallbacks)->fCommentCallback , (pDriverInfo->ptCallbacks)->pCommentCallbackData , (pDriverInfo->ptCallbacks)->commentType ));
+				}
+				
+				if ( pConfig_Install_ConfigValueCallback && ( pDriverInfo->ptCallbacks ))
+				{
+					FREE_STDERR_COPY_ERR( pConfig_Install_ConfigValueCallback( &pDriverInfo->InstrumentHandle , (pDriverInfo->ptCallbacks)->fConfigValueCallback , (pDriverInfo->ptCallbacks)->pConfigValueCallbackData , (pDriverInfo->ptCallbacks)->configType ));
+				}
+		
+				if ( pConfig_Install_CheckForBreakCallback && ( pDriverInfo->ptCallbacks ))
+				{
+					FREE_STDERR_COPY_ERR( pConfig_Install_CheckForBreakCallback( &pDriverInfo->InstrumentHandle , (pDriverInfo->ptCallbacks)->fCheckForBreakCallback , (pDriverInfo->ptCallbacks)->pCheckForBreakCallbackData , (pDriverInfo->ptCallbacks)->breakType ));
+				}
 			}
 		
 			if (pDriverInfo->ptCallbacks)
@@ -592,7 +600,7 @@ STD_ERROR   DLLEXPORT	DRV_SpectrumAnalyzer_Close ( int *pHandle )
 		LockHandle=0;
 		bLocked=0;
 		
-		DRIVER_MANAGER_RemoveConnectionExists( tDriverInfo.pInstrumentAddress );
+		DRIVER_MANAGER_RemoveConnectionExists( tDriverInfo.pInstrumentAddress , tDriverInfo.InstrumentHandle );
 	}
 	
 	if ( pWrapperFunction == NULL )
@@ -622,16 +630,8 @@ STD_ERROR   DLLEXPORT	DRV_SpectrumAnalyzer_Close ( int *pHandle )
 		FREE(tDriverInfo.pCalibration);
 	}  
 	
-	if ( tDriverInfo.ptCallbacks )
-	{
-		FREE( (tDriverInfo.ptCallbacks)->pCommentCallbackData );
-		FREE( (tDriverInfo.ptCallbacks)->pConfigValueCallbackData );
-		FREE( (tDriverInfo.ptCallbacks)->pCheckForBreakCallbackData ); 
-		FREE( (tDriverInfo.ptCallbacks)->pFileCallbackData );
-		
-		FREE(tDriverInfo.ptCallbacks);
-	}
-	
+	FREE( tDriverInfo.ptCallbacks );	
+
 Error:
 	
 	if ( LockHandle && bLocked )
@@ -640,7 +640,8 @@ Error:
 	if ( VariableHandle )
 		CmtDiscardTSV ( VariableHandle ); 
 	
-	FreeLibrary( tDriverInfo.LibraryHandle );
+	if ( DRIVER_MANAGER_IsConnectionExistsByType( DRIVER_TYPE_SPECTRUM_ANALYZER ) == 0 )
+		FreeLibrary( tDriverInfo.LibraryHandle );
 	
 	*pHandle = 0;
 	
@@ -5867,6 +5868,149 @@ Error:
 	return StdError;
 }
 
+/***** ***** ***** ***** ***** ***** ***** ***** Get Integrated Marker Measure ***** ***** ***** ***** ***** ***** *****/
+
+STD_ERROR   DLLEXPORT	DRV_SpectrumAnalyzer_PhaseNoise_GetIntegratedMarker ( int Handle , int iChannel , int marker , double lfTimeOut ,double lfMarkerStartFreq, double lfMarkerStopFreq, double *pPosition , double *pValue )
+{					
+	STD_ERROR                                 			StdError								=   {0};
+								
+	tsDriverInfo										*pDriverInfo							=	NULL,
+														tDriverInfo								=	{0};
+	
+	CmtTSVHandle 										VariableHandle							=	0;
+									
+	CmtThreadLockHandle 								LockHandle								=	0;
+										
+	pfSpectrumAnalyzer_PhaseNoise_GetIntegratedMarker	pWrapperFunction						=	NULL;
+	
+	int													bLocked									=	0;	
+	
+	char												*pTempString							=	NULL;
+
+	if ( Handle == 0 )
+		{STD_ERR (DRV_ERROR_PASSED_NULL);}
+	
+	VariableHandle = Handle;
+																				  
+	if ( CmtGetTSVPtr ( VariableHandle , &pDriverInfo ) < 0 )
+		{STD_ERR (DRV_ERROR_GET_TSV_POINTER);}
+	
+	memcpy( &tDriverInfo , pDriverInfo , sizeof(tsDriverInfo));
+
+	CmtReleaseTSVPtr ( VariableHandle ); 
+	
+	if ( tDriverInfo.InstrumentType != DRIVER_TYPE_SPECTRUM_ANALYZER )
+		{STD_ERR (DRV_ERROR_INCORRECT_DRIVER_TYPE);}
+	
+	LockHandle = tDriverInfo.InstrumentLockHandle;
+	
+	pWrapperFunction = tDriverInfo.tInstrDB.spectrumAnalyzerDriverFunctions.SpectrumAnalyzer_PhaseNoise_GetIntegratedMarker;
+	
+	CHK_PROCCESS_GET_LOCK ( LockHandle );
+		
+    if ( pWrapperFunction && ( pDriverInfo->bDemoMode == 0 ))
+		FREE_STDERR_COPY_ERR( pWrapperFunction( tDriverInfo.InstrumentHandle , iChannel , marker , lfTimeOut ,lfMarkerStartFreq, lfMarkerStopFreq,  pPosition , pValue )); 
+	
+	if ( pWrapperFunction == NULL )
+	{
+		char	szMessage[LOW_STRING]	= {0};
+
+		sprintf( szMessage , "Method \"%s\"\nis not implemented in driver:\n%s" , "SpectrumAnalyzer_PhaseNoise_GetIntegratedMarker" , tDriverInfo.pDriverFileName );
+
+		ShowMessage ( INSTR_TYPE_CONTINUE , "Implementation Error . . ." , szMessage , NULL );
+	}
+	
+Error:
+	
+    if ( LockHandle && bLocked ) CmtReleaseLock (LockHandle);
+	
+	if ( StdError.error )
+	{
+		DRV_SpectrumAnalyzer_GetErrorTextMessage ( VariableHandle , StdError.error , &pTempString );
+		
+		if ( pTempString && ( strlen(pTempString)))
+		{
+			SET_DESCRIPTION(pTempString);
+		}
+		
+		FREE(pTempString);
+	}
+	
+	return StdError;
+}
+/***** ***** ***** ***** ***** ***** ***** ***** Set Integrated Marker Start Stop Offsets ***** ***** ***** ***** ***** ***** *****/
+
+STD_ERROR   DLLEXPORT	DRV_SpectrumAnalyzer_PhaseNoise_SetIntegratedMarker_Start_Stop_Offsets ( int Handle , int iChannel , int marker , double lfTimeOut , double lfStartFreq , double lfStopFreq )
+{					
+	STD_ERROR                                   							StdError								=   {0};
+								
+	tsDriverInfo															*pDriverInfo							=	NULL,
+																			tDriverInfo								=	{0};
+	
+	CmtTSVHandle 															VariableHandle							=	0;
+									
+	CmtThreadLockHandle 													LockHandle								=	0;
+										
+	pfSpectrumAnalyzer_PhaseNoise_SetIntegratedMarker_Start_Stop_Offsets	pWrapperFunction						=	NULL;
+	
+	int																		bLocked									=	0;	
+	
+	char																	*pTempString							=	NULL;
+
+	if ( Handle == 0 )
+		{STD_ERR (DRV_ERROR_PASSED_NULL);}
+	
+	VariableHandle = Handle;
+	
+	if ( CmtGetTSVPtr ( VariableHandle , &pDriverInfo ) < 0 )
+		{STD_ERR (DRV_ERROR_GET_TSV_POINTER);}
+	
+	memcpy( &tDriverInfo , pDriverInfo , sizeof(tsDriverInfo));
+
+	CmtReleaseTSVPtr ( VariableHandle ); 
+	
+	if ( tDriverInfo.InstrumentType != DRIVER_TYPE_SPECTRUM_ANALYZER )
+		{STD_ERR (DRV_ERROR_INCORRECT_DRIVER_TYPE);}
+	
+	LockHandle = tDriverInfo.InstrumentLockHandle;
+	
+	pWrapperFunction = tDriverInfo.tInstrDB.spectrumAnalyzerDriverFunctions.SpectrumAnalyzer_PhaseNoise_SetIntegratedMarker_Start_Stop_Offsets;
+	
+	CHK_PROCCESS_GET_LOCK ( LockHandle );
+		
+    if ( pWrapperFunction && ( pDriverInfo->bDemoMode == 0 ))
+		FREE_STDERR_COPY_ERR( pWrapperFunction( tDriverInfo.InstrumentHandle , iChannel , marker , lfTimeOut , lfStartFreq , lfStopFreq )); 
+	
+	if ( pWrapperFunction == NULL )
+	{
+		char	szMessage[1024]	= {0};
+
+		sprintf( szMessage , "Method \"%s\"\nis not implemented in driver:\n%s" , "SpectrumAnalyzer_PhaseNoise_SetIntegratedMarker_Start_Stop_Offsets" , tDriverInfo.pDriverFileName );
+
+		ShowMessage ( INSTR_TYPE_CONTINUE , "Implementation Error . . ." , szMessage , NULL );
+	}
+	
+Error:
+	
+    if ( LockHandle && bLocked ) CmtReleaseLock (LockHandle);
+	
+	if ( StdError.error )
+	{
+		DRV_SpectrumAnalyzer_GetErrorTextMessage ( VariableHandle , StdError.error , &pTempString );
+		
+		if ( pTempString && ( strlen(pTempString)))
+		{
+			SET_DESCRIPTION(pTempString);
+		}
+		
+		FREE(pTempString);
+	}
+	
+	return StdError;
+}
+
+/***** ***** ***** ***** ***** ***** ***** ***** Auto Tune ***** ***** ***** ***** ***** ***** ***** ***** ***** ***** ***** *****/
+
 STD_ERROR   DLLEXPORT	DRV_SpectrumAnalyzer_AutoTune ( int Handle , double lfTimeout )
 {					
 	STD_ERROR                                   StdError                                    =   {0};
@@ -6774,6 +6918,77 @@ Error:
 	
 	return StdError;
 }
+
+
+STD_ERROR   DLLEXPORT	DRV_SpectrumAnalyzer_SetTriggerSource( int Handle , int iSource )
+{					
+	STD_ERROR                             			      			StdError                                    =   {0};
+								
+	tsDriverInfo													*pDriverInfo								=	NULL,
+																	tDriverInfo									=	{0};
+	
+	CmtTSVHandle 													VariableHandle								=	0;
+									
+	CmtThreadLockHandle 											LockHandle									=	0;
+										
+	pfSpectrumAnalyzer_SetTriggerSource								pWrapperFunction							=	NULL;
+	
+	int																bLocked										=	0;	
+	
+	char															*pTempString								=	NULL;
+
+	if ( Handle == 0 )
+		{STD_ERR (DRV_ERROR_PASSED_NULL);}
+	
+	VariableHandle = Handle;
+	
+	if ( CmtGetTSVPtr ( VariableHandle , &pDriverInfo ) < 0 )
+		{STD_ERR (DRV_ERROR_GET_TSV_POINTER);}
+	
+	memcpy( &tDriverInfo , pDriverInfo , sizeof(tsDriverInfo));
+
+	CmtReleaseTSVPtr ( VariableHandle ); 
+	
+	if ( tDriverInfo.InstrumentType != DRIVER_TYPE_SPECTRUM_ANALYZER )
+		{STD_ERR (DRV_ERROR_INCORRECT_DRIVER_TYPE);}
+	
+	LockHandle = tDriverInfo.InstrumentLockHandle;
+	
+	pWrapperFunction = tDriverInfo.tInstrDB.spectrumAnalyzerDriverFunctions.SpectrumAnalyzer_SetTriggerSource;
+	
+	CHK_PROCCESS_GET_LOCK ( LockHandle );
+		
+    if ( pWrapperFunction && ( pDriverInfo->bDemoMode == 0 ))
+		FREE_STDERR_COPY_ERR( pWrapperFunction( tDriverInfo.InstrumentHandle , iSource )); 
+	
+	if ( pWrapperFunction == NULL )
+	{
+		char	szMessage[LOW_STRING]	= {0};
+
+		sprintf( szMessage , "Method \"%s\"\nis not implemented in driver:\n%s" , "SpectrumAnalyzer_SetTriggerSource" , tDriverInfo.pDriverFileName );
+
+		ShowMessage ( INSTR_TYPE_CONTINUE , "Implementation Error . . ." , szMessage , NULL );
+	}
+	
+Error:
+	
+    if ( LockHandle && bLocked ) CmtReleaseLock (LockHandle);
+	
+	if ( StdError.error )
+	{
+		DRV_SpectrumAnalyzer_GetErrorTextMessage ( VariableHandle , StdError.error , &pTempString );
+		
+		if ( pTempString && ( strlen(pTempString)))
+		{
+			SET_DESCRIPTION(pTempString);
+		}
+		
+		FREE(pTempString);
+	}
+	
+	return StdError;
+}
+
 
 /*
 extern CmtTSVHandle			gGlobalDriverCommonHandle;

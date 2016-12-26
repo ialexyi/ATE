@@ -250,11 +250,13 @@ STD_ERROR   DLLEXPORT	DRV_PowerMeter_Init ( char *pszDriverLocation , char *pszA
 			
 			pDriverInfo->tInstrDB.powerMeterDriverFunctions.PowerMeter_GetErrorTextMessage     					= (pfPowerMeter_GetErrorTextMessage) GetProcAddress( pDriverInfo->LibraryHandle , "PowerMeter_GetErrorTextMessage");         
 			pDriverInfo->tInstrDB.powerMeterDriverFunctions.PowerMeter_Init                       			 	= (pfPowerMeter_Init) GetProcAddress( pDriverInfo->LibraryHandle , "PowerMeter_Init");                        
+			pDriverInfo->tInstrDB.powerMeterDriverFunctions.PowerMeter_Set_Trigger_Source          			 	= (pfPowerMeter_Set_Trigger_Source) GetProcAddress( pDriverInfo->LibraryHandle , "PowerMeter_Set_Trigger_Source");                        
 			pDriverInfo->tInstrDB.powerMeterDriverFunctions.PowerMeter_Close                      			 	= (pfPowerMeter_Close) GetProcAddress( pDriverInfo->LibraryHandle , "PowerMeter_Close");                       
 			pDriverInfo->tInstrDB.powerMeterDriverFunctions.PowerMeter_Reset									= (pfPowerMeter_Reset) GetProcAddress( pDriverInfo->LibraryHandle , "PowerMeter_Reset"); 
 			pDriverInfo->tInstrDB.powerMeterDriverFunctions.PowerMeter_SetSingleSweep             			 	= (pfPowerMeter_SetSingleSweep) GetProcAddress( pDriverInfo->LibraryHandle , "PowerMeter_SetSingleSweep");                    
 		    pDriverInfo->tInstrDB.powerMeterDriverFunctions.PowerMeter_SetContinuesSweep          			 	= (pfPowerMeter_SetContinuesSweep) GetProcAddress( pDriverInfo->LibraryHandle , "PowerMeter_SetContinuesSweep");                 
 			pDriverInfo->tInstrDB.powerMeterDriverFunctions.PowerMeter_InitSweep            					= (pfPowerMeter_InitSweep) GetProcAddress( pDriverInfo->LibraryHandle , "PowerMeter_InitSweep");            
+			pDriverInfo->tInstrDB.powerMeterDriverFunctions.PowerMeter_Abort	            					= (pfPowerMeter_Abort) GetProcAddress( pDriverInfo->LibraryHandle , "PowerMeter_Abort");            
 			pDriverInfo->tInstrDB.powerMeterDriverFunctions.PowerMeter_SetAuto     								= (pfPowerMeter_SetAuto) GetProcAddress( pDriverInfo->LibraryHandle , "PowerMeter_SetAuto");     
 			pDriverInfo->tInstrDB.powerMeterDriverFunctions.PowerMeter_SetChanelState      						= (pfPowerMeter_SetChanelState) GetProcAddress( pDriverInfo->LibraryHandle , "PowerMeter_SetChanelState");      
 			pDriverInfo->tInstrDB.powerMeterDriverFunctions.PowerMeter_SetVerticalScale         			   	= (pfPowerMeter_SetVerticalScale) GetProcAddress( pDriverInfo->LibraryHandle , "PowerMeter_SetVerticalScale");            
@@ -331,7 +333,7 @@ STD_ERROR   DLLEXPORT	DRV_PowerMeter_Init ( char *pszDriverLocation , char *pszA
 			}
 		
 			if ( !bHandleExists )
-				DRIVER_MANAGER_AddConnection( pszAddressString , &(pDriverInfo->InstrumentHandle) , &(pDriverInfo->InstrumentLockHandle) );
+				DRIVER_MANAGER_AddConnection( pszAddressString , &(pDriverInfo->InstrumentHandle) , DRIVER_TYPE_POWER_METER , &(pDriverInfo->InstrumentLockHandle) );
 		
 			LockHandle = pDriverInfo->InstrumentLockHandle;
 		
@@ -350,24 +352,28 @@ STD_ERROR   DLLEXPORT	DRV_PowerMeter_Init ( char *pszDriverLocation , char *pszA
 		
 			DRIVER_MANAGER_GetCopyCallbacksStructure( VariableHandle , &(pDriverInfo->ptCallbacks) , 1 , pszAddressString ); 
 			
-			if ( pConfig_Install_CommentCallback && ( pDriverInfo->ptCallbacks ))
-			{
-				FREE_STDERR_COPY_ERR( pConfig_Install_CommentCallback( &pDriverInfo->InstrumentHandle , (pDriverInfo->ptCallbacks)->fCommentCallback , (pDriverInfo->ptCallbacks)->pCommentCallbackData , (pDriverInfo->ptCallbacks)->commentType ));
-			}
-				
-			if ( pConfig_Install_ConfigValueCallback && ( pDriverInfo->ptCallbacks ))
-			{
-				FREE_STDERR_COPY_ERR( pConfig_Install_ConfigValueCallback( &pDriverInfo->InstrumentHandle , (pDriverInfo->ptCallbacks)->fConfigValueCallback , (pDriverInfo->ptCallbacks)->pConfigValueCallbackData , (pDriverInfo->ptCallbacks)->configType ));
-			}
-		
-			if ( pConfig_Install_CheckForBreakCallback && ( pDriverInfo->ptCallbacks ))
-			{
-				FREE_STDERR_COPY_ERR( pConfig_Install_CheckForBreakCallback( &pDriverInfo->InstrumentHandle , (pDriverInfo->ptCallbacks)->fCheckForBreakCallback , (pDriverInfo->ptCallbacks)->pCheckForBreakCallbackData , (pDriverInfo->ptCallbacks)->breakType ));
-			}
-
 			if ( pConfig_Copy_STD_CallBackSet && ( pDriverInfo->ptCallbacks ))
 			{
 				FREE_STDERR_COPY_ERR( pConfig_Copy_STD_CallBackSet( &pDriverInfo->InstrumentHandle , pDriverInfo->ptCallbacks ));
+				
+				pDriverInfo->ptCallbacks = NULL;
+			}
+			else
+			{
+				if ( pConfig_Install_CommentCallback && ( pDriverInfo->ptCallbacks ))
+				{
+					FREE_STDERR_COPY_ERR( pConfig_Install_CommentCallback( &pDriverInfo->InstrumentHandle , (pDriverInfo->ptCallbacks)->fCommentCallback , (pDriverInfo->ptCallbacks)->pCommentCallbackData , (pDriverInfo->ptCallbacks)->commentType ));
+				}
+				
+				if ( pConfig_Install_ConfigValueCallback && ( pDriverInfo->ptCallbacks ))
+				{
+					FREE_STDERR_COPY_ERR( pConfig_Install_ConfigValueCallback( &pDriverInfo->InstrumentHandle , (pDriverInfo->ptCallbacks)->fConfigValueCallback , (pDriverInfo->ptCallbacks)->pConfigValueCallbackData , (pDriverInfo->ptCallbacks)->configType ));
+				}
+		
+				if ( pConfig_Install_CheckForBreakCallback && ( pDriverInfo->ptCallbacks ))
+				{
+					FREE_STDERR_COPY_ERR( pConfig_Install_CheckForBreakCallback( &pDriverInfo->InstrumentHandle , (pDriverInfo->ptCallbacks)->fCheckForBreakCallback , (pDriverInfo->ptCallbacks)->pCheckForBreakCallbackData , (pDriverInfo->ptCallbacks)->breakType ));
+				}
 			}
 		
 			if (pDriverInfo->ptCallbacks)
@@ -556,7 +562,7 @@ STD_ERROR   DLLEXPORT	DRV_PowerMeter_Close ( int *pHandle )
 		LockHandle=0;
 		bLocked=0;
 		
-		DRIVER_MANAGER_RemoveConnectionExists( tDriverInfo.pInstrumentAddress );
+		DRIVER_MANAGER_RemoveConnectionExists( tDriverInfo.pInstrumentAddress , tDriverInfo.InstrumentHandle );
 	}
 	
 	if ( pWrapperFunction == NULL )
@@ -586,15 +592,7 @@ STD_ERROR   DLLEXPORT	DRV_PowerMeter_Close ( int *pHandle )
 		FREE(tDriverInfo.pCalibration);
 	}  
 	
-	if ( tDriverInfo.ptCallbacks )
-	{
-		FREE( (tDriverInfo.ptCallbacks)->pCommentCallbackData );
-		FREE( (tDriverInfo.ptCallbacks)->pConfigValueCallbackData );
-		FREE( (tDriverInfo.ptCallbacks)->pCheckForBreakCallbackData ); 
-		FREE( (tDriverInfo.ptCallbacks)->pFileCallbackData );
-		
-		FREE(tDriverInfo.ptCallbacks);
-	}
+	FREE( tDriverInfo.ptCallbacks );
 	
 Error:
 	
@@ -604,7 +602,8 @@ Error:
 	if ( VariableHandle )
 		CmtDiscardTSV ( VariableHandle );  
 	
-	FreeLibrary( tDriverInfo.LibraryHandle );
+	if ( DRIVER_MANAGER_IsConnectionExistsByType( DRIVER_TYPE_POWER_METER ) == 0 )
+		FreeLibrary( tDriverInfo.LibraryHandle );
 	
 	*pHandle = 0;
 	
@@ -1069,7 +1068,151 @@ Error:
 	
 	return StdError;
 }
+/***** ***** ***** ***** ***** ***** ***** Abort ***** ***** ***** ***** ***** *****/
 
+STD_ERROR   DLLEXPORT	DRV_PowerMeter_Abort ( int Handle , int channel ) 
+{		
+	STD_ERROR                                   StdError                                    =   {0};
+	
+	tsDriverInfo								*pDriverInfo							=	NULL,
+												tDriverInfo								=	{0};
+	
+	CmtTSVHandle 								VariableHandle							=	0;
+	
+	CmtThreadLockHandle 						LockHandle								=	0;
+										
+	pfPowerMeter_Abort							pWrapperFunction						=	NULL;
+	
+	
+	
+	int											bLocked									=	0;
+	
+	char										*pTempString							=	NULL;
+
+	if ( Handle == 0 )
+		{STD_ERR (DRV_ERROR_PASSED_NULL);}
+	
+	VariableHandle = Handle;
+	
+	if ( CmtGetTSVPtr ( VariableHandle , &pDriverInfo ) < 0 )
+		{STD_ERR (DRV_ERROR_GET_TSV_POINTER);}
+	
+	memcpy( &tDriverInfo , pDriverInfo , sizeof(tsDriverInfo));
+
+	CmtReleaseTSVPtr ( VariableHandle ); 
+	
+	if ( tDriverInfo.InstrumentType != DRIVER_TYPE_POWER_METER )
+		{STD_ERR (DRV_ERROR_INCORRECT_DRIVER_TYPE);}
+	
+	LockHandle = tDriverInfo.InstrumentLockHandle;
+	
+	pWrapperFunction = tDriverInfo.tInstrDB.powerMeterDriverFunctions.PowerMeter_Abort;
+	
+	CHK_PROCCESS_GET_LOCK ( LockHandle );
+		
+	if ( pWrapperFunction && ( pDriverInfo->bDemoMode == 0 ))
+		FREE_STDERR_COPY_ERR( pWrapperFunction( tDriverInfo.InstrumentHandle , channel )); 
+	
+	if ( pWrapperFunction == NULL )
+	{
+		char	szMessage[LOW_STRING]	= {0};
+		
+		sprintf( szMessage , "Method \"%s\"\nis not implemented in driver:\n%s" , "PowerMeter_Abort" , tDriverInfo.pDriverFileName );
+		
+		ShowMessage ( INSTR_TYPE_CONTINUE , "Implementation Error . . ." , szMessage , NULL );
+	}
+	
+Error:
+	
+    if ( LockHandle && bLocked ) CmtReleaseLock (LockHandle);
+	
+	if ( StdError.error )
+	{
+		DRV_PowerMeter_GetErrorTextMessage ( VariableHandle , StdError.error , &pTempString );
+		
+		if ( pTempString && ( strlen(pTempString)))
+		{
+			SET_DESCRIPTION(pTempString);
+		}
+		
+		FREE(pTempString);
+	}
+	
+	return StdError;
+}
+
+/***** ***** ***** ***** ***** ***** ***** Set Trigger Source ***** ***** ***** ***** ***** *****/
+
+STD_ERROR   DLLEXPORT	DRV_PowerMeter_Set_Trigger_Source ( int Handle , int iTriggerSource ) 
+{		
+	STD_ERROR                                   StdError								=   {0};
+	
+	tsDriverInfo								*pDriverInfo							=	NULL,
+												tDriverInfo								=	{0};
+	
+	CmtTSVHandle 								VariableHandle							=	0;
+	
+	CmtThreadLockHandle 						LockHandle								=	0;
+										
+	pfPowerMeter_Set_Trigger_Source				pWrapperFunction						=	NULL;
+	
+	
+	
+	int											bLocked									=	0;
+	
+	char										*pTempString							=	NULL;
+
+	if ( Handle == 0 )
+		{STD_ERR (DRV_ERROR_PASSED_NULL);}
+	
+	VariableHandle = Handle;
+	
+	if ( CmtGetTSVPtr ( VariableHandle , &pDriverInfo ) < 0 )
+		{STD_ERR (DRV_ERROR_GET_TSV_POINTER);}
+	
+	memcpy( &tDriverInfo , pDriverInfo , sizeof(tsDriverInfo));
+
+	CmtReleaseTSVPtr ( VariableHandle ); 
+	
+	if ( tDriverInfo.InstrumentType != DRIVER_TYPE_POWER_METER )
+		{STD_ERR (DRV_ERROR_INCORRECT_DRIVER_TYPE);}
+	
+	LockHandle = tDriverInfo.InstrumentLockHandle;
+	
+	pWrapperFunction = tDriverInfo.tInstrDB.powerMeterDriverFunctions.PowerMeter_Set_Trigger_Source;
+
+	CHK_PROCCESS_GET_LOCK ( LockHandle );
+		
+	if ( pWrapperFunction && ( pDriverInfo->bDemoMode == 0 ))
+		FREE_STDERR_COPY_ERR( pWrapperFunction( tDriverInfo.InstrumentHandle , iTriggerSource )); 
+	
+	if ( pWrapperFunction == NULL )
+	{
+		char	szMessage[LOW_STRING]	= {0};
+		
+		sprintf( szMessage , "Method \"%s\"\nis not implemented in driver:\n%s" , "PowerMeter_Set_Trigger_Source" , tDriverInfo.pDriverFileName );
+		
+		ShowMessage ( INSTR_TYPE_CONTINUE , "Implementation Error . . ." , szMessage , NULL );
+	}
+	
+Error:
+	
+    if ( LockHandle && bLocked ) CmtReleaseLock (LockHandle);
+	
+	if ( StdError.error )
+	{
+		DRV_PowerMeter_GetErrorTextMessage ( VariableHandle , StdError.error , &pTempString );
+		
+		if ( pTempString && ( strlen(pTempString)))
+		{
+			SET_DESCRIPTION(pTempString);
+		}
+		
+		FREE(pTempString);
+	}
+	
+	return StdError;
+}
 /***** ***** ***** ***** ***** ***** Set Auto ***** ***** ***** ***** ***** *****/
 
 STD_ERROR   DLLEXPORT	DRV_PowerMeter_SetAuto ( int Handle , int channel ) 
@@ -2753,6 +2896,7 @@ Error:
 }
 
 
+/***** ***** ***** ***** ***** ***** Recall State ***** ***** ***** ***** ***** *****/
 
 STD_ERROR   DLLEXPORT	DRV_PowerMeter_RecallState( int Handle , int iStateNumber )
 {						
@@ -2825,6 +2969,8 @@ Error:
 	return StdError;
 }
 
+/***** ***** ***** ***** ***** ***** Raed Power ***** ***** ***** ***** ***** *****/
+
 STD_ERROR   DLLEXPORT	DRV_PowerMeter_ReadPower ( int Handle , int iChannel , double lfTimeout , double *value )
 {	
 	STD_ERROR                                   StdError                                    =   {0};
@@ -2895,6 +3041,7 @@ Error:
 	
 	return StdError;
 }
+/***** ***** ***** ***** ***** ***** Fetch Power ***** ***** ***** ***** ***** *****/
 
 STD_ERROR   DLLEXPORT	DRV_PowerMeter_FetchPower ( int Handle , int iChannel , double lfTimeout , double *value )
 {	
@@ -2967,6 +3114,7 @@ Error:
 	return StdError;
 }
 
+/***** ***** ***** ***** ***** ***** Save State ***** ***** ***** ***** ***** *****/
 
 STD_ERROR   DLLEXPORT	DRV_PowerMeter_SaveState ( int Handle , int iStateNumber)
 {	
@@ -3038,6 +3186,7 @@ Error:
 	
 	return StdError;
 }
+/***** ***** ***** ***** ***** ***** Set Active Channel ***** ***** ***** ***** ***** *****/
 	
 STD_ERROR   DLLEXPORT	DRV_PowerMeter_SetActiveChannel( int Handle , int iChannelNumber )
 {	
@@ -3110,6 +3259,7 @@ Error:
 	return StdError;
 }
 	
+/***** ***** ***** ***** ***** ***** Gating Config Offset Time ***** ***** ***** ***** ***** *****/
 	
 STD_ERROR   DLLEXPORT	DRV_PowerMeter_Gating_ConfigOffsetTime ( int Handle , int iChannel , int iGate , double lfTime , double lfOffset , double lfMidambleOffset, double lfMidambleLength )
 {	
@@ -3182,6 +3332,7 @@ Error:
 	return StdError;
 } 
 
+/***** ***** ***** ***** ***** ***** Read Max Power ***** ***** ***** ***** ***** *****/
 
 STD_ERROR   DLLEXPORT	DRV_PowerMeter_Gating_ReadMaxPower ( int Handle , int iChannel , int iGait , double timeout , double *value )
 {	
@@ -3254,6 +3405,8 @@ Error:
 	return StdError;
 }
 
+/***** ***** ***** ***** ***** ***** Gating Fetch Max Power ***** ***** ***** ***** ***** *****/
+
 STD_ERROR   DLLEXPORT	DRV_PowerMeter_Gating_FetchMaxPower (int Handle , int iChannel , int iGate , double timeout , double *value)
 {	
 	STD_ERROR                                   StdError                                    =   {0};
@@ -3325,6 +3478,7 @@ Error:
 	return StdError;
 } 
 
+/***** ***** ***** ***** ***** ***** Gating Raed Power ***** ***** ***** ***** ***** *****/
 
 
 STD_ERROR   DLLEXPORT	DRV_PowerMeter_Gating_ReadPower( int Handle , int iChannel , int iGait , int iGaitMeasureIndex , double timeout , double *value )
@@ -3395,6 +3549,8 @@ Error:
 	
 	return StdError;
 }
+
+/***** ***** ***** ***** ***** ***** Gating Fetch Average Power ***** ***** ***** ***** ***** *****/
 
 STD_ERROR   DLLEXPORT	DRV_PowerMeter_Gating_FetchAveragePower (int Handle , int iChannel , int iGate , double timeout , double *value)
 {	
@@ -3467,6 +3623,8 @@ Error:
 	return StdError;
 } 
 
+/***** ***** ***** ***** ***** ***** Gating Fetch Min Power ***** ***** ***** ***** ***** *****/
+
 STD_ERROR   DLLEXPORT	DRV_PowerMeter_Gating_FetchMinPower (int Handle , int iChannel , int iGate , double timeout , double *value)
 {	
 	STD_ERROR                                   StdError                                    =   {0};
@@ -3537,6 +3695,8 @@ Error:
 	
 	return StdError;
 } 
+
+/***** ***** ***** ***** ***** ***** Set State Name ***** ***** ***** ***** ***** *****/
 
 STD_ERROR   DLLEXPORT	DRV_PowerMeter_SetStateName ( int Handle , int iStateNumber , char *pszName )
 {	
@@ -3611,6 +3771,8 @@ Error:
 	return StdError;
 }
 
+/***** ***** ***** ***** ***** ***** Get State Name ***** ***** ***** ***** ***** *****/
+
 STD_ERROR   DLLEXPORT	DRV_PowerMeter_GetStateName ( int Handle , int iStateNumber , char *pszName )
 {	
 	STD_ERROR                                   StdError                                    =   {0};
@@ -3682,6 +3844,7 @@ Error:
 	return StdError;
 }
 
+/***** ***** ***** ***** ***** ***** Set State File ***** ***** ***** ***** ***** *****/
 
 STD_ERROR   DLLEXPORT	DRV_PowerMeter_SetStateFile ( int Handle , int iStateNumber , char *pszFileName )
 {	
@@ -3756,6 +3919,8 @@ Error:
 	return StdError;
 }
 
+/***** ***** ***** ***** ***** ***** Get State File ***** ***** ***** ***** ***** *****/
+
 STD_ERROR   DLLEXPORT	DRV_PowerMeter_GetStateFile ( int Handle , int iStateNumber , char *pszFileName )
 {	
 	STD_ERROR                                   StdError                                    =   {0};
@@ -3827,6 +3992,7 @@ Error:
 	return StdError;
 }
 
+/***** ***** ***** ***** ***** ***** Recall State by Name ***** ***** ***** ***** ***** *****/
 
 STD_ERROR   DLLEXPORT	DRV_PowerMeter_RecallState_ByName ( int Handle , char *pszName )
 {	
@@ -3901,6 +4067,7 @@ Error:
 	return StdError;
 }
 
+/***** ***** ***** ***** ***** ***** Get Last State File Name ***** ***** ***** ***** ***** *****/
 
 STD_ERROR   DLLEXPORT	DRV_PowerMeter_GetLastStateFileName( int Handle ,char **pszFileName )
 {				
@@ -3981,6 +4148,8 @@ Error:
 	return StdError;
 }
 
+/***** ***** ***** ***** ***** ***** Configure Marker ***** ***** ***** ***** ***** *****/
+
 STD_ERROR   DLLEXPORT	DRV_PowerMeter_Configure_Marker( int Handle , int iChannel , int iMarkerNumber , int bEnable , double lfPosition )
 {	
 	STD_ERROR                                   StdError                                    =   {0};
@@ -4049,6 +4218,8 @@ Error:
 	
 	return StdError;
 }
+
+/***** ***** ***** ***** ***** ***** Read Marker ***** ***** ***** ***** ***** *****/
 
 STD_ERROR   DLLEXPORT	DRV_PowerMeter_Read_Marker( int Handle , int iChannel , int iMarkerNumber , double timeout , double *vlfPosition , double *vlfPower )
 {	
@@ -4119,6 +4290,7 @@ Error:
 	return StdError;
 }
 
+/***** ***** ***** ***** ***** ***** Fetch Marker ***** ***** ***** ***** ***** *****/
 
 STD_ERROR   DLLEXPORT	DRV_PowerMeter_Fetch_Marker( int Handle , int iChannel , int iMarkerNumber , double *vlfPosition , double *vlfPower )
 {	
@@ -4189,6 +4361,8 @@ Error:
 	return StdError;
 }
 
+/***** ***** ***** ***** ***** ***** Set Active Port ***** ***** ***** ***** ***** *****/
+
 STD_ERROR   DLLEXPORT	DRV_PowerMeter_SetActivePort( int Handle , int iSensorNumber )
 {	
 	STD_ERROR                                   StdError                                    =   {0};
@@ -4257,6 +4431,8 @@ Error:
 	
 	return StdError;
 }
+
+/***** ***** ***** ***** ***** ***** Enable Dual Port Mode ***** ***** ***** ***** ***** *****/
 
 STD_ERROR   DLLEXPORT	DRV_PowerMeter_EnableDualPortMode( int Handle , int bEnable )
 {	
@@ -4327,6 +4503,8 @@ Error:
 	return StdError;
 }
 
+/***** ***** ***** ***** ***** ***** Read CW Power ***** ***** ***** ***** ***** *****/
+
 STD_ERROR   DLLEXPORT	DRV_PowerMeter_ReadCWpower( int Handle , int iChannel , double timeout , double *value )
 {	
 	STD_ERROR                                   StdError                                =   {0};
@@ -4395,6 +4573,8 @@ Error:
 	
 	return StdError;
 }
+
+/***** ***** ***** ***** ***** ***** Get Trace ***** ***** ***** ***** ***** *****/
 
 STD_ERROR   DLLEXPORT	DRV_PowerMeter_GetTrace( int Handle , int iChannel , double timeout, double **plfTime , double **plfTrace , int numberOfPoints , int *pCount )
 {	

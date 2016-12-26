@@ -99,10 +99,19 @@ int	DLLEXPORT	DRIVER_MANAGER_SETUP_UpdateCallbacksStructure( void *pSTD_SetCallB
 	
 	char						*pAddress						=	NULL;
 	
+	unsigned long long 			ulEquipmentID					=	0;
+	
+	int							bFound							=	0;
+	
+	int							iIndex							=	0;
+	
 	va_start( argumentsList , iNumberOfParams );
 	
 	if ( iNumberOfParams > 0 )
 		pAddress = va_arg(argumentsList, char* );
+	
+	if ( iNumberOfParams > 1 )
+		ulEquipmentID = va_arg(argumentsList, unsigned long long );
 	
 	pSTD_CallBackSet = pSTD_SetCallBackSet;
 
@@ -110,15 +119,47 @@ int	DLLEXPORT	DRIVER_MANAGER_SETUP_UpdateCallbacksStructure( void *pSTD_SetCallB
 	
 	CHK_CMT( CmtGetTSVPtr ( globalHandle , &pGlobalStore ));
 	
-	iNumberOfCallBackSet = pGlobalStore->iNumberOfCallBackSet++;
-	
-	pGlobalStore->pSTD_CallBackSet = realloc( pGlobalStore->pSTD_CallBackSet , ( pGlobalStore->iNumberOfCallBackSet * sizeof(tsSTD_CallBackSet)));
-	
-	memcpy( &(pGlobalStore->pSTD_CallBackSet[iNumberOfCallBackSet]) , pSTD_SetCallBackSet , sizeof(tsSTD_CallBackSet));
-		
-	if ( pAddress && ( strlen(pAddress)))
+	//--------------- Check if exists --------------------------//
+	if ( ulEquipmentID > 0 )
 	{
-		strcpy( pGlobalStore->pSTD_CallBackSet[iNumberOfCallBackSet].szAddress ,	pAddress ); 
+		for ( iIndex = 0; iIndex < pGlobalStore->iNumberOfCallBackSet; iIndex++ )
+			if ( pGlobalStore->pSTD_CallBackSet[iIndex].ullDataBaseLinkID == ulEquipmentID )
+			{
+				bFound = 1;
+				break;
+			}		
+	}
+	else
+	{
+		if ( pAddress && strlen(pAddress) )
+		{
+			for ( iIndex = 0; iIndex < pGlobalStore->iNumberOfCallBackSet; iIndex++ )
+			{
+				if ( strlen( pGlobalStore->pSTD_CallBackSet[iIndex].szAddress ) && ( strcmp( pAddress , pGlobalStore->pSTD_CallBackSet[iIndex].szAddress ) == 0 ))
+				{
+					bFound = 1;
+					break;
+				}
+			}
+		}	
+	}
+	
+	if ( bFound )
+	{
+		memcpy( &(pGlobalStore->pSTD_CallBackSet[iIndex]) , pSTD_SetCallBackSet , sizeof(tsSTD_CallBackSet));
+	}
+	else
+	{
+		iNumberOfCallBackSet = pGlobalStore->iNumberOfCallBackSet++;
+	
+		pGlobalStore->pSTD_CallBackSet = realloc( pGlobalStore->pSTD_CallBackSet , ( pGlobalStore->iNumberOfCallBackSet * sizeof(tsSTD_CallBackSet)));
+	
+		memcpy( &(pGlobalStore->pSTD_CallBackSet[iNumberOfCallBackSet]) , pSTD_SetCallBackSet , sizeof(tsSTD_CallBackSet));
+		
+		if ( pAddress && ( strlen(pAddress)))
+		{
+			strcpy( pGlobalStore->pSTD_CallBackSet[iNumberOfCallBackSet].szAddress ,	pAddress ); 
+		}
 	}
 	
 Error:
@@ -147,6 +188,8 @@ int		DRIVER_MANAGER_GetCopyCallbacksStructure( int hDeviceHandle , tsSTD_CallBac
 	char						*pAddress						=	NULL;
 	
 	int							bFound							=	0;
+
+	unsigned long long 			ulEquipmentID					=	0;
 	
 	va_list						argumentsList;
 	
@@ -154,6 +197,9 @@ int		DRIVER_MANAGER_GetCopyCallbacksStructure( int hDeviceHandle , tsSTD_CallBac
 	
 	if ( iNumberOfParams > 0 )
 		pAddress = va_arg(argumentsList, char* );
+	
+	if ( iNumberOfParams > 1 )
+		ulEquipmentID = va_arg(argumentsList, unsigned long long );
 	
 	IF( ( pSTD_GetCallBackSet == NULL ) , "NULL Pointer" );
 	
@@ -165,14 +211,27 @@ int		DRIVER_MANAGER_GetCopyCallbacksStructure( int hDeviceHandle , tsSTD_CallBac
 		
 	CALLOC_ERR(pSTD_CallBackSet , 1 , sizeof(tsSTD_CallBackSet));
 	
-	if ( pAddress && strlen(pAddress) )
+	//--------------- Check if exists --------------------------//
+	if ( ulEquipmentID > 0 )
 	{
 		for ( iIndex = 0; iIndex < pGlobalStore->iNumberOfCallBackSet; iIndex++ )
-		{
-			if ( strlen( pGlobalStore->pSTD_CallBackSet[iIndex].szAddress ) && ( strcmp( pAddress , pGlobalStore->pSTD_CallBackSet[iIndex].szAddress ) == 0 ))
+			if ( pGlobalStore->pSTD_CallBackSet[iIndex].ullDataBaseLinkID == ulEquipmentID )
 			{
 				bFound = 1;
 				break;
+			}		
+	}
+	else
+	{
+		if ( pAddress && strlen(pAddress) )
+		{
+			for ( iIndex = 0; iIndex < pGlobalStore->iNumberOfCallBackSet; iIndex++ )
+			{
+				if ( strlen( pGlobalStore->pSTD_CallBackSet[iIndex].szAddress ) && ( strcmp( pAddress , pGlobalStore->pSTD_CallBackSet[iIndex].szAddress ) == 0 ))
+				{
+					bFound = 1;
+					break;
+				}
 			}
 		}
 	}
@@ -307,7 +366,7 @@ int		DRIVER_MANAGER_IsConnectionExists( char *pszAddress , int *phHandle , int *
 	
 	pCurrentItem = pGlobalStore->pItemsList;
 
-	//------------ Check if resurse exists -------------//
+	//------------ Check if resourse exists -------------//
 		
 	if ( pCurrentItem )
 	{
@@ -316,6 +375,14 @@ int		DRIVER_MANAGER_IsConnectionExists( char *pszAddress , int *phHandle , int *
 			if ( pCurrentItem->pszConnectString )
 				if ( strcmp( pCurrentItem->pszConnectString , pszAddress ) == 0 )
 				{
+					if ( pCurrentItem->ignore_dup_address )
+						if ( phHandle != NULL )
+							if ( *phHandle != pCurrentItem->handle ) 
+							{
+								pCurrentItem = pCurrentItem->pNextItem;   
+								continue;
+							}
+						
 					if ( phHandle )
 						*phHandle = pCurrentItem->handle;
 					
@@ -342,7 +409,54 @@ Error:
 	return status;
 }
 
-int		DRIVER_MANAGER_AddConnection( char *pszAddress, int *phHandle , int *phLock )
+int		DRIVER_MANAGER_IsConnectionExistsByType( teDriversType tInstrumentType )
+{
+	STD_ERROR                   StdError						=	{0};
+	
+	CmtTSVHandle         		globalHandle			=	0;
+	
+	tsGlobalHandle				*pGlobalStore			=	NULL;
+	
+	tsSingleListItem			*pCurrentItem			=	NULL;
+	
+	int							status					=	0;
+	
+	globalHandle = gGlobalDriverCommonHandle;
+	
+	CHK_CMT( CmtGetTSVPtr ( globalHandle , &pGlobalStore ));
+	
+	pCurrentItem = pGlobalStore->pItemsList;
+
+	//------------ Check if resourse exists -------------//
+		
+	if ( pCurrentItem )
+	{
+		do
+		{
+			if ( pCurrentItem->pszConnectString )
+				if ( pCurrentItem->InstrumentType == tInstrumentType )
+				{   
+					status = 1;
+					
+					RETURN;
+				}
+				
+				if ( pCurrentItem->pNextItem )
+					pCurrentItem = pCurrentItem->pNextItem;
+				else
+					break;
+				
+		} while( pCurrentItem );
+	}
+	
+Error:
+	
+	CmtReleaseTSVPtr (globalHandle);
+
+	return status;
+}
+
+int		DRIVER_MANAGER_AddConnection( char *pszAddress, int *phHandle , teDriversType tInstrumentType , int *phLock )
 {
 	STD_ERROR                   StdError						=	{0};
 	
@@ -373,6 +487,20 @@ int		DRIVER_MANAGER_AddConnection( char *pszAddress, int *phHandle , int *phLock
 			if ( pCurrentItem->pszConnectString )
 				if ( strcmp( pCurrentItem->pszConnectString , pszAddress ) == 0 )
 				{
+					if ( pCurrentItem->ignore_dup_address )
+						if ( phHandle != NULL )
+							if ( *phHandle != pCurrentItem->handle ) 
+							{
+								if ( pCurrentItem->pNextItem )
+								{
+									pCurrentItem = pCurrentItem->pNextItem;   
+								
+									continue;
+								}
+								else
+									break;
+							}
+										
 					bExists = 1;
 					break;
 				}
@@ -405,6 +533,8 @@ int		DRIVER_MANAGER_AddConnection( char *pszAddress, int *phHandle , int *phLock
 	
 			FREE_CALLOC_COPY( pCurrentItem->pszConnectString , strlen(pszAddress)+1 , sizeof(char) , pszAddress , strlen(pszAddress));
 	 
+			pCurrentItem->InstrumentType = tInstrumentType;
+			
 			CmtNewLock ( NULL , OPT_TL_PROCESS_EVENTS_WHILE_WAITING , &(pCurrentItem->lock) );
 	
 			if ( phLock )
@@ -460,6 +590,14 @@ int		DRIVER_MANAGER_UpdateConnection( char *pszAddress, int hHandle , int *phLoc
 			if ( pCurrentItem->pszConnectString )
 				if ( strcmp( pCurrentItem->pszConnectString , pszAddress ) == 0 )
 				{
+					if ( pCurrentItem->ignore_dup_address )
+						if (( pCurrentItem->handle > 0 ) && ( hHandle != pCurrentItem->handle )) 
+						{
+					
+							pCurrentItem = pCurrentItem->pNextItem;   
+							continue;
+						}
+												
 					bExists = 1;
 					break;
 				}
@@ -495,8 +633,137 @@ Error:
 	return status;
 }
 
+int		DRIVER_MANAGER_UpdateAddressByConnection( int hHandle , char *pszAddress )
+{
+	STD_ERROR                   StdError						=	{0};
+	
+	CmtTSVHandle         		globalHandle			=	0;
+	
+	tsGlobalHandle				*pGlobalStore			=	NULL;
+	
+	tsSingleListItem			*pCurrentItem			=	NULL;
+	
+	int							bExists					=	0,
+								status					=	0;
+	
+	if ( pszAddress == NULL )
+		return 0;
+	
+	globalHandle = gGlobalDriverCommonHandle;
+	
+	CHK_CMT( CmtGetTSVPtr ( globalHandle , &pGlobalStore ));
+	
+	pCurrentItem = pGlobalStore->pItemsList;
 
-int		DRIVER_MANAGER_RemoveConnectionExists( char *pszAddress )
+	//------------ Check if resurse exists -------------//
+		
+	if ( pCurrentItem )
+	{
+		do
+		{
+				if ( pCurrentItem->handle == hHandle )
+				{
+					bExists = 1;
+					break;
+				}
+				
+				if ( pCurrentItem->pNextItem )
+					pCurrentItem = pCurrentItem->pNextItem;
+				else
+					break;
+				
+		} while( pCurrentItem );
+		
+	}
+	
+	if ( pCurrentItem && bExists )
+	{
+		FREE_CALLOC_COPY( pCurrentItem->pszConnectString , strlen(pszAddress)+1 , sizeof(char) , pszAddress , strlen(pszAddress) );
+		
+		status = 1;
+		
+		RETURN;
+	}
+
+	
+Error:
+	
+	CmtReleaseTSVPtr (globalHandle);
+
+	return status;
+}
+
+int		DRIVER_MANAGER_UpdateIgnoreDupAddresses( char *pszAddress , int hHandle , int bIgnoreDupAddresses )
+{
+	STD_ERROR                   StdError						=	{0};
+	
+	CmtTSVHandle         		globalHandle			=	0;
+	
+	tsGlobalHandle				*pGlobalStore			=	NULL;
+	
+	tsSingleListItem			*pCurrentItem			=	NULL;
+	
+	int							bExists					=	0,
+								status					=	0;
+	
+	if ( pszAddress == NULL )
+		return 0;
+	
+	globalHandle = gGlobalDriverCommonHandle;
+	
+	CHK_CMT( CmtGetTSVPtr ( globalHandle , &pGlobalStore ));
+	
+	pCurrentItem = pGlobalStore->pItemsList;
+
+	//------------ Check if resurse exists -------------//
+		
+	if ( pCurrentItem )
+	{
+		do
+		{
+			if ( pCurrentItem->pszConnectString )
+				if ( strcmp( pCurrentItem->pszConnectString , pszAddress ) == 0 )
+				{
+					if ( pCurrentItem->ignore_dup_address )
+						if (( pCurrentItem->handle > 0 ) && ( hHandle != pCurrentItem->handle )) 
+						{
+							pCurrentItem = pCurrentItem->pNextItem;   
+							continue;
+						}	
+					
+					bExists = 1;
+					break;
+				}
+				
+				if ( pCurrentItem->pNextItem )
+					pCurrentItem = pCurrentItem->pNextItem;
+				else
+					break;
+				
+		} while( pCurrentItem );
+		
+	}
+	
+	if ( pCurrentItem && bExists )
+	{
+		pCurrentItem->ignore_dup_address = bIgnoreDupAddresses;	
+		
+		status = 1;
+		
+		RETURN;
+	}
+
+	
+Error:
+	
+	CmtReleaseTSVPtr (globalHandle);
+
+	return status;
+}
+
+
+
+int		DRIVER_MANAGER_RemoveConnectionExists( char *pszAddress , int hHandle )
 {
 	STD_ERROR                   StdError				=	{0};
 	
@@ -521,7 +788,7 @@ int		DRIVER_MANAGER_RemoveConnectionExists( char *pszAddress )
 	
 	pCurrentItem = pGlobalStore->pItemsList;
 
-	//------------ Check if resurse exists -------------//
+	//------------ Check if resourse exists -------------//
 		
 	if ( pCurrentItem )
 	{
@@ -530,6 +797,14 @@ int		DRIVER_MANAGER_RemoveConnectionExists( char *pszAddress )
 			if ( pCurrentItem->pszConnectString )
 				if ( strcmp( pCurrentItem->pszConnectString , pszAddress ) == 0 )
 				{
+					if ( pCurrentItem->ignore_dup_address )
+						if ( hHandle != pCurrentItem->handle ) 
+						{
+							pPreviousItem = pCurrentItem;
+							pCurrentItem = pCurrentItem->pNextItem;   
+							continue;
+						}
+					
 					if ( pPreviousItem )
 					{
 						pPreviousItem->pNextItem = pCurrentItem->pNextItem;
@@ -2102,7 +2377,7 @@ STD_ERROR		DRIVER_MANAGER_CALIBRATION_DiscardHandle( int *pHandle )
 		LockHandle=0;
 		bLocked=0;
 		
-		DRIVER_MANAGER_RemoveConnectionExists( tDriverInfo.pInstrumentAddress );
+		DRIVER_MANAGER_RemoveConnectionExists( tDriverInfo.pInstrumentAddress , tDriverInfo.InstrumentHandle );
 	}
 	
 	FREE(tDriverInfo.pInstrumentAddress); 

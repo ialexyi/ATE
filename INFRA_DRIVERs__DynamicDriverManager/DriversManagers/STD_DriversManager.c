@@ -142,7 +142,7 @@ Error:
 
 STD_ERROR   DLLEXPORT	DRV_StandardDevice_Init( char *pszDriverLocation , int iDeviceID , char *pszConnectionName , char *pszAddressString , int *pHandle , ... )
 {		   					
-	STD_ERROR                                   StdError                                    =   {0};
+	STD_ERROR                                   StdError                                =   {0};
 	
 	tsDriverInfo								*pDriverInfo							=	NULL;
 	
@@ -151,6 +151,8 @@ STD_ERROR   DLLEXPORT	DRV_StandardDevice_Init( char *pszDriverLocation , int iDe
 	CmtThreadLockHandle 						LockHandle								=	0;
 	
 	pfStandardDevice_Init						pWrapperFunction						=	NULL;
+	
+	pfStandardDevice_GetConnectionAddress		pfGetConnectionAddress					=	NULL;
 	
 	char										szCurrentDirectory[STD_STRING]			=	{0},
 												szDriverLocation[STD_STRING]			=	{0},
@@ -171,9 +173,22 @@ STD_ERROR   DLLEXPORT	DRV_StandardDevice_Init( char *pszDriverLocation , int iDe
 
 	HINSTANCE									LibraryHandle							=	NULL;
 	
+	va_list										argumentsList;
+
+	int 										iNumberOfParams							=	-1;
+	
+	int 										bPopUpMessageDisable					=	0;
+
 	if (( pszDriverLocation == NULL ) || ( pszAddressString == NULL ))
 		{STD_ERR (DRV_ERROR_PASSED_NULL);}
 	
+	va_start( argumentsList , pHandle );
+	
+	iNumberOfParams = va_arg(argumentsList, int );
+	
+	if ( iNumberOfParams == 1 )
+		bPopUpMessageDisable = va_arg(argumentsList, int ); 
+		
 	strcpy( szDriverLocation , pszDriverLocation );
 	
 	do
@@ -292,6 +307,8 @@ STD_ERROR   DLLEXPORT	DRV_StandardDevice_Init( char *pszDriverLocation , int iDe
 			
 			pWrapperFunction = pDriverInfo->tInstrDB.standardDeviceDriverFunctions.StandardDevice_Init;
 	
+			pfGetConnectionAddress = pDriverInfo->tInstrDB.standardDeviceDriverFunctions.StandardDevice_GetConnectionAddress;
+			
 			if ( pWrapperFunction == NULL )
 			{
 				char	szMessage[LOW_STRING]	= {0};
@@ -304,7 +321,7 @@ STD_ERROR   DLLEXPORT	DRV_StandardDevice_Init( char *pszDriverLocation , int iDe
 			}
 		
 			if ( !bHandleExists )
-				DRIVER_MANAGER_AddConnection( pszAddressString , &(pDriverInfo->InstrumentHandle) , &(pDriverInfo->InstrumentLockHandle) );
+				DRIVER_MANAGER_AddConnection( pszAddressString , &(pDriverInfo->InstrumentHandle) , DRIVER_TYPE_STANDARD_DEVICE , &(pDriverInfo->InstrumentLockHandle) );
 		
 			LockHandle = pDriverInfo->InstrumentLockHandle;
 		
@@ -323,24 +340,28 @@ STD_ERROR   DLLEXPORT	DRV_StandardDevice_Init( char *pszDriverLocation , int iDe
 		
 			DRIVER_MANAGER_GetCopyCallbacksStructure( VariableHandle , &(pDriverInfo->ptCallbacks) , 1 , pszAddressString ); 
 		
-			if ( pConfig_Install_CommentCallback && ( pDriverInfo->ptCallbacks ))
-			{
-				FREE_STDERR_COPY_ERR( pConfig_Install_CommentCallback( &pDriverInfo->InstrumentHandle , (pDriverInfo->ptCallbacks)->fCommentCallback , (pDriverInfo->ptCallbacks)->pCommentCallbackData , (pDriverInfo->ptCallbacks)->commentType ));
-			}
-				
-			if ( pConfig_Install_ConfigValueCallback && ( pDriverInfo->ptCallbacks ))
-			{
-				FREE_STDERR_COPY_ERR( pConfig_Install_ConfigValueCallback( &pDriverInfo->InstrumentHandle , (pDriverInfo->ptCallbacks)->fConfigValueCallback , (pDriverInfo->ptCallbacks)->pConfigValueCallbackData , (pDriverInfo->ptCallbacks)->configType ));
-			}
-		
-			if ( pConfig_Install_CheckForBreakCallback && ( pDriverInfo->ptCallbacks ))
-			{
-				FREE_STDERR_COPY_ERR( pConfig_Install_CheckForBreakCallback( &pDriverInfo->InstrumentHandle , (pDriverInfo->ptCallbacks)->fCheckForBreakCallback , (pDriverInfo->ptCallbacks)->pCheckForBreakCallbackData , (pDriverInfo->ptCallbacks)->breakType ));
-			}
-
 			if ( pConfig_Copy_STD_CallBackSet && ( pDriverInfo->ptCallbacks ))
 			{
 				FREE_STDERR_COPY_ERR( pConfig_Copy_STD_CallBackSet( &pDriverInfo->InstrumentHandle , pDriverInfo->ptCallbacks ));
+				
+				pDriverInfo->ptCallbacks = NULL;
+			}
+			else
+			{
+				if ( pConfig_Install_CommentCallback && ( pDriverInfo->ptCallbacks ))
+				{
+					FREE_STDERR_COPY_ERR( pConfig_Install_CommentCallback( &pDriverInfo->InstrumentHandle , (pDriverInfo->ptCallbacks)->fCommentCallback , (pDriverInfo->ptCallbacks)->pCommentCallbackData , (pDriverInfo->ptCallbacks)->commentType ));
+				}
+				
+				if ( pConfig_Install_ConfigValueCallback && ( pDriverInfo->ptCallbacks ))
+				{
+					FREE_STDERR_COPY_ERR( pConfig_Install_ConfigValueCallback( &pDriverInfo->InstrumentHandle , (pDriverInfo->ptCallbacks)->fConfigValueCallback , (pDriverInfo->ptCallbacks)->pConfigValueCallbackData , (pDriverInfo->ptCallbacks)->configType ));
+				}
+		
+				if ( pConfig_Install_CheckForBreakCallback && ( pDriverInfo->ptCallbacks ))
+				{
+					FREE_STDERR_COPY_ERR( pConfig_Install_CheckForBreakCallback( &pDriverInfo->InstrumentHandle , (pDriverInfo->ptCallbacks)->fCheckForBreakCallback , (pDriverInfo->ptCallbacks)->pCheckForBreakCallbackData , (pDriverInfo->ptCallbacks)->breakType ));
+				}
 			}
 		
 			if (pDriverInfo->ptCallbacks)
@@ -366,18 +387,21 @@ STD_ERROR   DLLEXPORT	DRV_StandardDevice_Init( char *pszDriverLocation , int iDe
 					
 						if ( pDriverInfo->tInstrDB.Equipment_GetLowLevelHandle )
 						{
-							pDriverInfo->tInstrDB.Equipment_GetLowLevelHandle( pDriverInfo->InstrumentHandle , &(pDriverInfo->InstrumentLowLevelHandle));
+							FREE_STDERR_COPY( pDriverInfo->tInstrDB.Equipment_GetLowLevelHandle( pDriverInfo->InstrumentHandle , &(pDriverInfo->InstrumentLowLevelHandle)));
 						}
 					}
 				}
 				else
 					break;
 			
-				if ( StdError.error )
+				if ( StdError.error && ( bPopUpMessageDisable == 0 ))
 					if ( ShowMessage ( INSTR_TYPE_YES_NO , "Standard Device Error !!!", "Check connection and Power On the Device." , NULL ) )
 					{
 						if ( pszAddressString && ( strstr(pszAddressString,"TCPIP")))
-							LaunchExecutableEx ("cmd /c arp -d", LE_HIDE, NULL); 
+						{   
+							LaunchExecutableEx ("arp -d *" , LE_HIDE , NULL );  
+							LaunchExecutableEx ("C:\\Windows\\sysnative\\nbtstat.exe -R" , LE_HIDE , NULL );  
+						}
 						
 						continue;
 					}
@@ -392,7 +416,20 @@ STD_ERROR   DLLEXPORT	DRV_StandardDevice_Init( char *pszDriverLocation , int iDe
 	
 			if ( !bHandleExists ) 
 				DRIVER_MANAGER_UpdateConnection( pszAddressString , pDriverInfo->InstrumentHandle , NULL );
-
+			
+			if ( strstr( pszAddressString , "TCPIP" ) && ( strchr( pszAddressString , '.' ) == NULL ) && pfGetConnectionAddress )
+			{
+				FREE_STDERR_COPY( pfGetConnectionAddress( pDriverInfo->InstrumentHandle , &pszAddressString ));
+				
+				if ( pszAddressString && strstr( pszAddressString , "TCPIP" ) && strchr( pszAddressString , '.' ) )
+				{
+					DRIVER_MANAGER_UpdateAddressByConnection( pDriverInfo->InstrumentHandle , pszAddressString );
+				
+					FREE_CALLOC_COPY_STRING( pDriverInfo->pInstrumentAddress , pszAddressString );  
+				}
+			}
+				
+			
 		} while (0);
 	}
 	else
@@ -483,7 +520,7 @@ Error:
 			*pHandle = 0;
 	}
 	
-	return StdError;
+	RETURN_STDERR;
 }
 
 /***** ***** ***** ***** ***** ***** ***** ***** Close ***** ***** ***** ***** ***** ***** ***** *****/
@@ -502,8 +539,6 @@ STD_ERROR   DLLEXPORT	DRV_StandardDevice_Close ( int *pHandle )
 	pfStandardDevice_Close						pWrapperFunction						=	NULL;
 	
 	int											bHandleExists							=	0;
-
-	
 	
 	int											bLocked									=	0;
 	
@@ -532,7 +567,7 @@ STD_ERROR   DLLEXPORT	DRV_StandardDevice_Close ( int *pHandle )
 	
 	pWrapperFunction = tDriverInfo.tInstrDB.standardDeviceDriverFunctions.StandardDevice_Close;
 	
-	bHandleExists = DRIVER_MANAGER_IsConnectionExists( tDriverInfo.pInstrumentAddress , NULL , NULL );
+	bHandleExists = DRIVER_MANAGER_IsConnectionExists( tDriverInfo.pInstrumentAddress , &( tDriverInfo.InstrumentHandle ) , NULL );
 
 	if ( pWrapperFunction && bHandleExists )
 	{
@@ -547,7 +582,7 @@ STD_ERROR   DLLEXPORT	DRV_StandardDevice_Close ( int *pHandle )
 		LockHandle=0;
 		bLocked=0;
 		
-		DRIVER_MANAGER_RemoveConnectionExists( tDriverInfo.pInstrumentAddress );
+		DRIVER_MANAGER_RemoveConnectionExists( tDriverInfo.pInstrumentAddress , tDriverInfo.InstrumentHandle );
 	}
 	
 	if ( pWrapperFunction == NULL )
@@ -577,16 +612,8 @@ STD_ERROR   DLLEXPORT	DRV_StandardDevice_Close ( int *pHandle )
 		FREE(tDriverInfo.pCalibration);
 	}  
 	
-	if ( tDriverInfo.ptCallbacks )
-	{
-		FREE( (tDriverInfo.ptCallbacks)->pCommentCallbackData );
-		FREE( (tDriverInfo.ptCallbacks)->pConfigValueCallbackData );
-		FREE( (tDriverInfo.ptCallbacks)->pCheckForBreakCallbackData ); 
-		FREE( (tDriverInfo.ptCallbacks)->pFileCallbackData );
-		
-		FREE(tDriverInfo.ptCallbacks);
-	}
-	
+	FREE( tDriverInfo.ptCallbacks );	
+
 Error:
 	
 	if ( LockHandle && bLocked )
@@ -595,16 +622,40 @@ Error:
 	if ( VariableHandle )
 		CmtDiscardTSV ( VariableHandle ); 
 	
-	FreeLibrary( tDriverInfo.LibraryHandle );
+	if ( DRIVER_MANAGER_IsConnectionExistsByType( DRIVER_TYPE_STANDARD_DEVICE ) == 0 )
+		FreeLibrary( tDriverInfo.LibraryHandle );
 	
 	*pHandle = 0;
 	
 	if ( StdError.error )
 	{FREE_CALLOC_COPY_STRING (StdError.pszErrorDescription, "Error while closing instrument driver.");}
 	
-	return StdError;
+	RETURN_STDERR;
 }
 
+/***** ***** ***** ***** ***** Remove Device Address From Connection List ***** ***** ***** ***** ***** ***** ***** *****/
+
+STD_ERROR   DLLEXPORT	DRV_StandardDevice_UpdateIgnoreDuplicationAddresses ( int hHandle )
+{							
+	STD_ERROR                                   StdError                                =   {0};
+								
+	tsDriverInfo								*pDriverInfo							=	NULL;
+	
+	if ( hHandle == 0 )
+		{STD_ERR (DRV_ERROR_PASSED_NULL);} 
+	
+	if ( CmtGetTSVPtr ( hHandle , &pDriverInfo ) < 0 )
+		{STD_ERR (DRV_ERROR_GET_TSV_POINTER);}
+	
+	DRIVER_MANAGER_UpdateIgnoreDupAddresses( pDriverInfo->pInstrumentAddress , pDriverInfo->InstrumentHandle , 1 );
+		
+Error:
+	
+	if ( hHandle )
+		CmtReleaseTSVPtr ( hHandle ); 
+	
+	RETURN_STDERR;
+}
 
 /***** ***** ***** ***** ***** ***** ***** Get Lock ***** ***** ***** ***** ***** ***** ***** *****/
 
@@ -645,7 +696,7 @@ STD_ERROR   DLLEXPORT DRV_StandardDevice_GetLock ( int Handle )
 	
 Error:	
 	
-	return StdError;		
+	RETURN_STDERR;		
 }
 
 /***** ***** ***** ***** ***** ***** ***** Try To Get Lock ***** ***** ***** ***** ***** ***** ***** *****/
@@ -691,7 +742,7 @@ STD_ERROR   DLLEXPORT DRV_StandardDevice_TryToGetLock ( int Handle , int *pSucce
 		}
 Error:	
 	
-	return StdError;			
+	RETURN_STDERR;			
 }
 
 /***** ***** ***** ***** ***** ***** ***** Release Lock ***** ***** ***** ***** ***** ***** ***** *****/
@@ -737,7 +788,7 @@ STD_ERROR   DLLEXPORT DRV_StandardDevice_ReleaseLock ( int Handle )
 
 Error:	
 		
-	return StdError;		
+	RETURN_STDERR;		
 }
 
 /***** ***** ***** ***** ***** ***** ***** Lock Status ***** ***** ***** ***** ***** ***** ***** *****/
@@ -766,7 +817,7 @@ Error:
 	if (Handle)
 		CmtReleaseTSVPtr ( Handle );
 	
-	return StdError;		
+	RETURN_STDERR;		
 }
 
 /***** ***** ***** ***** ***** ***** ***** Save State ***** ***** ***** ***** ***** ***** ***** *****/
@@ -837,7 +888,7 @@ Error:
 		FREE(pTempString);
 	}
 	
-	return StdError;
+	RETURN_STDERR;
 }
 
 STD_ERROR   DLLEXPORT	DRV_StandardDevice_ResetDriver( int Handle )
@@ -906,7 +957,7 @@ Error:
 		FREE(pTempString);
 	}
 	
-	return StdError;
+	RETURN_STDERR;
 }
 
 /***** ***** ***** ***** ***** ***** ***** Save State ***** ***** ***** ***** ***** ***** ***** *****/
@@ -977,7 +1028,7 @@ Error:
 		FREE(pTempString);
 	}
 	
-	return StdError;
+	RETURN_STDERR;
 }
 
 /***** ***** ***** ***** ***** ***** ***** Set Value ***** ***** ***** ***** ***** ***** ***** *****/
@@ -1049,7 +1100,7 @@ Error:
 		FREE(pTempString);
 	}
 	
-	return StdError;
+	RETURN_STDERR;
 }
 
 
@@ -1259,7 +1310,7 @@ Error:
 	FREE(pVoidValue);
 	FREE(pGetCommand);
 	
-	return StdError;
+	RETURN_STDERR;
 }
 
 /***** ***** ***** ***** ***** ***** ***** Set Value ***** ***** ***** ***** ***** ***** ***** *****/
@@ -1333,7 +1384,7 @@ Error:
 		FREE(pTempString);
 	}
 	
-	return StdError;
+	RETURN_STDERR;
 }
 
 /***** ***** ***** ***** ***** ***** ***** Get Value ***** ***** ***** ***** ***** ***** ***** *****/
@@ -1404,7 +1455,7 @@ Error:
 		FREE(pTempString);
 	}
 	
-	return StdError;
+	RETURN_STDERR;
 }
 
 /***** ***** ***** ***** ***** ***** ***** Save State ***** ***** ***** ***** ***** ***** ***** *****/
@@ -1475,7 +1526,7 @@ Error:
 		FREE(pTempString);
 	}
 	
-	return StdError;
+	RETURN_STDERR;
 }
 
 /***** ***** ***** ***** ***** ***** ***** Save State ***** ***** ***** ***** ***** ***** ***** *****/
@@ -1547,7 +1598,7 @@ Error:
 		FREE(pTempString);
 	}
 	
-	return StdError;
+	RETURN_STDERR;
 }
 
 /***** ***** ***** ***** ***** ***** ***** Save State ***** ***** ***** ***** ***** ***** ***** *****/
@@ -1618,7 +1669,7 @@ Error:
 		FREE(pTempString);
 	}
 	
-	return StdError;
+	RETURN_STDERR;
 }
 
 /***** ***** ***** ***** ***** ***** ***** Save State ***** ***** ***** ***** ***** ***** ***** *****/
@@ -1690,7 +1741,7 @@ Error:
 		FREE(pTempString);
 	}
 	
-	return StdError;
+	RETURN_STDERR;
 }
 
 /***** ***** ***** ***** ***** ***** ***** Save State ***** ***** ***** ***** ***** ***** ***** *****/
@@ -1761,7 +1812,7 @@ Error:
 		FREE(pTempString);
 	}
 	
-	return StdError;
+	RETURN_STDERR;
 }
 
 /***** ***** ***** ***** ***** ***** ***** Save State ***** ***** ***** ***** ***** ***** ***** *****/
@@ -1832,7 +1883,7 @@ Error:
 		FREE(pTempString);
 	}
 	
-	return StdError;
+	RETURN_STDERR;
 }
 
 /***** ***** ***** ***** ***** ***** ***** Save State ***** ***** ***** ***** ***** ***** ***** *****/
@@ -1903,7 +1954,7 @@ Error:
 		FREE(pTempString);
 	}
 	
-	return StdError;
+	RETURN_STDERR;
 }
 
 
@@ -1973,7 +2024,7 @@ Error:
 		FREE(pTempString);
 	}
 	
-	return StdError;
+	RETURN_STDERR;
 }
 
 STD_ERROR   DLLEXPORT   DRV_StandardDevice_Check_Connection( int Handle , char *pCommandName , int *piStatus )
@@ -2015,7 +2066,13 @@ STD_ERROR   DLLEXPORT   DRV_StandardDevice_Check_Connection( int Handle , char *
 	CHK_PROCCESS_GET_LOCK ( LockHandle );
 	
     if ( pWrapperFunction && pDriverInfo && ( pDriverInfo->bDemoMode == 0 ))
+	{
 		FREE_STDERR_COPY_ERR( pWrapperFunction( tDriverInfo.InstrumentHandle , pCommandName , piStatus )); 
+	}
+	else
+	{
+		*piStatus = 1;
+	}
 	
 	if ( pWrapperFunction == NULL )
 	{
@@ -2042,7 +2099,7 @@ Error:
 		FREE(pTempString);
 	}
 	
-	return StdError;
+	RETURN_STDERR;
 }
 
 STD_ERROR   DLLEXPORT   DRV_StandardDevice_Get_Commands_List( int Handle , char ***pCommandsList , int *piNumberOfCommands )
@@ -2111,7 +2168,7 @@ Error:
 		FREE(pTempString);
 	}
 	
-	return StdError;
+	RETURN_STDERR;
 }
 
 
@@ -2183,7 +2240,7 @@ Error:
 		FREE(pTempString);
 	}
 	
-	return StdError;
+	RETURN_STDERR;
 }
 
 
@@ -2253,7 +2310,7 @@ Error:
 		FREE(pTempString);
 	}
 	
-	return StdError;
+	RETURN_STDERR;
 }
 
 STD_ERROR   DLLEXPORT	DRV_StandardDevice_GetLowLevelHandle( int Handle , int *pInstrumentLowLevelHandle )
@@ -2322,5 +2379,5 @@ Error:
 		FREE(pTempString);
 	}
 	
-	return StdError;
+	RETURN_STDERR;
 }

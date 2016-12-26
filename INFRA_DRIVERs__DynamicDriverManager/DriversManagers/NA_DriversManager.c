@@ -300,9 +300,7 @@ STD_ERROR   DLLEXPORT	DRV_NetworkAnalyzer_Init ( char *pszDriverLocation , char 
 			pDriverInfo->tInstrDB.networkAnalyzerDriverFunctions.NetworkAnalyzer_SaveToRegister							= (pfNetworkAnalyzer_SaveToRegister) GetProcAddress( pDriverInfo->LibraryHandle , "NetworkAnalyzer_SaveToRegister");        
 			pDriverInfo->tInstrDB.networkAnalyzerDriverFunctions.NetworkAnalyzer_QuaryCalibration						= (pfNetworkAnalyzer_QuaryCalibration) GetProcAddress( pDriverInfo->LibraryHandle , "NetworkAnalyzer_QuaryCalibration");      
 			pDriverInfo->tInstrDB.networkAnalyzerDriverFunctions.NetworkAnalyzer_SetPointsNum							= (pfNetworkAnalyzer_SetPointsNum) GetProcAddress( pDriverInfo->LibraryHandle , "NetworkAnalyzer_SetPointsNum");
-			pDriverInfo->tInstrDB.networkAnalyzerDriverFunctions.NetworkAnalyzer_GetPointsNum							= (pfNetworkAnalyzer_GetPointsNum) GetProcAddress( pDriverInfo->LibraryHandle , "NetworkAnalyzer_GetPointsNum");
-			pDriverInfo->tInstrDB.networkAnalyzerDriverFunctions.NetworkAnalyzer_SetFrequencySweepType					= (pfNetworkAnalyzer_SetFrequencySweepType) GetProcAddress( pDriverInfo->LibraryHandle , "NetworkAnalyzer_GetPointsNum");
-			pDriverInfo->tInstrDB.networkAnalyzerDriverFunctions.NetworkAnalyzer_SelectChannel							= (pfNetworkAnalyzer_SelectChannel) GetProcAddress( pDriverInfo->LibraryHandle , "NetworkAnalyzer_SelectChannel");
+			pDriverInfo->tInstrDB.networkAnalyzerDriverFunctions.NetworkAnalyzer_GetPointsNum							= (pfNetworkAnalyzer_GetPointsNum) GetProcAddress( pDriverInfo->LibraryHandle , "NetworkAnalyzer_GetPointsNum");			pDriverInfo->tInstrDB.networkAnalyzerDriverFunctions.NetworkAnalyzer_SelectChannel							= (pfNetworkAnalyzer_SelectChannel) GetProcAddress( pDriverInfo->LibraryHandle , "NetworkAnalyzer_SelectChannel");
 			pDriverInfo->tInstrDB.networkAnalyzerDriverFunctions.NetworkAnalyzer_GetLastStateFileName					= (pfNetworkAnalyzer_GetLastStateFileName) GetProcAddress( pDriverInfo->LibraryHandle , "NetworkAnalyzer_GetLastStateFileName");
 			pDriverInfo->tInstrDB.networkAnalyzerDriverFunctions.NetworkAnalyzer_SelectMathFunction						= (pfNetworkAnalyzer_SelectMathFunction) GetProcAddress( pDriverInfo->LibraryHandle , "NetworkAnalyzer_SelectMathFunction");     
 			pDriverInfo->tInstrDB.networkAnalyzerDriverFunctions.NetworkAnalyzer_SetTraceToMathMemory					= (pfNetworkAnalyzer_SetTraceToMathMemory) GetProcAddress( pDriverInfo->LibraryHandle , "NetworkAnalyzer_SetTraceToMathMemory");     
@@ -350,7 +348,7 @@ STD_ERROR   DLLEXPORT	DRV_NetworkAnalyzer_Init ( char *pszDriverLocation , char 
 			}
 		
 			if ( !bHandleExists )
-				DRIVER_MANAGER_AddConnection( pszAddressString , &(pDriverInfo->InstrumentHandle) , &(pDriverInfo->InstrumentLockHandle) );
+				DRIVER_MANAGER_AddConnection( pszAddressString , &(pDriverInfo->InstrumentHandle) , DRIVER_TYPE_NETWORK_ANALYZER , &(pDriverInfo->InstrumentLockHandle) );
 		
 			LockHandle = pDriverInfo->InstrumentLockHandle;
 		
@@ -369,24 +367,28 @@ STD_ERROR   DLLEXPORT	DRV_NetworkAnalyzer_Init ( char *pszDriverLocation , char 
 		
 			DRIVER_MANAGER_GetCopyCallbacksStructure( VariableHandle , &(pDriverInfo->ptCallbacks) , 1 , pszAddressString ); 
 			
-			if ( pConfig_Install_CommentCallback )
-			{
-				FREE_STDERR_COPY_ERR( pConfig_Install_CommentCallback( &pDriverInfo->InstrumentHandle , (pDriverInfo->ptCallbacks)->fCommentCallback , (pDriverInfo->ptCallbacks)->pCommentCallbackData , (pDriverInfo->ptCallbacks)->commentType ));
-			}
-	
-			if ( pConfig_Install_ConfigValueCallback && ( pDriverInfo->ptCallbacks ))
-			{
-				FREE_STDERR_COPY_ERR( pConfig_Install_ConfigValueCallback( &pDriverInfo->InstrumentHandle , (pDriverInfo->ptCallbacks)->fConfigValueCallback , (pDriverInfo->ptCallbacks)->pConfigValueCallbackData , (pDriverInfo->ptCallbacks)->configType ));
-			}
-
-			if ( pConfig_Install_CheckForBreakCallback && ( pDriverInfo->ptCallbacks ))
-			{
-				FREE_STDERR_COPY_ERR( pConfig_Install_CheckForBreakCallback( &pDriverInfo->InstrumentHandle , (pDriverInfo->ptCallbacks)->fCheckForBreakCallback , (pDriverInfo->ptCallbacks)->pCheckForBreakCallbackData , (pDriverInfo->ptCallbacks)->breakType ));
-			}
-
 			if ( pConfig_Copy_STD_CallBackSet && ( pDriverInfo->ptCallbacks ))
 			{
 				FREE_STDERR_COPY_ERR( pConfig_Copy_STD_CallBackSet( &pDriverInfo->InstrumentHandle , pDriverInfo->ptCallbacks ));
+				
+				pDriverInfo->ptCallbacks = NULL;
+			}
+			else
+			{
+				if ( pConfig_Install_CommentCallback && ( pDriverInfo->ptCallbacks ))
+				{
+					FREE_STDERR_COPY_ERR( pConfig_Install_CommentCallback( &pDriverInfo->InstrumentHandle , (pDriverInfo->ptCallbacks)->fCommentCallback , (pDriverInfo->ptCallbacks)->pCommentCallbackData , (pDriverInfo->ptCallbacks)->commentType ));
+				}
+				
+				if ( pConfig_Install_ConfigValueCallback && ( pDriverInfo->ptCallbacks ))
+				{
+					FREE_STDERR_COPY_ERR( pConfig_Install_ConfigValueCallback( &pDriverInfo->InstrumentHandle , (pDriverInfo->ptCallbacks)->fConfigValueCallback , (pDriverInfo->ptCallbacks)->pConfigValueCallbackData , (pDriverInfo->ptCallbacks)->configType ));
+				}
+		
+				if ( pConfig_Install_CheckForBreakCallback && ( pDriverInfo->ptCallbacks ))
+				{
+					FREE_STDERR_COPY_ERR( pConfig_Install_CheckForBreakCallback( &pDriverInfo->InstrumentHandle , (pDriverInfo->ptCallbacks)->fCheckForBreakCallback , (pDriverInfo->ptCallbacks)->pCheckForBreakCallbackData , (pDriverInfo->ptCallbacks)->breakType ));
+				}
 			}
 		
 			if (pDriverInfo->ptCallbacks)
@@ -580,7 +582,7 @@ STD_ERROR   DLLEXPORT	DRV_NetworkAnalyzer_Close ( int *pHandle )
 		LockHandle=0;
 		bLocked=0;
 		
-		DRIVER_MANAGER_RemoveConnectionExists( tDriverInfo.pInstrumentAddress );
+		DRIVER_MANAGER_RemoveConnectionExists( tDriverInfo.pInstrumentAddress , tDriverInfo.InstrumentHandle );
 	}
 	
 	if ( pWrapperFunction == NULL )
@@ -610,15 +612,7 @@ STD_ERROR   DLLEXPORT	DRV_NetworkAnalyzer_Close ( int *pHandle )
 		FREE(tDriverInfo.pCalibration);
 	}  
 	
-	if ( tDriverInfo.ptCallbacks )
-	{
-		FREE( (tDriverInfo.ptCallbacks)->pCommentCallbackData );
-		FREE( (tDriverInfo.ptCallbacks)->pConfigValueCallbackData );
-		FREE( (tDriverInfo.ptCallbacks)->pCheckForBreakCallbackData ); 
-		FREE( (tDriverInfo.ptCallbacks)->pFileCallbackData );
-		
-		FREE(tDriverInfo.ptCallbacks);
-	}
+	FREE( tDriverInfo.ptCallbacks );
 	
 Error:
 	
@@ -628,7 +622,8 @@ Error:
 	if ( VariableHandle )
 		CmtDiscardTSV ( VariableHandle ); 
 	
-	FreeLibrary( tDriverInfo.LibraryHandle );
+	if ( DRIVER_MANAGER_IsConnectionExistsByType( DRIVER_TYPE_NETWORK_ANALYZER ) == 0 )
+		FreeLibrary( tDriverInfo.LibraryHandle );
 	
 	*pHandle = 0;
 	

@@ -176,6 +176,12 @@ STD_ERROR   DLLEXPORT	DRV_SpectrumAnalyzer_NoiseFigure_CalibrateNow ( int Handle
 STD_ERROR   DLLEXPORT	DRV_SpectrumAnalyzer_NoiseFigure_SetLossCompensationTable ( int Handle , int bAfterDUT , double *pvFrequencies, double *pvLoss , int iNumberOfPoints );
 STD_ERROR   DLLEXPORT	DRV_SpectrumAnalyzer_NoiseFigure_ApplyCalibration ( int Handle , double lfTimeout );
 
+STD_ERROR   DLLEXPORT	DRV_SpectrumAnalyzer_SetTriggerSource( int Handle , int iSource );  
+
+STD_ERROR   DLLEXPORT	DRV_SpectrumAnalyzer_PhaseNoise_GetIntegratedMarker ( int Handle , int iChannel , int marker , double lfTimeOut ,double lfMarkerStartFreq, double lfMarkerStopFreq, double *pPosition , double *pValue );
+
+STD_ERROR   DLLEXPORT	DRV_SpectrumAnalyzer_PhaseNoise_SetIntegratedMarker_Start_Stop_Offsets( int Handle , int iChannel , int marker , double lfTimeOut , double lfStartFreq , double lfStopFreq );
+
 #ifdef __cplusplus
     }
 #endif

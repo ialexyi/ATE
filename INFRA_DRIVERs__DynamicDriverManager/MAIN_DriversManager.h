@@ -24,8 +24,8 @@
 #include "FG_DriversManager.h"
 #include "STD_DriversManager.h"
 #include "EQUIP_FileSupport.h"
-		
-#define		CHK_PROCCESS_GET_LOCK(xxLockHandle)		{ IF((xxLockHandle==0),"Handle is NULL."); do { CHK_CMT( CmtTryToGetLock ( xxLockHandle , &bLocked )); ProcessDrawEvents(); ProcessSystemEvents(); }while(bLocked==0); }
+
+#define		CHK_PROCCESS_GET_LOCK(xxLockHandle)		{ IF((xxLockHandle==0),"Handle is NULL."); do { CHK_CMT( CmtTryToGetLock ( xxLockHandle , &bLocked ));  if ( bLocked ) break; ProcessDrawEvents(); DelayWithEventProcessing(0.3); }while(bLocked==0); }
 
 #define		DRIVER_MANAGER_STD_FUNCTION_VARIABLES_DECLARATION	STD_ERROR	StdError	=	{0}; tsSTD_CallBackSet	tSTD_CallBackSet =	{0};
 		
@@ -151,6 +151,7 @@ typedef void* (*pfPowerMeter_Reset) ( int hInstrumentHandle );
 typedef void* (*pfPowerMeter_SetSingleSweep) ( int hInstrumentHandle , int channel ); 
 typedef void* (*pfPowerMeter_SetContinuesSweep) ( int hInstrumentHandle , int channel ); 
 typedef void* (*pfPowerMeter_InitSweep) ( int hInstrumentHandle , int channel ); 
+typedef void* (*pfPowerMeter_Abort) ( int hInstrumentHandle , int channel ); 
 typedef void* (*pfPowerMeter_SetAuto) ( int hInstrumentHandle , int channel ); 
 typedef void* (*pfPowerMeter_SetChanelState) ( int hInstrumentHandle , int channel , int state );
 typedef void* (*pfPowerMeter_SetVerticalScale) ( int hInstrumentHandle , int channel , double scale );
@@ -198,6 +199,8 @@ typedef void* (*pfPowerMeter_ReadCWpower)( int hInstrumentHandle , int iChannel 
 typedef void* (*pfPowerMeter_GetLastStateFileName)( int hInstrumentHandle ,char **pszFileName ); 
 typedef void* (*pfPowerMeter_Gating_ReadPower)( int hInstrumentHandle , int iChannel , int iGait , int iGaitMeasureIndex , double timeout , double *value );
 typedef void* (*pfPowerMeter_GetTrace) ( int hInstrumentHandle, int iChannel, int timeout, double **plfTime , double **pTrace , int numberOfPoints , int *pCount ); 
+typedef void* (*pfPowerMeter_Set_Trigger_Source) ( int hInstrumentHandle, int iTriggerSorce ); 
+typedef void* (*pfPowerMeter_Abort) ( int hInstrumentHandle, int iChannel ); 
 
 typedef struct
 {
@@ -267,6 +270,10 @@ typedef struct
 			
 			//------------ Version 1.7.5.0 --------------------//       
 			pfPowerMeter_GetTrace										PowerMeter_GetTrace;
+
+			//------------ Version 1.7.6.0 --------------------//       
+			pfPowerMeter_Set_Trigger_Source								PowerMeter_Set_Trigger_Source;
+			pfPowerMeter_Abort											PowerMeter_Abort;
 			
 } tsPowerMeterFunctions;
 
@@ -494,33 +501,37 @@ typedef void* (*pfSpectrumAnalyzer_NoiseFigure_CalibrateNow)( int hInstrumentHan
 typedef void* (*pfSpectrumAnalyzer_NoiseFigure_SetLossCompensationTable)( int hInstrumentHandle , int bAfterDUT , double *pvFrequencies, double *pvLoss , int iNumberOfPoints );
 typedef void* (*pfSpectrumAnalyzer_SetMarkerFrequencyCounter)( int hInstrumentHandle , int iMarkerNr , int bState ); 
 typedef void* (*pfSpectrumAnalyzer_NoiseFigure_ApplyCalibration)( int hInstrumentHandle , double lfTimeout );
+typedef void* (*pfSpectrumAnalyzer_SetTriggerSource)( int hInstrumentHandle , int iSource );  
+typedef void* (*pfSpectrumAnalyzer_PhaseNoise_GetIntegratedMarker)( int Handle , int iChannel , int marker , double lfTimeOut ,double lfMarkerStartFreq, double lfMarkerStopFreq, double *pPosition , double *pValue );
+typedef void* (*pfSpectrumAnalyzer_PhaseNoise_SetIntegratedMarker_Start_Stop_Offsets)( int Handle , int iChannel , int marker , double lfTimeOut , double lfStartFreq , double lfStopFreq );
+
 
 typedef struct
 {
-			pfSTD_Config_Install_CommentCallback						Config_Install_CommentCallback;
-			pfSTD_Config_Install_ConfigValueCallback					Config_Install_ConfigValueCallback;
-			pfSTD_Config_Install_CheckForBreakCallback					Config_Install_CheckForBreakCallback;
-			pfSTD_Config_LOG_SetAllowState								Config_LOG_SetAllowState;
-			pfSTD_Config_Copy_STD_CallBackSet							Config_Copy_STD_CallBackSet;
-			
-			pfSpectrumAnalyzer_GetErrorTextMessage						SpectrumAnalyzer_GetErrorTextMessage;          
-			pfSpectrumAnalyzer_Init						  				SpectrumAnalyzer_Init;                         
-			pfSpectrumAnalyzer_Close									SpectrumAnalyzer_Close;  
-			pfSpectrumAnalyzer_Reset									SpectrumAnalyzer_Reset;
-			pfSpectrumAnalyzer_SetAuto									SpectrumAnalyzer_SetAuto;
-			pfSpectrumAnalyzer_Config									SpectrumAnalyzer_Config;
-			pfSpectrumAnalyzer_SetFrequency								SpectrumAnalyzer_SetFrequency;
-			pfSpectrumAnalyzer_SetStartStopFrequency					SpectrumAnalyzer_SetStartStopFrequency;
-			pfSpectrumAnalyzer_GetStartStopFrequency					SpectrumAnalyzer_GetStartStopFrequency;
-			pfSpectrumAnalyzer_SetSpan									SpectrumAnalyzer_SetSpan;
-			pfSpectrumAnalyzer_SetAmplitude								SpectrumAnalyzer_SetAmplitude;
-			pfSpectrumAnalyzer_SetAttenuation							SpectrumAnalyzer_SetAttenuation;
-			pfSpectrumAnalyzer_SetRBW									SpectrumAnalyzer_SetRBW;
-			pfSpectrumAnalyzer_SetVBW									SpectrumAnalyzer_SetVBW;
-			pfSpectrumAnalyzer_SetBW									SpectrumAnalyzer_SetBW;
-			pfSpectrumAnalyzer_GetSweep									SpectrumAnalyzer_GetSweep;
-			pfSpectrumAnalyzer_SetMarker								SpectrumAnalyzer_SetMarker;
-			pfSpectrumAnalyzer_SetRLAuto								SpectrumAnalyzer_SetRLAuto;
+			pfSTD_Config_Install_CommentCallback								Config_Install_CommentCallback;
+			pfSTD_Config_Install_ConfigValueCallback							Config_Install_ConfigValueCallback;
+			pfSTD_Config_Install_CheckForBreakCallback							Config_Install_CheckForBreakCallback;
+			pfSTD_Config_LOG_SetAllowState										Config_LOG_SetAllowState;
+			pfSTD_Config_Copy_STD_CallBackSet									Config_Copy_STD_CallBackSet;
+																			
+			pfSpectrumAnalyzer_GetErrorTextMessage								SpectrumAnalyzer_GetErrorTextMessage;          
+			pfSpectrumAnalyzer_Init						  						SpectrumAnalyzer_Init;                         
+			pfSpectrumAnalyzer_Close											SpectrumAnalyzer_Close;  
+			pfSpectrumAnalyzer_Reset											SpectrumAnalyzer_Reset;
+			pfSpectrumAnalyzer_SetAuto											SpectrumAnalyzer_SetAuto;
+			pfSpectrumAnalyzer_Config											SpectrumAnalyzer_Config;
+			pfSpectrumAnalyzer_SetFrequency										SpectrumAnalyzer_SetFrequency;
+			pfSpectrumAnalyzer_SetStartStopFrequency							SpectrumAnalyzer_SetStartStopFrequency;
+			pfSpectrumAnalyzer_GetStartStopFrequency							SpectrumAnalyzer_GetStartStopFrequency;
+			pfSpectrumAnalyzer_SetSpan											SpectrumAnalyzer_SetSpan;
+			pfSpectrumAnalyzer_SetAmplitude										SpectrumAnalyzer_SetAmplitude;
+			pfSpectrumAnalyzer_SetAttenuation									SpectrumAnalyzer_SetAttenuation;
+			pfSpectrumAnalyzer_SetRBW											SpectrumAnalyzer_SetRBW;
+			pfSpectrumAnalyzer_SetVBW											SpectrumAnalyzer_SetVBW;
+			pfSpectrumAnalyzer_SetBW											SpectrumAnalyzer_SetBW;
+			pfSpectrumAnalyzer_GetSweep											SpectrumAnalyzer_GetSweep;
+			pfSpectrumAnalyzer_SetMarker										SpectrumAnalyzer_SetMarker;
+			pfSpectrumAnalyzer_SetRLAuto										SpectrumAnalyzer_SetRLAuto;
 			pfSpectrumAnalyzer_GetFrequency								SpectrumAnalyzer_GetFrequency;
 			pfSpectrumAnalyzer_GetAmplitude								SpectrumAnalyzer_GetAmplitude;
 			pfSpectrumAnalyzer_SetFreqCountResol						SpectrumAnalyzer_SetFreqCountResol;
@@ -585,27 +596,34 @@ typedef struct
 			pfSpectrumAnalyzer_Read_Harmonics_Distortion				SpectrumAnalyzer_Read_Harmonics_Distortion;   
 			pfSpectrumAnalyzer_Read_Harmonics_dBc						SpectrumAnalyzer_Read_Harmonics_dBc;          
 			pfSpectrumAnalyzer_Read_Harmonics_Amplitude					SpectrumAnalyzer_Read_Harmonics_Amplitude;    
-			pfSpectrumAnalyzer_Read_Spurious_Emissions_List				SpectrumAnalyzer_Read_Spurious_Emissions_List;
+			pfSpectrumAnalyzer_Read_Spurious_Emissions_List					SpectrumAnalyzer_Read_Spurious_Emissions_List;
 			
 			//------------ Version 1.2.3.0 --------------------// 
-			pfSpectrumAnalyzer_SetOffset								SpectrumAnalyzer_SetOffset;
+			pfSpectrumAnalyzer_SetOffset											SpectrumAnalyzer_SetOffset;
 		
 			//------------ Version 1.2.4.0 --------------------// 
-			pfSpectrumAnalyzer_GetMarkerFrequencyCounter				SpectrumAnalyzer_GetMarkerFrequencyCounter;
+			pfSpectrumAnalyzer_GetMarkerFrequencyCounter							SpectrumAnalyzer_GetMarkerFrequencyCounter;
 			
 			//------------ Version 1.2.6.0 --------------------// 
-			pfSpectrumAnalyzer_MeasureMarkerFrequencyCounter			SpectrumAnalyzer_MeasureMarkerFrequencyCounter;
+			pfSpectrumAnalyzer_MeasureMarkerFrequencyCounter						SpectrumAnalyzer_MeasureMarkerFrequencyCounter;
 																														   
 			//------------ Version 1.3.5.0 --------------------//  
-			pfSpectrumAnalyzer_AlignNow									SpectrumAnalyzer_AlignNow;
-			pfSpectrumAnalyzer_NoiseFigure_CalibrateNow					SpectrumAnalyzer_NoiseFigure_CalibrateNow;
-			pfSpectrumAnalyzer_NoiseFigure_SetLossCompensationTable		SpectrumAnalyzer_NoiseFigure_SetLossCompensationTable;
+			pfSpectrumAnalyzer_AlignNow												SpectrumAnalyzer_AlignNow;
+			pfSpectrumAnalyzer_NoiseFigure_CalibrateNow								SpectrumAnalyzer_NoiseFigure_CalibrateNow;
+			pfSpectrumAnalyzer_NoiseFigure_SetLossCompensationTable					SpectrumAnalyzer_NoiseFigure_SetLossCompensationTable;
 
 			//------------ Version 1.6.2.0 --------------------//  
-			pfSpectrumAnalyzer_SetMarkerFrequencyCounter				SpectrumAnalyzer_SetMarkerFrequencyCounter;
+			pfSpectrumAnalyzer_SetMarkerFrequencyCounter							SpectrumAnalyzer_SetMarkerFrequencyCounter;
 
 			//------------ Version 1.8.3.0 --------------------//  
-			pfSpectrumAnalyzer_NoiseFigure_ApplyCalibration				SpectrumAnalyzer_NoiseFigure_ApplyCalibration;
+			pfSpectrumAnalyzer_NoiseFigure_ApplyCalibration							SpectrumAnalyzer_NoiseFigure_ApplyCalibration;
+		
+			//------------ Version 1.8.5.0 --------------------//  
+			pfSpectrumAnalyzer_SetTriggerSource										SpectrumAnalyzer_SetTriggerSource;
+		
+			//------------ Version 1.8.7.0 --------------------//  
+			pfSpectrumAnalyzer_PhaseNoise_GetIntegratedMarker						SpectrumAnalyzer_PhaseNoise_GetIntegratedMarker;
+			pfSpectrumAnalyzer_PhaseNoise_SetIntegratedMarker_Start_Stop_Offsets	SpectrumAnalyzer_PhaseNoise_SetIntegratedMarker_Start_Stop_Offsets
 			
 } tsSpectrumAnalyzerFunctions;
 
@@ -858,7 +876,6 @@ typedef void* (*pfNetworkAnalyzer_SaveToRegister)(int hInstrumentHandle, char *p
 typedef void* (*pfNetworkAnalyzer_QuaryCalibration)(int hInstrumentHandle , int iChannel  , char *pResponse  );
 typedef void* (*pfNetworkAnalyzer_SetPointsNum)( int hInstrumentHandle , int points );  
 typedef void* (*pfNetworkAnalyzer_GetPointsNum)(int hInstrumentHandle, int *points);    
-typedef void* (*pfNetworkAnalyzer_SetFrequencySweepType)(int hInstrumentHandle, int iChannel , int iFrequencySweepType );
 typedef void* (*pfNetworkAnalyzer_SelectChannel) ( int hInstrumentHandle , int iChannel );
 typedef void* (*pfNetworkAnalyzer_GetLastStateFileName)(int hInstrumentHandle, char **pszFileName );
 typedef void* (*pfNetworkAnalyzer_SelectMathFunction) ( int hInstrumentHandle , int iChannel , char cFunction );
@@ -1160,8 +1177,8 @@ typedef struct
 			pfSTD_Equipment_DeleteStateFile		Equipment_DeleteStateFile;
 		
 			//------------ Version 1.9.0.0 --------------------//  
-			pfSTD_Config_SetAttribute			Config_SetAttribute;  			
-
+			pfSTD_Config_SetAttribute			Config_SetAttribute;  
+		
 } tsInstrDB;
 
 typedef struct
@@ -1252,8 +1269,12 @@ typedef struct SINGLE_LIST_ITEM
 			int									handle,
 												lock;
 	
+			int									ignore_dup_address;
+			
 			char								*pszConnectString;
 	
+			teDriversType						InstrumentType; 
+			
 			struct SINGLE_LIST_ITEM				*pNextItem;
 			//------------ Version 1.1.0.0 --------------------//  
 
@@ -1277,10 +1298,13 @@ typedef struct
 // Global functions
 int  ShowMessage ( int type , char *pTitle , char *pText, char *pPicture );
 
+int DRIVER_MANAGER_IsConnectionExistsByType( teDriversType tInstrumentType );
 int DRIVER_MANAGER_IsConnectionExists( char *pszAddress , int *phHandle , int *phLock );
-int DRIVER_MANAGER_AddConnection( char *pszAddress , int *phHandle , int *phLock );
+int DRIVER_MANAGER_AddConnection( char *pszAddress , int *phHandle , teDriversType tInstrumentType , int *phLock );
 int	DRIVER_MANAGER_UpdateConnection( char *pszAddress, int hHandle , int *phLock );
-int DRIVER_MANAGER_RemoveConnectionExists( char *pszAddress );
+int	DRIVER_MANAGER_UpdateAddressByConnection( int hHandle , char *pszAddress );
+int DRIVER_MANAGER_RemoveConnectionExists( char *pszAddress , int hHandle );
+int DRIVER_MANAGER_UpdateIgnoreDupAddresses( char *pszAddress , int hHandle , int bIgnoreDupAddresses );
 
 int	DRIVER_MANAGER_GetCopyCallbacksStructure( int hDeviceHandle , tsSTD_CallBackSet **pSTD_CallBackSet , int iNumberOfParams , ... );  
 

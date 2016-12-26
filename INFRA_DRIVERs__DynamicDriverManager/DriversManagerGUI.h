@@ -25,7 +25,15 @@
 #define  FILES_QUIT                       10      /* control type: pictButton, callback function: (none) */
 #define  FILES_LIST                       11      /* control type: listBox, callback function: clbListTrigger */
 
-#define  SETUP_MSG                        2
+#define  HELP_ABOUT                       2
+#define  HELP_ABOUT_TEXTMSG               2       /* control type: textMsg, callback function: clbAboutPanleContuctWeb */
+#define  HELP_ABOUT_QUIT                  3       /* control type: pictButton, callback function: clbAboutPanleQuit */
+#define  HELP_ABOUT_PICTURE               4       /* control type: picture, callback function: clbAboutPanleContuctUs */
+#define  HELP_ABOUT_PICTURE_3             5       /* control type: picture, callback function: (none) */
+#define  HELP_ABOUT_DATE                  6       /* control type: textMsg, callback function: (none) */
+#define  HELP_ABOUT_VERSION               7       /* control type: textMsg, callback function: (none) */
+
+#define  SETUP_MSG                        3
 #define  SETUP_MSG_YES                    2       /* control type: pictButton, callback function: (none) */
 #define  SETUP_MSG_NO                     3       /* control type: pictButton, callback function: (none) */
 #define  SETUP_MSG_PICTURE_2              4       /* control type: picture, callback function: (none) */
@@ -46,6 +54,9 @@
 
      /* Callback Prototypes: */
 
+int  CVICALLBACK clbAboutPanleContuctUs(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);
+int  CVICALLBACK clbAboutPanleContuctWeb(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);
+int  CVICALLBACK clbAboutPanleQuit(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);
 int  CVICALLBACK clbListTrigger(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);
 int  CVICALLBACK filesUnlink(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);
 

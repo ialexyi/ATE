@@ -91,6 +91,10 @@ STD_ERROR   DLLEXPORT	DRV_SignalGenerator_RecallState( int Handle , char *szFile
 
 STD_ERROR   DLLEXPORT	DRV_SignalGenerator_ApplyPowerCorrection_ByLoss ( int Handle , int Channel , double lfOutputPower , double lfAdditionalLoss );
 
+STD_ERROR   DLLEXPORT 	DRV_SignalGenerator_GetLock ( int Handle );
+STD_ERROR   DLLEXPORT 	DRV_SignalGenerator_TryToGetLock ( int Handle , int *pSuccess);
+STD_ERROR   DLLEXPORT 	DRV_SignalGenerator_ReleaseLock ( int Handle );
+STD_ERROR   DLLEXPORT 	DRV_SignalGenerator_LockStatus ( int Handle , int *iStatus );
 
 #ifdef __cplusplus
     }
