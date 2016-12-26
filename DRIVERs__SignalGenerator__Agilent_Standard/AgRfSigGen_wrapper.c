@@ -93,6 +93,25 @@ Error:
 	RETURN_STDERR_POINTER;	
 }
 
+void*	DLLEXPORT		Config_Copy_STD_CallBackSet ( int *pHandle , void *pCallBackSet )
+{
+	STD_ERROR						StdError									=	{0};
+
+	tsSTD_CallBackSet				*ptCallbacks								=	 pCallBackSet;
+	
+	if ( ptCallbacks )
+	{
+		FREE(ptCallbacks->pCommentCallbackData);
+		FREE(ptCallbacks->pConfigValueCallbackData);
+		FREE(ptCallbacks->pCheckForBreakCallbackData);
+		FREE(ptCallbacks->pFileCallbackData);
+	
+		FREE(ptCallbacks);	
+	}
+
+	RETURN_STDERR_POINTER;
+}
+
 void*	DLLEXPORT		Equipment_Info ( int hLowLevelHandle , char *pAddress , char **pVendor , char **pSerialNumber , char **pModel , char **pFirmware )
 {
 	STD_ERROR						StdError									=	{0};
@@ -278,13 +297,6 @@ void*	DLLEXPORT		Equipment_IsSupported ( int hLowLevelHandle , char *pAddress , 
 	
 	if (pbSupporting)
 		*pbSupporting = bSupport;
-	
-	RETURN_STDERR_POINTER;	
-}
-
-void*	DLLEXPORT		Config_Copy_STD_CallBackSet ( int *pHandle , void *pCallBackSet )
-{
-	STD_ERROR						StdError									=	{0};
 	
 	RETURN_STDERR_POINTER;	
 }
