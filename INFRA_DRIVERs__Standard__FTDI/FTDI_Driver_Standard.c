@@ -419,6 +419,9 @@ void* DLLEXPORT FTDI_Driver_Init( char *pszConnectionName , char *pszAddress , i
 		
 		for ( iCommandIndex = 0; iCommandIndex < pLocalStorage->listSize; iCommandIndex++ )
 		{
+			if (( strlen( pLocalStorage->pFTDI_CommandList[iCommandIndex].szCommandName ) == 0 ) || ( pLocalStorage->pFTDI_CommandList[iCommandIndex].szCommandName[0] == '-' ))
+				continue;
+			
 			if ( hConnectionHandle == 0 )
 			{
 				FREE_STDERR_COPY_ERR( FTDI_Init( pLocalStorage->pFTDI_CommandList[iCommandIndex].iConfigType , pLocalStorage->pFTDI_CommandList[iCommandIndex].szDeviceName , &(pLocalStorage->pFTDI_CommandList[iCommandIndex].hDriverHandle) ));
