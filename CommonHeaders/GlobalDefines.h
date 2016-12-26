@@ -182,6 +182,7 @@ typedef union
 		int				sendingSizeType,
 						responseSizeType;
 						
+		unsigned int	sendReceiveDelay_Msec;
 	};
 	
 } tsSTD_CommandItem;
@@ -214,6 +215,8 @@ typedef union
 		//------------ Signature --------------------------------//
 		unsigned __int64			ulSignatureID;
 		//-------------------------------------------------------//	
+		
+		unsigned int	sendReceiveDelay_Msec; 
 	};
 	
 } tsSTD_Extended_CommandItem;
@@ -228,8 +231,8 @@ typedef void* (*tfStdReceiveCallback) ( void *pHandle , char *pCommand , int *pV
 #define		FREE_LIST_ONLY(xPointer,xCount)																	{ int xxIndex=0; if ( xPointer ) { if ( xCount ) { for(xxIndex=0;xxIndex<xCount;xxIndex++) { FREE(xPointer[xxIndex]);}}}} 
 #define		FREE_LIST(xPointer,xCount)																		{ FREE_LIST_ONLY(xPointer,xCount); free(xPointer); xPointer = NULL; }
 
-#define		CALLOC(xyPointer,xyCount,xySizeof)																{ int xxCount = xyCount; void *xxpData = NULL; if (xySizeof==1) xxCount++; if ((xxCount>0) && (xySizeof>0)) { xxpData = calloc(xxCount,xySizeof); xyPointer = xxpData; if ( xyPointer && ( xySizeof < sizeof(xyPointer[0]))) { DebugPrintf("Allocation size has mismatched in file \"%s\"\nin function \"%s\"\nline number %d\n\n",__FILE__ , __FUNCTION__ , __LINE__ ); }}}
-#define		CALLOC_CONST_SINGLE(xyPointer,xySizeof)															{ void *xxpData = NULL; xxpData = calloc(1,xySizeof); xyPointer = xxpData; if ( xyPointer && ( xySizeof < sizeof(xyPointer[0]))) { DebugPrintf("Allocation size has mismatched in file \"%s\"\nin function \"%s\"\nline number %d\n\n",__FILE__ , __FUNCTION__ , __LINE__ ); }}   
+#define		CALLOC(xyPointer,xyCount,xySizeof)																{ int xxCount = xyCount; void *xxpData = NULL; if (xySizeof==1) xxCount++; if ((xxCount>0) && (xySizeof>0)) { xxpData = calloc(xxCount,xySizeof); xyPointer = xxpData; }}
+#define		CALLOC_CONST_SINGLE(xyPointer,xySizeof)															{ void *xxpData = NULL; xxpData = calloc(1,xySizeof); xyPointer = xxpData; }   
 
 #define		CALLOC_ERR(xPointer,xCount,xSizeof)																{ CALLOC(xPointer,xCount,xSizeof); IF ((xPointer==NULL),"Can't allocate memory.");}
 #define		CALLOC_CONST_SINGLE_ERR(xPointer,xSizeof)														{ CALLOC_CONST_SINGLE(xPointer,xSizeof); IF ((xPointer==NULL),"Can't allocate memory.");}
@@ -390,5 +393,7 @@ extern const char	errorsDescriptions[NUMBER_OF_ERRORS][1024];
 
 //==============================================================================
 // Global functions
+
+//void CVICALLBACK MSG_Messenger(void *Data);
 
 #endif  /* ndef __GlobalDefines_H__ */
