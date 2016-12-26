@@ -1,3 +1,13 @@
+//==============================================================================
+//
+// Title:       BoontonPowerMeter_4540
+// Purpose:     A short description of the interface.
+//
+// Created on:  22/05/2011 at 09:02:11 by win7.
+// Copyright:   . All Rights Reserved.
+//
+//==============================================================================
+
 #ifndef __BoontonPowerMeter_4540_H__
 #define __BoontonPowerMeter_4540_H__
 
