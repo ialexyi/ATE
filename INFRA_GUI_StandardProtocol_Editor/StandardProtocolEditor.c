@@ -6,14 +6,18 @@
 #include <formatio.h>
 #include <ansi_c.h>
 
-#define						MAX_LIST_NUMBER							0xFF
+#define							MAX_LIST_NUMBER							0xFF
 
-#define			DEVICE_ID				STANDARD_PROTOCOL_DRIVER_DEVICE_ID
+#define							DEVICE_ID								STANDARD_PROTOCOL_DRIVER_DEVICE_ID
 
-tsSTD_CommandItem			gvtListOfCommands[MAX_LIST_NUMBER]	=	{0};
+tsSTD_CommandItem				gvtListOfCommands[MAX_LIST_NUMBER]	=	{0};
 	
-int							giCurrentItemIndex					=	0,
-							giNumberOfItems						=	0;
+int								giCurrentItemIndex					=	0,
+								giNumberOfItems						=	0;
+
+char							szCurrentFilePath[STD_STRING]		=	{0};
+
+int								bSaveChanges						=	0;
 
 int		UpdateList( int panelHandle )
 {
@@ -21,7 +25,7 @@ int		UpdateList( int panelHandle )
 	
 	DeleteListItem ( panelHandle, PANEL_COMMAND_NAME_LIST , 0 , -1 );
 	
-	for ( iIndex = 0 ; iIndex < MAX_LIST_NUMBER; iIndex++ )
+	for ( iIndex = 0 ; iIndex < giNumberOfItems; iIndex++ )
 	{
 		if ( strlen(gvtListOfCommands[iIndex].szCommandName) == 0 )
 			break;
@@ -86,6 +90,8 @@ int		OpenConfigurationFile( char *pszFilePath )
 	if ( FileExists( pszFilePath , NULL ))
 		if ( strstr( pszFilePath , ".spcnf" ))
 		{
+			strcpy( szCurrentFilePath , pszFilePath );
+			
 			hFileHandle = OpenFile (pszFilePath, VAL_READ_ONLY, VAL_TRUNCATE, VAL_BINARY);
 
 			memset( gvtListOfCommands , 0 , sizeof(gvtListOfCommands));
@@ -162,12 +168,62 @@ int CVICALLBACK panelCB (int panel, int event, void *callbackData, int eventData
 	return 0;
 }
 
+
+void		SaveFileAs( int bAskUser , int bAskForSaveChanges )
+{
+	char		szFilePath[STD_STRING]				=	{0},
+				szPath[STD_STRING]					=	{0},
+				szFileName[LOW_STRING]				=	{0};
+
+	char		*pTemp								=	NULL;
+	
+	int			hFileHandle							=	0;
+	
+	int			iIndex								=	0;
+	
+	if ( bSaveChanges && (( bAskUser == 0 ) || ( bAskForSaveChanges == 0 ) || ConfirmPopup ("Save Changes", "Do you want to save last changes?")))
+	{
+		strcpy( szFilePath , szCurrentFilePath );
+		strcpy( szPath , szCurrentFilePath );    
+	
+		pTemp = strrchr( szPath , '\\' );
+	
+		if ( pTemp )
+		{
+			*pTemp++ = 0;
+
+			strcpy( szFileName , pTemp );
+		}
+	
+		if (( bAskUser == 0 ) || ( FileSelectPopup (szPath, szFileName , "*.spcnf", "Save", VAL_SAVE_BUTTON, 0, 1, 1, 1, szFilePath )))
+		{
+			hFileHandle = OpenFile (szFilePath, VAL_WRITE_ONLY, VAL_TRUNCATE, VAL_BINARY);
+
+			for ( iIndex = 0 ; iIndex < giNumberOfItems; iIndex++ )
+			{
+				gvtListOfCommands[iIndex].ulSignatureID = DEVICE_ID;
+
+				WriteFile ( hFileHandle , gvtListOfCommands[iIndex].max_size , sizeof(tsSTD_Extended_CommandItem) );
+			}
+	
+			CloseFile (hFileHandle);
+			
+			bSaveChanges = 0;
+		}
+	}
+	
+	return;
+}
+
+
 int CVICALLBACK clbExit (int panel, int control, int event, void *callbackData, int eventData1, int eventData2)
 {
 	switch (event)
 	{
 		case EVENT_COMMIT:
 
+			SaveFileAs( 1 , 1 ); 
+			
 			QuitUserInterface (0); 
 			
 			break;
@@ -179,6 +235,8 @@ void CVICALLBACK clbMenuNewFile (int menuBar, int menuItem, void *callbackData, 
 {
 	memset( gvtListOfCommands , 0 , sizeof(gvtListOfCommands));
 	
+	bSaveChanges = 1;
+	
 	giCurrentItemIndex = 0;
 	
 	UpdateList( panel );
@@ -189,8 +247,12 @@ void CVICALLBACK clbMenuOpenFile (int menuBar, int menuItem, void *callbackData,
 {
 	char		szFilePath[STD_STRING]				=	{0};
 	
+	SaveFileAs( 1 , 1 ); 
+	
 	if ( FileSelectPopup ("", "*.spcnf", "*.spcnf", "Load", VAL_LOAD_BUTTON, 0, 1, 1, 1, szFilePath ))
 	{
+		bSaveChanges = 0;
+		
 		OpenConfigurationFile( szFilePath );
 	
 		UpdateList( panel );
@@ -200,29 +262,25 @@ void CVICALLBACK clbMenuOpenFile (int menuBar, int menuItem, void *callbackData,
 
 void CVICALLBACK clbMenuSaveFile (int menuBar, int menuItem, void *callbackData, int panel)
 {
-	int			iIndex								=	0;
+	SaveFileAs( 0 , 0 );
+}
 
-	char		szFilePath[STD_STRING]				=	{0};
+void CVICALLBACK clbMenuSaveAsFile (int menuBar, int menuItem, void *callbackData, int panel)
+{
+	int				bLastSaveChanges = bSaveChanges;
 
-	int			hFileHandle							=	0;
+	bSaveChanges = 1;
 	
-	if ( FileSelectPopup ("", "*.spcnf", "*.spcnf", "Save", VAL_SAVE_BUTTON, 0, 1, 1, 1, szFilePath ))
-	{
-		hFileHandle = OpenFile (szFilePath, VAL_WRITE_ONLY, VAL_TRUNCATE, VAL_BINARY);
-		
-		for ( iIndex = 0 ; iIndex < giNumberOfItems; iIndex++ )
-		{
-			gvtListOfCommands[iIndex].ulSignatureID = DEVICE_ID;
-
-			WriteFile ( hFileHandle , gvtListOfCommands[iIndex].max_size , sizeof(tsSTD_CommandItem) );
-		}
-			
-		CloseFile (hFileHandle);
-	}
+	SaveFileAs( 1 , 0 );
+	
+	if ( bSaveChanges )
+		bSaveChanges = bLastSaveChanges;  
 }
 
 void CVICALLBACK clbMenuExit (int menuBar, int menuItem, void *callbackData, int panel)
 {
+	SaveFileAs( 1 , 1 );  
+	
 	QuitUserInterface (0);
 }
 
@@ -238,6 +296,8 @@ int CVICALLBACK clbValueChanged (int panel, int control, int event, void *callba
 	{
 		case EVENT_COMMIT:
 
+			bSaveChanges = 1;
+			
 			GetCtrlVal( panel , control , szStringValue );  
 			
 			if ( strchr( szStringValue , 'x' ) || strchr( szStringValue , 'X' ))
@@ -299,6 +359,8 @@ int CVICALLBACK clbValueNumericChanged (int panel, int control, int event, void 
 
 			GetCtrlVal( panel , control , &iValue );  
 			
+			bSaveChanges = 1;
+			
 			switch (control)
 			{
 				case PANEL_SEND_VAR_SIZE:
@@ -325,6 +387,13 @@ int CVICALLBACK clbCommandsList (int panel, int control, int event, void *callba
 			UpdateCurrentItem( panel );
 				
 			break;
+			
+		case EVENT_KEYPRESS:
+			
+			if ( GetKeyPressEventVirtualKey (eventData2) == VAL_FWD_DELETE_VKEY )
+				clbMenuDeleteItem ( 0 , 0 , 0 , panel );
+			
+			break;
 	}
 	return 0;
 }
@@ -341,6 +410,8 @@ int CVICALLBACK clbCommandNameChanged (int panel, int control, int event, void *
 	{
 		case EVENT_COMMIT:
 
+			bSaveChanges = 1;
+			
 			GetCtrlVal( panel , control , szStringValue );  
 			
 			StringUpperCase (szStringValue);
@@ -409,4 +480,67 @@ void CVICALLBACK clbSortByOpCode (int menuBar, int menuItem, void *callbackData,
 	SortCommandListByOpCode();
 	
 	UpdateList( panel ); 
+}
+
+void CVICALLBACK clbMenuDeleteItem (int menuBar, int menuItem, void *callbackData, int panel)
+{
+	int							iIndex				=	0,
+								iCurrentIndex		=	0;
+	
+	GetCtrlIndex ( panel , PANEL_COMMAND_NAME_LIST , &iCurrentIndex );
+			
+	bSaveChanges = 1;
+	
+	if ( iCurrentIndex < giNumberOfItems )
+	{
+		giNumberOfItems--;
+	
+		for ( iIndex = giCurrentItemIndex; iIndex < giNumberOfItems; iIndex++ )
+			gvtListOfCommands[iIndex] = gvtListOfCommands[iIndex+1];
+	
+		UpdateList( panel );
+		
+		if ( iCurrentIndex >= giNumberOfItems )
+			iCurrentIndex = giNumberOfItems - 1;
+		
+		if ( iCurrentIndex < 0 )
+			iCurrentIndex = 0;
+		
+		giCurrentItemIndex = iCurrentIndex;
+		
+		SetCtrlIndex ( panel , PANEL_COMMAND_NAME_LIST , iCurrentIndex );
+		
+		UpdateCurrentItem( panel );
+	}
+
+	return;
+}
+
+void CVICALLBACK clbChangeHeader (int menuBar, int menuItem, void *callbackData, int panel)
+{
+	unsigned int 	iIndex			= 0,
+					iNewHeader 		= 0;
+	
+	char			szBuffer[32]	= {0};
+	
+	
+	if ( PromptPopup ("Change Header", "Enter new valu eof header", szBuffer , sizeof(szBuffer)-1 ) == 0 )
+	{
+		if ( strchr( szBuffer , 'X' ) || strchr( szBuffer , 'x' ))
+			sscanf( szBuffer , "%x" , &iNewHeader );
+		else
+			iNewHeader = atoi(szBuffer);
+		
+		for ( iIndex = 0; iIndex < giNumberOfItems; iIndex++ )
+		{
+			gvtListOfCommands[iIndex].sendHeader = iNewHeader;
+			gvtListOfCommands[iIndex].responseHeader = iNewHeader;
+		}
+		
+		bSaveChanges = 1;  
+		
+		UpdateCurrentItem( panel );
+	}
+	
+	return;
 }
