@@ -35,7 +35,8 @@ MODEL_TYPE_E4405B,
 MODEL_TYPE_E4404B, 
 MODEL_TYPE_E4403B,
 MODEL_TYPE_E4402B, 
-MODEL_TYPE_E4401B, 
+MODEL_TYPE_E4401B,
+MODEL_TYPE_N9010B,
 MODEL_TYPE_E7405A 
 MODEL_TYPE_E7404A, 
 MODEL_TYPE_E7403A,
@@ -47,7 +48,7 @@ MODEL_TYPE_E7401A,
 
 //==============================================================================
 // Types
-typedef enum { MODEL_TYPE_DEFAULT ,MODEL_TYPE_N9030A,MODEL_TYPE_N9020A, MODEL_TYPE_N9010A, MODEL_TYPE_N9000A, MODEL_TYPE_N8201A,  MODEL_TYPE_E4448A, MODEL_TYPE_E4447A, MODEL_TYPE_E4446A,MODEL_TYPE_E4445A, MODEL_TYPE_E4443A, MODEL_TYPE_E4440A,MODEL_TYPE_E4406A, MODEL_TYPE_E4411B,MODEL_TYPE_E4408B, MODEL_TYPE_E4407B, MODEL_TYPE_E4405B,  MODEL_TYPE_E4404B, MODEL_TYPE_E4403B,MODEL_TYPE_E4402B, MODEL_TYPE_E4401B, MODEL_TYPE_E7405A, MODEL_TYPE_E7404A, MODEL_TYPE_E7403A,MODEL_TYPE_E7402A, MODEL_TYPE_E7401A, MODEL_TYPE_SENTINEL} teModelSupport;
+typedef enum { MODEL_TYPE_DEFAULT ,MODEL_TYPE_N9030A,MODEL_TYPE_N9020A, MODEL_TYPE_N9010A, MODEL_TYPE_N9010B,MODEL_TYPE_N9030B, MODEL_TYPE_N9000A, MODEL_TYPE_N8201A,  MODEL_TYPE_E4448A, MODEL_TYPE_E4447A, MODEL_TYPE_E4446A, MODEL_TYPE_E4445A, MODEL_TYPE_E4443A, MODEL_TYPE_E4440A, MODEL_TYPE_E4406A, MODEL_TYPE_E4411B, MODEL_TYPE_E4408B, MODEL_TYPE_E4407B, MODEL_TYPE_E4405B,  MODEL_TYPE_E4404B, MODEL_TYPE_E4403B,MODEL_TYPE_E4402B, MODEL_TYPE_E4401B, MODEL_TYPE_E7405A, MODEL_TYPE_E7404A, MODEL_TYPE_E7403A,MODEL_TYPE_E7402A, MODEL_TYPE_E7401A, MODEL_TYPE_SENTINEL} teModelSupport;
 
 typedef struct
 {
@@ -117,7 +118,7 @@ void*	DLLEXPORT		Config_Copy_STD_CallBackSet ( int *pHandle , void *pCallBackSet
 {
 	STD_ERROR						StdError									=	{0};
 	
-	tsHandle						*pLocalHandle								=	NULL;			
+	tsHandle						*pLocalStorage								=	NULL;			
 	
 	int								handle										=	0;
 	
@@ -130,14 +131,19 @@ void*	DLLEXPORT		Config_Copy_STD_CallBackSet ( int *pHandle , void *pCallBackSet
 	
 	handle = *pHandle;
 	
-	CHK_CMT( CmtGetTSVPtr ( handle , &pLocalHandle ));
+	CHK_CMT( CmtGetTSVPtr ( handle , &pLocalStorage ));
 	
-	if ( pLocalHandle->ptCallbacks  == NULL )
+	if ( pLocalStorage->ptCallbacks )
 	{
-		CALLOC( pLocalHandle->ptCallbacks , 1 , sizeof(tsSTD_CallBackSet)); 
-	}
+		FREE(pLocalStorage->ptCallbacks->pCommentCallbackData);
+		FREE(pLocalStorage->ptCallbacks->pConfigValueCallbackData);
+		FREE(pLocalStorage->ptCallbacks->pCheckForBreakCallbackData);
+		FREE(pLocalStorage->ptCallbacks->pFileCallbackData);
 	
-	memcpy( pLocalHandle->ptCallbacks , pCallBackSet , sizeof(tsSTD_CallBackSet));  
+		FREE(pLocalStorage->ptCallbacks);	
+	}
+		
+	pLocalStorage->ptCallbacks = pCallBackSet;
 
 Error:
 	
@@ -190,7 +196,7 @@ void*	DLLEXPORT		Equipment_Info ( int hLowLevelHandle , char *pAddress , char **
 
 	do
 	{
-		IF (( strstr( szIdentificationText , "Agilent Technologies" ) == NULL ) , "Is not supported" );
+		IF ((( strstr( szIdentificationText , "Agilent Technologies" ) == NULL )) && (( strstr( szIdentificationText , "Keysight Technologies" ) == NULL ))  , "Is not supported" );
 	
 		pTemp = strrchr( szIdentificationText , ',' );
 
@@ -254,13 +260,13 @@ void*	DLLEXPORT		Equipment_GetLowLevelHandle( int hHandle , int *phLowLevelHandl
 {
 	STD_ERROR						StdError										=	{0};
 
-	tsHandle						*pLocalHandle									=	{0};
+	tsHandle						*pLocalStorage									=	{0};
 	
 	if ( phLowLevelHandle )
 	{
-		if ( CmtGetTSVPtr ( hHandle , &pLocalHandle ) == 0 )
+		if ( CmtGetTSVPtr ( hHandle , &pLocalStorage ) == 0 )
 		{
-			*phLowLevelHandle = pLocalHandle->sessionHandle; 
+			*phLowLevelHandle = pLocalStorage->sessionHandle; 
 			
 			CmtReleaseTSVPtr ( hHandle ); 
 		}	
@@ -281,10 +287,10 @@ void*	DLLEXPORT		Equipment_IsSupported ( int hLowLevelHandle , char *pAddress , 
 									hConnectionHandle								=	0;
 	
 	char							szIdentificationText[LOW_STRING]				=	{0},
-																					//MODEL_TYPE_N9030A,MODEL_TYPE_N9020A,MODEL_TYPE_N9010A,MODEL_TYPE_N9000A,MODEL_TYPE_N8201A,MODEL_TYPE_E4448A,MODEL_TYPE_E4447A,MODEL_TYPE_E4446A,MODEL_TYPE_E4445A, MODEL_TYPE_E4443A, MODEL_TYPE_E4440A,MODEL_TYPE_E4406A, MODEL_TYPE_E4411B,MODEL_TYPE_E4408B, MODEL_TYPE_E4407B, MODEL_TYPE_E4405B,  MODEL_TYPE_E4404B, MODEL_TYPE_E4403B,MODEL_TYPE_E4402B, MODEL_TYPE_E4401B, MODEL_TYPE_E7405A MODEL_TYPE_E7404A,MODEL_TYPE_E7403A,MODEL_TYPE_E7402A, MODEL_TYPE_E7401A
-									vszSupportdedModels[][16]						=	{{"N9030A"},		{"N9020A"},		{"N9010A"},			{"N9000A"},		{"N8201A"},			{"E4448A"},		{"E4447A"},			{"E4446A"},		{"E4445A"},			{"E4443A"},			{"E4440A"},		{"E4406A"},			{"E4411B"},		{"E4408B"},			{"E4407B"},			{"E4405B"},			{"E4404B"},			{"E4403B"},		{"E4402B"},			{"E4401B"},			{"E7405A"},		{"E7404A"},			{"E7403A"},		{"E7402A"},			{"E7401A"}};
+																					//MODEL_TYPE_N9030A,MODEL_TYPE_N9020A,MODEL_TYPE_N9010A,MODEL_TYPE_N9010B,MODEL_TYPE_N9030B,MODEL_TYPE_N9000A,MODEL_TYPE_N8201A,MODEL_TYPE_E4448A,MODEL_TYPE_E4447A,MODEL_TYPE_E4446A,MODEL_TYPE_E4445A, MODEL_TYPE_E4443A, MODEL_TYPE_E4440A,MODEL_TYPE_E4406A, MODEL_TYPE_E4411B,MODEL_TYPE_E4408B, MODEL_TYPE_E4407B, MODEL_TYPE_E4405B,  MODEL_TYPE_E4404B, MODEL_TYPE_E4403B,MODEL_TYPE_E4402B, MODEL_TYPE_E4401B, MODEL_TYPE_E7405A MODEL_TYPE_E7404A,MODEL_TYPE_E7403A,MODEL_TYPE_E7402A, MODEL_TYPE_E7401A
+									vszSupportdedModels[][16]						=	{{"N9030A"},		{"N9020A"},		{"N9010A"},			{"N9010B"},		{"N9030B"},			{"N9000A"},		{"N8201A"},			{"E4448A"},		{"E4447A"},			{"E4446A"},		{"E4445A"},			{"E4443A"},			{"E4440A"},		{"E4406A"},			{"E4411B"},		{"E4408B"},			{"E4407B"},			{"E4405B"},			{"E4404B"},			{"E4403B"},		{"E4402B"},			{"E4401B"},			{"E7405A"},		{"E7404A"},			{"E7403A"},		{"E7402A"},			{"E7401A"}};
 
-	tsHandle						*pLocalHandle									=	{0};
+	tsHandle						*pLocalStorage									=	{0};
 									
 	if (( pIdentificationText == NULL ) || ( strlen(pIdentificationText) < 10 ))
 	{
@@ -329,20 +335,20 @@ void*	DLLEXPORT		Equipment_IsSupported ( int hLowLevelHandle , char *pAddress , 
 	
 	if ( pLocalData )
 	{
-		pLocalHandle = (tsHandle*)(*pLocalData);
-		pLocalHandle->tType = 0;
+		pLocalStorage = (tsHandle*)(*pLocalData);
+		pLocalStorage->tType = 0;
 	}
 	
 	do
 	{
-		if ( strstr( szIdentificationText , "Agilent Technologies" ) == NULL ) 
+		if (( strstr( szIdentificationText , "Agilent Technologies" ) == NULL ) && ( strstr( szIdentificationText , "Keysight Technologies" ) == NULL ))
 			break;
 	
 		for ( iIndex = 0; iIndex < (sizeof(vszSupportdedModels) / sizeof(vszSupportdedModels[0])); iIndex++ )
 			if ( strstr( szIdentificationText , vszSupportdedModels[iIndex]) )
 			{		
-				if ( pLocalHandle )
-					pLocalHandle->tType = iIndex+1; 
+				if ( pLocalStorage )
+					pLocalStorage->tType = iIndex+1; 
 				
 				bSupport = 1; 
 				break;
@@ -361,7 +367,7 @@ void* DLLEXPORT SpectrumAnalyzer_GetErrorTextMessage ( int hInstrumentHandle , i
 {
 	STD_ERROR		StdError							=	{0};
 	
-	tsHandle		*pLocalHandle						=	{0};
+	tsHandle		*pLocalStorage						=	{0};
 
 	int				handle								=	0;
 	
@@ -379,13 +385,14 @@ void* DLLEXPORT SpectrumAnalyzer_GetErrorTextMessage ( int hInstrumentHandle , i
 	
 	handle = hInstrumentHandle;
 	
-	CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalHandle ));
+	CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalStorage ));
 	
-	switch ( pLocalHandle->tType )
+	switch ( pLocalStorage->tType )
 	{
 		case MODEL_TYPE_N9030A:
 		case MODEL_TYPE_N9020A:
 		case MODEL_TYPE_N9010A:
+		case MODEL_TYPE_N9010B:	
 		case MODEL_TYPE_N9000A:
 		case MODEL_TYPE_N8201A:
 		case MODEL_TYPE_E4448A:
@@ -417,16 +424,16 @@ void* DLLEXPORT SpectrumAnalyzer_GetErrorTextMessage ( int hInstrumentHandle , i
 					break;
 	}
 	
-	WaitForOperationCompletion( pLocalHandle->sessionHandle , pLocalHandle->lfTimeout  ,  pLocalHandle->lfOpcLowLevelTimeout );  
+	WaitForOperationCompletion( pLocalStorage->sessionHandle , pLocalStorage->lfTimeout  ,  pLocalStorage->lfOpcLowLevelTimeout );  
 	
-	viPrintf( pLocalHandle->sessionHandle , szCommand );
-	viRead( pLocalHandle->sessionHandle, szReadBuffer , LOW_STRING , &count );
+	viPrintf( pLocalStorage->sessionHandle , szCommand );
+	viRead( pLocalStorage->sessionHandle, szReadBuffer , LOW_STRING , &count );
 	
 	iError = atoi(szReadBuffer);
 	
 	if ( iError == -420 || iError == -144 || iError == -113)
 	{
-		viPrintf( pLocalHandle->sessionHandle , "*CLS\n" ); 
+		viPrintf( pLocalStorage->sessionHandle , "*CLS\n" ); 
 		
 		strcpy( szReadBuffer , "No Error");
 	}
@@ -445,7 +452,7 @@ void* DLLEXPORT SpectrumAnalyzer_GetErrorTextMessage ( int hInstrumentHandle , i
 			*pTemp = 0;
 	}
 	
-	viPrintf( pLocalHandle->sessionHandle , "*CLS\n" );
+	viPrintf( pLocalStorage->sessionHandle , "*CLS\n" );
 	
 	if ( pErrorMessage )
 	{
@@ -475,7 +482,7 @@ void* DLLEXPORT SpectrumAnalyzer_Init ( int hParentInstrumentHandle , ViRsrc szR
 {
 	STD_ERROR						StdError										=	{0};
 	
-	tsHandle						*pLocalHandle									=	{0};
+	tsHandle						*pLocalStorage									=	{0};
 	
 	CmtTSVHandle 					handle											=	0;
 	
@@ -501,69 +508,69 @@ void* DLLEXPORT SpectrumAnalyzer_Init ( int hParentInstrumentHandle , ViRsrc szR
 	if ( vhInstrumentHandle )
 		*vhInstrumentHandle = handle;
 	
-	CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalHandle ));
+	CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalStorage ));
 
-	if ( pLocalHandle->defaultRM == 0 )
+	if ( pLocalStorage->defaultRM == 0 )
 	{
-		CHK_VSA ( viOpenDefaultRM (&(pLocalHandle->defaultRM)));
+		CHK_VSA ( viOpenDefaultRM (&(pLocalStorage->defaultRM)));
 	}
 	
-	if ( pLocalHandle->sessionHandle == 0 )
+	if ( pLocalStorage->sessionHandle == 0 )
 	{
-		CHK_VSA ( viOpen ( pLocalHandle->defaultRM , szRsrcAddress , VI_NULL, VI_NULL, &(pLocalHandle->sessionHandle)));
+		CHK_VSA ( viOpen ( pLocalStorage->defaultRM , szRsrcAddress , VI_NULL, VI_NULL, &(pLocalStorage->sessionHandle)));
 	}
 	
-	WaitForOperationCompletion( pLocalHandle->sessionHandle , 20.0 , 0.5 );
+	WaitForOperationCompletion( pLocalStorage->sessionHandle , 20.0 , 0.5 );
 	
-	CHK_VSA ( viSetAttribute ( pLocalHandle->sessionHandle , VI_ATTR_TMO_VALUE , 500 ));
+	CHK_VSA ( viSetAttribute ( pLocalStorage->sessionHandle , VI_ATTR_TMO_VALUE , 500 ));
 	
-	FREE_STDERR_COPY_ERR( Equipment_IsSupported ( pLocalHandle->sessionHandle , NULL , NULL , NULL , &supported , &pLocalHandle )); 
+	FREE_STDERR_COPY_ERR( Equipment_IsSupported ( pLocalStorage->sessionHandle , NULL , NULL , NULL , &supported , &pLocalStorage )); 
 
 	IF (( supported == 0 ) , "This device has not supported." );
 
-	FREE_STDERR_COPY_ERR( Equipment_Info ( pLocalHandle->sessionHandle , NULL , &pLocalHandle->pVendor , &pLocalHandle->pSerialNumber , &pLocalHandle->pModel , &pLocalHandle->pFirmware ));
+	FREE_STDERR_COPY_ERR( Equipment_Info ( pLocalStorage->sessionHandle , NULL , &pLocalStorage->pVendor , &pLocalStorage->pSerialNumber , &pLocalStorage->pModel , &pLocalStorage->pFirmware ));
 
-	STDF_UPDATE_CALLBACK_DATA(pLocalHandle->ptCallbacks); 
+	STDF_UPDATE_CALLBACK_DATA(pLocalStorage->ptCallbacks); 
 	
-	viPrintf( pLocalHandle->sessionHandle , ":CAL:AUTO OFF\n" );  
+	viPrintf( pLocalStorage->sessionHandle , ":CAL:AUTO OFF\n" );  
 	
-	viPrintf( pLocalHandle->sessionHandle ,"*CLS\n" ); 
+	viPrintf( pLocalStorage->sessionHandle ,"*CLS\n" ); 
 	
-	viPrintf( pLocalHandle->sessionHandle ,":FORM:DATA REAL\n" );  
+	viPrintf( pLocalStorage->sessionHandle ,":FORM:DATA REAL\n" );  
 	
-	viPrintf( pLocalHandle->sessionHandle ,":FORM:BORD SWAP\n" );  
+	viPrintf( pLocalStorage->sessionHandle ,":FORM:BORD SWAP\n" );  
 	
 	STDF_CONFIG_VALUE("Timeout", VAL_DOUBLE , 1 , lfTimeout , lfDefaultTimeout );	
 	
 	if ( lfTimeout == 0.0 )
 		lfTimeout = lfDefaultTimeout;
 	
-	viSetAttribute ( pLocalHandle->sessionHandle , VI_ATTR_TMO_VALUE , (lfTimeout*1E3) );
+	viSetAttribute ( pLocalStorage->sessionHandle , VI_ATTR_TMO_VALUE , (lfTimeout*1E3) );
 	
-	STDF_CONFIG_VALUE("OPC_Timeout", VAL_DOUBLE , 1 , (pLocalHandle->lfTimeout) , lfDefaultTimeout );	
+	STDF_CONFIG_VALUE("OPC_Timeout", VAL_DOUBLE , 1 , (pLocalStorage->lfTimeout) , lfDefaultTimeout );	
 	
-	if ( pLocalHandle->lfTimeout == 0.0 )
-		pLocalHandle->lfTimeout = lfDefaultTimeout;
+	if ( pLocalStorage->lfTimeout == 0.0 )
+		pLocalStorage->lfTimeout = lfDefaultTimeout;
 	
-	STDF_CONFIG_VALUE("OPC_LowLevel_Timeout", VAL_DOUBLE , 1 , (pLocalHandle->lfOpcLowLevelTimeout) , lfDefaultTimeout );	 
+	STDF_CONFIG_VALUE("OPC_LowLevel_Timeout", VAL_DOUBLE , 1 , (pLocalStorage->lfOpcLowLevelTimeout) , lfDefaultTimeout );	 
 	
-	if ( pLocalHandle->lfOpcLowLevelTimeout == 0.0 )
-		pLocalHandle->lfOpcLowLevelTimeout = lfDefaultTimeout;
+	if ( pLocalStorage->lfOpcLowLevelTimeout == 0.0 )
+		pLocalStorage->lfOpcLowLevelTimeout = lfDefaultTimeout;
 	
-		STDF_CONFIG_VALUE("State_File_Timeout", VAL_DOUBLE , 1 , (pLocalHandle->lfStateFileTimeout) , lfStateFileTimeout );	 
+		STDF_CONFIG_VALUE("State_File_Timeout", VAL_DOUBLE , 1 , (pLocalStorage->lfStateFileTimeout) , lfStateFileTimeout );	 
 	
-	if ( pLocalHandle->lfStateFileTimeout == 0.0 )
-		pLocalHandle->lfStateFileTimeout = lfStateFileTimeout;
+	if ( pLocalStorage->lfStateFileTimeout == 0.0 )
+		pLocalStorage->lfStateFileTimeout = lfStateFileTimeout;
 	
-	STDF_CONFIG_VALUE("State_File_Delay", VAL_DOUBLE , 1 , (pLocalHandle->lfStateFileDelay) , lfStateFileDelay );	 
+	STDF_CONFIG_VALUE("State_File_Delay", VAL_DOUBLE , 1 , (pLocalStorage->lfStateFileDelay) , lfStateFileDelay );	 
 	
-	if ( pLocalHandle->lfStateFileDelay == 0.0 )
-		pLocalHandle->lfStateFileDelay = lfStateFileDelay;   
+	if ( pLocalStorage->lfStateFileDelay == 0.0 )
+		pLocalStorage->lfStateFileDelay = lfStateFileDelay;   
 	
-	STDF_CONFIG_VALUE("Delay", VAL_DOUBLE , 1 , (pLocalHandle->lfDelay) , lfDelay );	 
+	STDF_CONFIG_VALUE("Delay", VAL_DOUBLE , 1 , (pLocalStorage->lfDelay) , lfDelay );	 
 	
-	if ( pLocalHandle->lfDelay == 0.0 )
-		pLocalHandle->lfDelay = lfDelay;   
+	if ( pLocalStorage->lfDelay == 0.0 )
+		pLocalStorage->lfDelay = lfDelay;   
 	
 	
 Error:
@@ -583,7 +590,7 @@ void* DLLEXPORT SpectrumAnalyzer_Close ( int *vhInstrumentHandle )
 {
 	STD_ERROR		StdError						=	{0};
 	
-	tsHandle		*pLocalHandle					=	{0};
+	tsHandle		*pLocalStorage					=	{0};
 
 	int				handle							=	0;
 	
@@ -591,20 +598,30 @@ void* DLLEXPORT SpectrumAnalyzer_Close ( int *vhInstrumentHandle )
 	
 	handle = *vhInstrumentHandle;
 	
-	CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalHandle ));
+	CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalStorage ));
 	
-	viPrintf( pLocalHandle->sessionHandle , ":CAL:AUTO ON\n" ); 
-	viPrintf( pLocalHandle->sessionHandle , ":CAL\n" );  
+	viPrintf( pLocalStorage->sessionHandle , ":CAL:AUTO ON\n" ); 
+	viPrintf( pLocalStorage->sessionHandle , ":CAL\n" );  
 	
-	viClose (pLocalHandle->sessionHandle);  
+	viClose (pLocalStorage->sessionHandle);  
 	
-	viClose (pLocalHandle->defaultRM);
+	viClose (pLocalStorage->defaultRM);
 	
-	FREE(pLocalHandle->pLastStateFile);
-	FREE(pLocalHandle->pFirmware);
-	FREE(pLocalHandle->pSerialNumber);
-	FREE(pLocalHandle->pModel);
+	FREE(pLocalStorage->pLastStateFile);
+	FREE(pLocalStorage->pFirmware);
+	FREE(pLocalStorage->pSerialNumber);
+	FREE(pLocalStorage->pModel);
+
+	if ( pLocalStorage->ptCallbacks )
+	{
+		FREE(pLocalStorage->ptCallbacks->pCommentCallbackData);
+		FREE(pLocalStorage->ptCallbacks->pConfigValueCallbackData);
+		FREE(pLocalStorage->ptCallbacks->pCheckForBreakCallbackData);
+		FREE(pLocalStorage->ptCallbacks->pFileCallbackData);
 	
+		FREE(pLocalStorage->ptCallbacks);	
+	}
+		
 	CmtReleaseTSVPtr ( handle ); 
 	
 	CmtDiscardTSV (handle);
@@ -620,7 +637,7 @@ void* DLLEXPORT SpectrumAnalyzer_Reset ( int hInstrumentHandle )
 {
 	STD_ERROR		StdError							=	{0};
 	
-	tsHandle		*pLocalHandle						=	{0};
+	tsHandle		*pLocalStorage						=	{0};
 
 	int				handle								=	0;
 	
@@ -628,9 +645,9 @@ void* DLLEXPORT SpectrumAnalyzer_Reset ( int hInstrumentHandle )
 	
 	handle = hInstrumentHandle;
 	
-	CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalHandle ));
+	CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalStorage ));
 	
-	switch ( pLocalHandle->tType )
+	switch ( pLocalStorage->tType )
 	{
 		case MODEL_TYPE_N9030A:
 		case MODEL_TYPE_N9020A:
@@ -659,11 +676,11 @@ void* DLLEXPORT SpectrumAnalyzer_Reset ( int hInstrumentHandle )
 		case MODEL_TYPE_E7401A:
 		default :
 				{
-						CHK_VSA ( viPrintf( pLocalHandle->sessionHandle ,"*CLS\n" ));
+						CHK_VSA ( viPrintf( pLocalStorage->sessionHandle ,"*CLS\n" ));
 					
-						CHK_VSA ( viPrintf( pLocalHandle->sessionHandle ,"*RST\n" ));
+						CHK_VSA ( viPrintf( pLocalStorage->sessionHandle ,"*RST\n" ));
 						
-						WaitForOperationCompletion( pLocalHandle->sessionHandle , pLocalHandle->lfTimeout  ,  pLocalHandle->lfOpcLowLevelTimeout );  
+						WaitForOperationCompletion( pLocalStorage->sessionHandle , pLocalStorage->lfTimeout  ,  pLocalStorage->lfOpcLowLevelTimeout );  
 				}
 	}
 	
@@ -679,7 +696,7 @@ void* DLLEXPORT SpectrumAnalyzer_AlignNow ( int hInstrumentHandle , double lfTim
 {
 	STD_ERROR		StdError							=	{0};
 	
-	tsHandle		*pLocalHandle						=	{0};
+	tsHandle		*pLocalStorage						=	{0};
 
 	int				handle								=	0;
 	
@@ -687,9 +704,9 @@ void* DLLEXPORT SpectrumAnalyzer_AlignNow ( int hInstrumentHandle , double lfTim
 	
 	handle = hInstrumentHandle;
 	
-	CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalHandle ));
+	CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalStorage ));
 	
-	switch ( pLocalHandle->tType )
+	switch ( pLocalStorage->tType )
 	{
 		case MODEL_TYPE_N9030A:
 		case MODEL_TYPE_N9020A:
@@ -718,9 +735,9 @@ void* DLLEXPORT SpectrumAnalyzer_AlignNow ( int hInstrumentHandle , double lfTim
 		case MODEL_TYPE_E7401A:
 		default :
 				{
-						CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , ":CAL\n" ));
+						CHK_VSA ( viPrintf( pLocalStorage->sessionHandle , ":CAL\n" ));
 						
-						WaitForOperationCompletion( pLocalHandle->sessionHandle , lfTimeout ,  pLocalHandle->lfOpcLowLevelTimeout );  
+						WaitForOperationCompletion( pLocalStorage->sessionHandle , lfTimeout ,  pLocalStorage->lfOpcLowLevelTimeout );  
 				}
 	}
 	
@@ -736,7 +753,7 @@ void* DLLEXPORT SpectrumAnalyzer_NoiseFigure_CalibrateNow ( int hInstrumentHandl
 {
 	STD_ERROR		StdError							=	{0};
 	
-	tsHandle		*pLocalHandle						=	{0};
+	tsHandle		*pLocalStorage						=	{0};
 
 	int				handle								=	0;
 	
@@ -744,9 +761,9 @@ void* DLLEXPORT SpectrumAnalyzer_NoiseFigure_CalibrateNow ( int hInstrumentHandl
 	
 	handle = hInstrumentHandle;
 	
-	CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalHandle ));
+	CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalStorage ));
 	
-	switch ( pLocalHandle->tType )
+	switch ( pLocalStorage->tType )
 	{
 		case MODEL_TYPE_N9030A:
 		case MODEL_TYPE_N9020A:
@@ -775,9 +792,9 @@ void* DLLEXPORT SpectrumAnalyzer_NoiseFigure_CalibrateNow ( int hInstrumentHandl
 		case MODEL_TYPE_E7401A:
 		default :
 				{
-						CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , ":NFIG:CAL:INIT\n" ));
+						CHK_VSA ( viPrintf( pLocalStorage->sessionHandle , ":NFIG:CAL:INIT\n" ));
 						
-						WaitForOperationCompletion( pLocalHandle->sessionHandle , lfTimeout ,  pLocalHandle->lfOpcLowLevelTimeout );  
+						WaitForOperationCompletion( pLocalStorage->sessionHandle , lfTimeout ,  pLocalStorage->lfOpcLowLevelTimeout );  
 				}
 	}
 	
@@ -793,7 +810,7 @@ void* DLLEXPORT SpectrumAnalyzer_NoiseFigure_ApplyCalibration ( int hInstrumentH
 {
 	STD_ERROR		StdError							=	{0};
 	
-	tsHandle		*pLocalHandle						=	{0};
+	tsHandle		*pLocalStorage						=	{0};
 
 	int				handle								=	0;
 	
@@ -801,9 +818,9 @@ void* DLLEXPORT SpectrumAnalyzer_NoiseFigure_ApplyCalibration ( int hInstrumentH
 	
 	handle = hInstrumentHandle;
 	
-	CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalHandle ));
+	CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalStorage ));
 	
-	switch ( pLocalHandle->tType )
+	switch ( pLocalStorage->tType )
 	{
 		case MODEL_TYPE_N9030A:
 		case MODEL_TYPE_N9020A:
@@ -832,9 +849,9 @@ void* DLLEXPORT SpectrumAnalyzer_NoiseFigure_ApplyCalibration ( int hInstrumentH
 		case MODEL_TYPE_E7401A:
 		default :
 				{
-						CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , ":NFIG:CAL:STAT 1\n" ));
+						CHK_VSA ( viPrintf( pLocalStorage->sessionHandle , ":NFIG:CAL:STAT 1\n" ));
 						
-						WaitForOperationCompletion( pLocalHandle->sessionHandle , lfTimeout ,  pLocalHandle->lfOpcLowLevelTimeout );  
+						WaitForOperationCompletion( pLocalStorage->sessionHandle , lfTimeout ,  pLocalStorage->lfOpcLowLevelTimeout );  
 				}
 	}
 	
@@ -850,7 +867,7 @@ void* DLLEXPORT SpectrumAnalyzer_NoiseFigure_SetLossCompensationTable ( int hIns
 {
 	STD_ERROR		StdError							=	{0};
 	
-	tsHandle		*pLocalHandle						=	{0};
+	tsHandle		*pLocalStorage						=	{0};
 
 	int				handle								=	0;
 	
@@ -872,9 +889,9 @@ void* DLLEXPORT SpectrumAnalyzer_NoiseFigure_SetLossCompensationTable ( int hIns
 	
 	handle = hInstrumentHandle;
 	
-	CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalHandle ));
+	CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalStorage ));
 	
-	switch ( pLocalHandle->tType )
+	switch ( pLocalStorage->tType )
 	{
 		case MODEL_TYPE_N9030A:
 		case MODEL_TYPE_N9020A:
@@ -905,14 +922,14 @@ void* DLLEXPORT SpectrumAnalyzer_NoiseFigure_SetLossCompensationTable ( int hIns
 				{
 						
 						sprintf( szString , ":NFIG:CORR:LOSS:%s:MODE TABL\n" , vszDirection[before] ); 
-						CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , szString ));
+						CHK_VSA ( viPrintf( pLocalStorage->sessionHandle , szString ));
 						
-						WaitForOperationCompletion( pLocalHandle->sessionHandle , 5.0 ,  pLocalHandle->lfOpcLowLevelTimeout );  
+						WaitForOperationCompletion( pLocalStorage->sessionHandle , 5.0 ,  pLocalStorage->lfOpcLowLevelTimeout );  
 						
 						sprintf( szString , ":NFIG:CORR:LOSS:%s:TABL:DATA:DEL\n" , vszDirection[before] ); 
-						CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , szString ));
+						CHK_VSA ( viPrintf( pLocalStorage->sessionHandle , szString ));
 						
-						WaitForOperationCompletion( pLocalHandle->sessionHandle ,  5.0 ,  pLocalHandle->lfOpcLowLevelTimeout );  
+						WaitForOperationCompletion( pLocalStorage->sessionHandle ,  5.0 ,  pLocalStorage->lfOpcLowLevelTimeout );  
 						
 						CALLOC_ERR( pFormatedData , (( iNumberOfPoints * 40 ) +  64 ), sizeof(char));
 						
@@ -927,9 +944,9 @@ void* DLLEXPORT SpectrumAnalyzer_NoiseFigure_SetLossCompensationTable ( int hIns
 						iCurrentPosition -= 2;
 						
 						sprintf( pFormatedData+iCurrentPosition , "\n" );
-						CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , pFormatedData )); 
+						CHK_VSA ( viPrintf( pLocalStorage->sessionHandle , pFormatedData )); 
 						
-						WaitForOperationCompletion( pLocalHandle->sessionHandle , 20.0 ,  pLocalHandle->lfOpcLowLevelTimeout );  
+						WaitForOperationCompletion( pLocalStorage->sessionHandle , 20.0 ,  pLocalStorage->lfOpcLowLevelTimeout );  
 						
 				}
 	}
@@ -948,7 +965,7 @@ void* DLLEXPORT SpectrumAnalyzer_Preset ( int hInstrumentHandle )
 {
 	STD_ERROR		StdError							=	{0};
 	
-	tsHandle		*pLocalHandle						=	{0};
+	tsHandle		*pLocalStorage						=	{0};
 
 	int				handle								=	0;
 	
@@ -956,13 +973,13 @@ void* DLLEXPORT SpectrumAnalyzer_Preset ( int hInstrumentHandle )
 	
 	handle = hInstrumentHandle;
 	
-	CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalHandle ));
+	CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalStorage ));
 	
-	switch ( pLocalHandle->tType )
+	switch ( pLocalStorage->tType )
 	{
 		case MODEL_TYPE_N9030A:
 			
-			CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , "SYSTem:PRESet" ));  
+			CHK_VSA ( viPrintf( pLocalStorage->sessionHandle , "SYSTem:PRESet" ));  
 			
 			break;
 			
@@ -992,7 +1009,7 @@ void* DLLEXPORT SpectrumAnalyzer_Preset ( int hInstrumentHandle )
 		case MODEL_TYPE_E7401A:
 		default :
 				{
-						CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , ":SOUR:PRES\n" ));
+						CHK_VSA ( viPrintf( pLocalStorage->sessionHandle , ":SOUR:PRES\n" ));
 				}
 	}
 	
@@ -1008,7 +1025,7 @@ void* DLLEXPORT SpectrumAnalyzer_SetAuto ( int hInstrumentHandle )
 {
 	STD_ERROR		StdError							=	{0};
 	
-	tsHandle		*pLocalHandle						=	{0};
+	tsHandle		*pLocalStorage						=	{0};
 
 	int				handle								=	0;
 	
@@ -1016,9 +1033,9 @@ void* DLLEXPORT SpectrumAnalyzer_SetAuto ( int hInstrumentHandle )
 	
 	handle = hInstrumentHandle;
 	
-	CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalHandle ));
+	CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalStorage ));
 	
-	switch ( pLocalHandle->tType )
+	switch ( pLocalStorage->tType )
 	{
 		case MODEL_TYPE_N9030A:
 		case MODEL_TYPE_N9020A:
@@ -1047,7 +1064,7 @@ void* DLLEXPORT SpectrumAnalyzer_SetAuto ( int hInstrumentHandle )
 		case MODEL_TYPE_E7401A:
 		default :
 				{
-						CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , ":SENS:FREQ:TUNE:IMM\n" ));
+						CHK_VSA ( viPrintf( pLocalStorage->sessionHandle , ":SENS:FREQ:TUNE:IMM\n" ));
 				}
 	}
 	
@@ -1063,7 +1080,7 @@ void* DLLEXPORT SpectrumAnalyzer_AutoTune ( int hInstrumentHandle , double lfTim
 {
 	STD_ERROR		StdError							=	{0};
 	
-	tsHandle		*pLocalHandle						=	{0};
+	tsHandle		*pLocalStorage						=	{0};
 
 	int				handle								=	0;
 	
@@ -1075,9 +1092,9 @@ void* DLLEXPORT SpectrumAnalyzer_AutoTune ( int hInstrumentHandle , double lfTim
 	
 	handle = hInstrumentHandle;
 	
-	CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalHandle ));
+	CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalStorage ));
 	
-	switch ( pLocalHandle->tType )
+	switch ( pLocalStorage->tType )
 	{
 		case MODEL_TYPE_N9030A:
 		case MODEL_TYPE_N9020A:
@@ -1106,165 +1123,165 @@ void* DLLEXPORT SpectrumAnalyzer_AutoTune ( int hInstrumentHandle , double lfTim
 		case MODEL_TYPE_E7401A:
 		default :
 				{
-					CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , ":INST:SEL?\n" )); 
+					CHK_VSA ( viPrintf( pLocalStorage->sessionHandle , ":INST:SEL?\n" )); 
 
 					SetBreakOnLibraryErrors (0);
-					viRead( pLocalHandle->sessionHandle, szReadFeedback , 20 , &iActualSize );
+					viRead( pLocalStorage->sessionHandle, szReadFeedback , 20 , &iActualSize );
 					SetBreakOnLibraryErrors (1);
 					
 					if ( strcmp( szReadFeedback , "SA" ) == 0 )
 					{
-						CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , ":SENS:FREQ:TUNE:IMM\n" ));
+						CHK_VSA ( viPrintf( pLocalStorage->sessionHandle , ":SENS:FREQ:TUNE:IMM\n" ));
 						break;
 					}
 					
 					if ( strcmp( szReadFeedback , "RTSA" ) == 0 )
 					{
-						//CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , ":SENS:FREQ:TUNE:IMM\n" ));
+						//CHK_VSA ( viPrintf( pLocalStorage->sessionHandle , ":SENS:FREQ:TUNE:IMM\n" ));
 						break;
 					}
 					
 					if ( strcmp( szReadFeedback , "SEQAN" ) == 0 )
 					{
-						//CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , ":SENS:FREQ:TUNE:IMM\n" ));
+						//CHK_VSA ( viPrintf( pLocalStorage->sessionHandle , ":SENS:FREQ:TUNE:IMM\n" ));
 						break;
 					}
 					
 					if ( strcmp( szReadFeedback , "EMI" ) == 0 )
 					{
-						//CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , ":SENS:FREQ:TUNE:IMM\n" ));
+						//CHK_VSA ( viPrintf( pLocalStorage->sessionHandle , ":SENS:FREQ:TUNE:IMM\n" ));
 						break;
 					}
 					
 					if ( strcmp( szReadFeedback , "BASIC" ) == 0 )
 					{
-						//CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , ":SENS:FREQ:TUNE:IMM\n" ));
+						//CHK_VSA ( viPrintf( pLocalStorage->sessionHandle , ":SENS:FREQ:TUNE:IMM\n" ));
 						break;
 					}
 					
 					if ( strcmp( szReadFeedback , "WCDMA" ) == 0 )
 					{
-						//CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , ":SENS:FREQ:TUNE:IMM\n" ));
+						//CHK_VSA ( viPrintf( pLocalStorage->sessionHandle , ":SENS:FREQ:TUNE:IMM\n" ));
 						break;
 					}
 					
 					if ( strcmp( szReadFeedback , "EDGEGSM" ) == 0 )
 					{
-						//CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , ":SENS:FREQ:TUNE:IMM\n" ));
+						//CHK_VSA ( viPrintf( pLocalStorage->sessionHandle , ":SENS:FREQ:TUNE:IMM\n" ));
 						break;
 					}
 					
 					if ( strcmp( szReadFeedback , "WIMAXOFDMA" ) == 0 )
 					{
-						//CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , ":SENS:FREQ:TUNE:IMM\n" ));
+						//CHK_VSA ( viPrintf( pLocalStorage->sessionHandle , ":SENS:FREQ:TUNE:IMM\n" ));
 						break;
 					}
 					
 					if ( strcmp( szReadFeedback , "VSA" ) == 0 )
 					{
-						//CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , ":SENS:FREQ:TUNE:IMM\n" ));
+						//CHK_VSA ( viPrintf( pLocalStorage->sessionHandle , ":SENS:FREQ:TUNE:IMM\n" ));
 						break;
 					}
 					
 					if ( strcmp( szReadFeedback , "PNOISE" ) == 0 )
 					{
-						//CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , ":SENS:FREQ:TUNE:IMM\n" ));
+						//CHK_VSA ( viPrintf( pLocalStorage->sessionHandle , ":SENS:FREQ:TUNE:IMM\n" ));
 						break;
 					}
 					
 					if ( strcmp( szReadFeedback , "NFIGure" ) == 0 )
 					{
-						//CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , ":SENS:FREQ:TUNE:IMM\n" ));
+						//CHK_VSA ( viPrintf( pLocalStorage->sessionHandle , ":SENS:FREQ:TUNE:IMM\n" ));
 						break;
 					}
 					
 					if ( strcmp( szReadFeedback , "ADEMOD" ) == 0 )
 					{
-						//CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , ":SENS:FREQ:TUNE:IMM\n" ));
+						//CHK_VSA ( viPrintf( pLocalStorage->sessionHandle , ":SENS:FREQ:TUNE:IMM\n" ));
 						break;
 					}
 					
 					if ( strcmp( szReadFeedback , "BTooth" ) == 0 )
 					{
-						//CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , ":SENS:FREQ:TUNE:IMM\n" ));
+						//CHK_VSA ( viPrintf( pLocalStorage->sessionHandle , ":SENS:FREQ:TUNE:IMM\n" ));
 						break;
 					}
 					
 					if ( strcmp( szReadFeedback , "TDSCDMA" ) == 0 )
 					{
-						//CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , ":SENS:FREQ:TUNE:IMM\n" ));
+						//CHK_VSA ( viPrintf( pLocalStorage->sessionHandle , ":SENS:FREQ:TUNE:IMM\n" ));
 						break;
 					}
 					
 					if ( strcmp( szReadFeedback , "TDSCDMA" ) == 0 )
 					{
-						//CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , ":SENS:FREQ:TUNE:IMM\n" ));
+						//CHK_VSA ( viPrintf( pLocalStorage->sessionHandle , ":SENS:FREQ:TUNE:IMM\n" ));
 						break;
 					}
 					
 					if ( strcmp( szReadFeedback , "CDMA2K" ) == 0 )
 					{
-						//CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , ":SENS:FREQ:TUNE:IMM\n" ));
+						//CHK_VSA ( viPrintf( pLocalStorage->sessionHandle , ":SENS:FREQ:TUNE:IMM\n" ));
 						break;
 					}
 					
 					if ( strcmp( szReadFeedback , "CDMA1XEV" ) == 0 )
 					{
-						//CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , ":SENS:FREQ:TUNE:IMM\n" ));
+						//CHK_VSA ( viPrintf( pLocalStorage->sessionHandle , ":SENS:FREQ:TUNE:IMM\n" ));
 						break;
 					}
 					
 					if ( strcmp( szReadFeedback , "LTE" ) == 0 )
 					{
-						//CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , ":SENS:FREQ:TUNE:IMM\n" ));
+						//CHK_VSA ( viPrintf( pLocalStorage->sessionHandle , ":SENS:FREQ:TUNE:IMM\n" ));
 						break;
 					}
 					
 					if ( strcmp( szReadFeedback , "LTETDD" ) == 0 )
 					{
-						//CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , ":SENS:FREQ:TUNE:IMM\n" ));
+						//CHK_VSA ( viPrintf( pLocalStorage->sessionHandle , ":SENS:FREQ:TUNE:IMM\n" ));
 						break;
 					}
 					
 					if ( strcmp( szReadFeedback , "MSR" ) == 0 )
 					{
-						//CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , ":SENS:FREQ:TUNE:IMM\n" ));
+						//CHK_VSA ( viPrintf( pLocalStorage->sessionHandle , ":SENS:FREQ:TUNE:IMM\n" ));
 						break;
 					}
 					
 					if ( strcmp( szReadFeedback , "DVB" ) == 0 )
 					{
-						//CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , ":SENS:FREQ:TUNE:IMM\n" ));
+						//CHK_VSA ( viPrintf( pLocalStorage->sessionHandle , ":SENS:FREQ:TUNE:IMM\n" ));
 						break;
 					}
 					
 					if ( strcmp( szReadFeedback , "DTMB" ) == 0 )
 					{
-						//CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , ":SENS:FREQ:TUNE:IMM\n" ));
+						//CHK_VSA ( viPrintf( pLocalStorage->sessionHandle , ":SENS:FREQ:TUNE:IMM\n" ));
 						break;
 					}
 					
 					if ( strcmp( szReadFeedback , "DCATV" ) == 0 )
 					{
-						//CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , ":SENS:FREQ:TUNE:IMM\n" ));
+						//CHK_VSA ( viPrintf( pLocalStorage->sessionHandle , ":SENS:FREQ:TUNE:IMM\n" ));
 						break;
 					}
 					
 					if ( strcmp( szReadFeedback , "ISDBT" ) == 0 )
 					{
-						//CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , ":SENS:FREQ:TUNE:IMM\n" ));
+						//CHK_VSA ( viPrintf( pLocalStorage->sessionHandle , ":SENS:FREQ:TUNE:IMM\n" ));
 						break;
 					}
 					
 					if ( strcmp( szReadFeedback , "CMMB" ) == 0 )
 					{
-						//CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , ":SENS:FREQ:TUNE:IMM\n" ));
+						//CHK_VSA ( viPrintf( pLocalStorage->sessionHandle , ":SENS:FREQ:TUNE:IMM\n" ));
 						break;
 					}
 					
 					if ( strcmp( szReadFeedback , "WLAN" ) == 0 )
 					{
-						//CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , ":SENS:FREQ:TUNE:IMM\n" ));
+						//CHK_VSA ( viPrintf( pLocalStorage->sessionHandle , ":SENS:FREQ:TUNE:IMM\n" ));
 						break;
 					}
 				}
@@ -1282,7 +1299,7 @@ void* DLLEXPORT SpectrumAnalyzer_SetFrequencyCenterSpan ( int hInstrumentHandle 
 {
 	STD_ERROR				StdError							=	{0};
 	
-	tsHandle				*pLocalHandle						=	{0};
+	tsHandle				*pLocalStorage						=	{0};
 
 	int						handle								=	0;
 	
@@ -1290,9 +1307,9 @@ void* DLLEXPORT SpectrumAnalyzer_SetFrequencyCenterSpan ( int hInstrumentHandle 
 	
 	handle = hInstrumentHandle;
 	
-	CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalHandle ));
+	CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalStorage ));
 	
-	switch ( pLocalHandle->tType )
+	switch ( pLocalStorage->tType )
 	{
 		case MODEL_TYPE_N9030A:
 		case MODEL_TYPE_N9020A:
@@ -1321,11 +1338,11 @@ void* DLLEXPORT SpectrumAnalyzer_SetFrequencyCenterSpan ( int hInstrumentHandle 
 		case MODEL_TYPE_E7401A:
 		default :
 				{
-						CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , ":SENS:FREQ:CENT %E\n" , lfFrequency ));
+						CHK_VSA ( viPrintf( pLocalStorage->sessionHandle , ":SENS:FREQ:CENT %E\n" , lfFrequency ));
 	
-						WaitForOperationCompletion( pLocalHandle->sessionHandle , pLocalHandle->lfTimeout  ,  pLocalHandle->lfOpcLowLevelTimeout );
+						WaitForOperationCompletion( pLocalStorage->sessionHandle , pLocalStorage->lfTimeout  ,  pLocalStorage->lfOpcLowLevelTimeout );
 	
-						CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , ":SENS:FREQ:SPAN %E\n" , lfSpan ));
+						CHK_VSA ( viPrintf( pLocalStorage->sessionHandle , ":SENS:FREQ:SPAN %E\n" , lfSpan ));
 				}
 	}
 	
@@ -1343,7 +1360,7 @@ void* DLLEXPORT SpectrumAnalyzer_ConfigureMarker ( int hInstrumentHandle , int c
 
 	char					szString[128]						=	{0};
 
-	tsHandle				*pLocalHandle						=	{0};
+	tsHandle				*pLocalStorage						=	{0};
 
 	int						handle								=	0;
 	
@@ -1351,9 +1368,9 @@ void* DLLEXPORT SpectrumAnalyzer_ConfigureMarker ( int hInstrumentHandle , int c
 	
 	handle = hInstrumentHandle;
 	
-	CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalHandle ));
+	CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalStorage ));
 	
-	switch ( pLocalHandle->tType )
+	switch ( pLocalStorage->tType )
 	{
 		case MODEL_TYPE_N9030A:
 		case MODEL_TYPE_N9020A:
@@ -1387,7 +1404,7 @@ void* DLLEXPORT SpectrumAnalyzer_ConfigureMarker ( int hInstrumentHandle , int c
 			else
 				sprintf( szString , ":CALC:MARK%d:STAT OFF\n" , marker );
 	
-			CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , szString ));
+			CHK_VSA ( viPrintf( pLocalStorage->sessionHandle , szString ));
 	}
 	
 Error: 
@@ -1405,7 +1422,7 @@ void* DLLEXPORT SpectrumAnalyzer_SetMarkerSearchPeakAuto ( int hInstrumentHandle
 
 	char					szString[128]						=	{0};
 
-	tsHandle				*pLocalHandle						=	{0};
+	tsHandle				*pLocalStorage						=	{0};
 
 	int						handle								=	0;
 	
@@ -1413,9 +1430,9 @@ void* DLLEXPORT SpectrumAnalyzer_SetMarkerSearchPeakAuto ( int hInstrumentHandle
 	
 	handle = hInstrumentHandle;
 	
-	CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalHandle ));
+	CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalStorage ));
 	
-	switch ( pLocalHandle->tType )
+	switch ( pLocalStorage->tType )
 	{
 		case MODEL_TYPE_N9030A:
 		case MODEL_TYPE_N9020A:
@@ -1445,28 +1462,28 @@ void* DLLEXPORT SpectrumAnalyzer_SetMarkerSearchPeakAuto ( int hInstrumentHandle
 		default:
 			
 			sprintf( szString , ":CALC:MARK%d:STAT ON\n" , iMarkerNr );
-			CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , szString ));
+			CHK_VSA ( viPrintf( pLocalStorage->sessionHandle , szString ));
 			
-			WaitForOperationCompletion( pLocalHandle->sessionHandle , pLocalHandle->lfTimeout  ,  pLocalHandle->lfOpcLowLevelTimeout ); 
+			WaitForOperationCompletion( pLocalStorage->sessionHandle , pLocalStorage->lfTimeout  ,  pLocalStorage->lfOpcLowLevelTimeout ); 
 			
 			if ( bState > 0 )
 				sprintf( szString , ":CALC:MARK%d:CPS:STAT ON\n" , iMarkerNr );
 			else
 				sprintf( szString , ":CALC:MARK%d:CPS:STAT OFF\n" , iMarkerNr );
 				
-			CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , szString ));
+			CHK_VSA ( viPrintf( pLocalStorage->sessionHandle , szString ));
 		
-			WaitForOperationCompletion( pLocalHandle->sessionHandle , pLocalHandle->lfTimeout  ,  pLocalHandle->lfOpcLowLevelTimeout ); 
+			WaitForOperationCompletion( pLocalStorage->sessionHandle , pLocalStorage->lfTimeout  ,  pLocalStorage->lfOpcLowLevelTimeout ); 
 			
 			if ( bMax > 0 )
 			{
 				sprintf( szString , ":CALC:MARK%d:MAX\n" , iMarkerNr ); 
-				CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , szString ));
+				CHK_VSA ( viPrintf( pLocalStorage->sessionHandle , szString ));
 			}
 			else
 			{
 				sprintf( szString , ":CALC:MARK%d:MIN\n" , iMarkerNr );
-				CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , szString ));
+				CHK_VSA ( viPrintf( pLocalStorage->sessionHandle , szString ));
 			}	
 	}
 	
@@ -1486,7 +1503,7 @@ void* DLLEXPORT SpectrumAnalyzer_GetMarkerMeasure ( int hInstrumentHandle , int 
 
 	int						iActualSize							=	0;
 	
-	tsHandle				*pLocalHandle						=	{0};
+	tsHandle				*pLocalStorage						=	{0};
 
 	int						handle								=	0;
 	
@@ -1494,9 +1511,9 @@ void* DLLEXPORT SpectrumAnalyzer_GetMarkerMeasure ( int hInstrumentHandle , int 
 	
 	handle = hInstrumentHandle;
 	
-	CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalHandle ));
+	CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalStorage ));
 	
-	switch ( pLocalHandle->tType )
+	switch ( pLocalStorage->tType )
 	{
 		case MODEL_TYPE_N9030A:
 		case MODEL_TYPE_N9020A:
@@ -1526,27 +1543,27 @@ void* DLLEXPORT SpectrumAnalyzer_GetMarkerMeasure ( int hInstrumentHandle , int 
 		default:
 			
 			sprintf( szString , ":CALC:MARK%d:STAT ON\n" , iMarkerNr );
-			CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , szString ));
+			CHK_VSA ( viPrintf( pLocalStorage->sessionHandle , szString ));
 
-			WaitForOperationCompletion( pLocalHandle->sessionHandle , pLocalHandle->lfTimeout  ,  pLocalHandle->lfOpcLowLevelTimeout ); 
+			WaitForOperationCompletion( pLocalStorage->sessionHandle , pLocalStorage->lfTimeout  ,  pLocalStorage->lfOpcLowLevelTimeout ); 
 			
 			sprintf( szString , ":CALC:MARK%d:X?\n" , iMarkerNr );
-			CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , szString ));
+			CHK_VSA ( viPrintf( pLocalStorage->sessionHandle , szString ));
 	
 			SetBreakOnLibraryErrors (0);
-			viRead( pLocalHandle->sessionHandle, szString , 20 , &iActualSize );
+			viRead( pLocalStorage->sessionHandle, szString , 20 , &iActualSize );
 			SetBreakOnLibraryErrors (1);
 				
 			if ( pFrequency )
 				*pFrequency = atof( szString );
 			
-			WaitForOperationCompletion( pLocalHandle->sessionHandle , pLocalHandle->lfTimeout  ,  pLocalHandle->lfOpcLowLevelTimeout ); 
+			WaitForOperationCompletion( pLocalStorage->sessionHandle , pLocalStorage->lfTimeout  ,  pLocalStorage->lfOpcLowLevelTimeout ); 
 			
 			sprintf( szString , ":CALC:MARK%d:Y?\n" , iMarkerNr );
-			CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , szString ));
+			CHK_VSA ( viPrintf( pLocalStorage->sessionHandle , szString ));
 	
 			SetBreakOnLibraryErrors (0);
-			viRead( pLocalHandle->sessionHandle, szString , 20 , &iActualSize );
+			viRead( pLocalStorage->sessionHandle, szString , 20 , &iActualSize );
 			SetBreakOnLibraryErrors (1);
 				
 			if ( pPower )
@@ -1569,7 +1586,7 @@ void* DLLEXPORT SpectrumAnalyzer_PhaseNoise_GetMarker ( int hInstrumentHandle , 
 
 	int						iActualSize							=	0;
 	
-	tsHandle				*pLocalHandle						=	{0};
+	tsHandle				*pLocalStorage						=	{0};
 
 	int						handle								=	0;
 	
@@ -1586,9 +1603,9 @@ void* DLLEXPORT SpectrumAnalyzer_PhaseNoise_GetMarker ( int hInstrumentHandle , 
 	
 	handle = hInstrumentHandle;
 	
-	CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalHandle ));
+	CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalStorage ));
 	
-	switch ( pLocalHandle->tType )
+	switch ( pLocalStorage->tType )
 	{
 		case MODEL_TYPE_N9030A:
 		case MODEL_TYPE_N9020A:
@@ -1617,10 +1634,10 @@ void* DLLEXPORT SpectrumAnalyzer_PhaseNoise_GetMarker ( int hInstrumentHandle , 
 		case MODEL_TYPE_E7401A:
 		default:
 			
-			CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , ":FETCH:LPLot6?\n" ));
+			CHK_VSA ( viPrintf( pLocalStorage->sessionHandle , ":FETCH:LPLot6?\n" ));
 
 			SetBreakOnLibraryErrors (0);
-			viRead( pLocalHandle->sessionHandle, szString , 1024 , &iActualSize );
+			viRead( pLocalStorage->sessionHandle, szString , 1024 , &iActualSize );
 			SetBreakOnLibraryErrors (1);
 			
 			pNext = szString;
@@ -1673,24 +1690,29 @@ Error:
 	
 	return SpectrumAnalyzer_GetErrorTextMessage(hInstrumentHandle,StdError.error,NULL);
 } 
-	 
-void* DLLEXPORT SpectrumAnalyzer_SetMaxHold ( int hInstrumentHandle , int  iCounter )
+
+
+void* DLLEXPORT SpectrumAnalyzer_PhaseNoise_GetIntegratedMarker ( int hInstrumentHandle , int channel , int iMarkerNr , double lfTimeout ,double lfMarkerStartFreqkHz,double IntMarkerStoptFreqkHz, double *pPosition , double *pValue )
 {
 	STD_ERROR               StdError                  			=   {0};        
 
-	char					szString[128]						=	{0};
+	char					szString[1025]						=	{0};
 
-	tsHandle				*pLocalHandle						=	{0};
+	int						iActualSize							=	0;
+	
+	tsHandle				*pLocalStorage						=	{0};
 
 	int						handle								=	0;
+	
+	int						iCount								=	0;
 	
 	IF (( hInstrumentHandle == 0 ) , "Handle is empty" );
 	
 	handle = hInstrumentHandle;
 	
-	CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalHandle ));
+	CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalStorage ));
 	
-	switch ( pLocalHandle->tType )
+	switch ( pLocalStorage->tType )
 	{
 		case MODEL_TYPE_N9030A:
 		case MODEL_TYPE_N9020A:
@@ -1704,6 +1726,95 @@ void* DLLEXPORT SpectrumAnalyzer_SetMaxHold ( int hInstrumentHandle , int  iCoun
 		case MODEL_TYPE_E4443A:
 		case MODEL_TYPE_E4440A:
 		case MODEL_TYPE_E4406A:
+		case MODEL_TYPE_N9010B:
+		case MODEL_TYPE_E4411B:
+		case MODEL_TYPE_E4408B:
+		case MODEL_TYPE_E4407B:
+		case MODEL_TYPE_E4405B:
+		case MODEL_TYPE_E4404B:
+		case MODEL_TYPE_E4403B:
+		case MODEL_TYPE_E4402B:
+		case MODEL_TYPE_E4401B:
+		case MODEL_TYPE_E7405A:
+		case MODEL_TYPE_E7404A:
+		case MODEL_TYPE_E7403A:
+		case MODEL_TYPE_E7402A:
+		case MODEL_TYPE_E7401A:
+		default:
+									
+			sprintf( szString , ":CALC:LPL:MARK:BAND:LEFT %0.2lfkHz", lfMarkerStartFreqkHz );
+			CHK_VSA ( viWrite( pLocalStorage->sessionHandle , szString , strlen(szString), &iCount));  
+
+			WaitForOperationCompletion( pLocalStorage->sessionHandle , pLocalStorage->lfTimeout  ,  pLocalStorage->lfOpcLowLevelTimeout ); 
+
+			sprintf( szString , ":CALC:LPL:MARK:BAND:RIGHT %0.2lfkHz", IntMarkerStoptFreqkHz );
+			CHK_VSA ( viPrintf( pLocalStorage->sessionHandle , szString ));
+
+			WaitForOperationCompletion( pLocalStorage->sessionHandle , pLocalStorage->lfTimeout  ,  pLocalStorage->lfOpcLowLevelTimeout ); 
+			
+			sprintf( szString , ":CALC:LPL:MARK%d:X?\n" , iMarkerNr );
+			CHK_VSA ( viWrite( pLocalStorage->sessionHandle , szString , strlen(szString), &iCount));  
+	
+			SetBreakOnLibraryErrors (0);
+			viRead( pLocalStorage->sessionHandle, szString , 20 , &iActualSize );
+			SetBreakOnLibraryErrors (1);
+				
+			if ( pPosition )
+				*pPosition = atof( szString );
+			
+			WaitForOperationCompletion( pLocalStorage->sessionHandle , pLocalStorage->lfTimeout  ,  pLocalStorage->lfOpcLowLevelTimeout ); 
+			
+			sprintf( szString , ":CALC:LPL:MARK%d:Y?\n" , iMarkerNr );
+			CHK_VSA ( viPrintf( pLocalStorage->sessionHandle , szString ));
+	
+			SetBreakOnLibraryErrors (0);
+			viRead( pLocalStorage->sessionHandle, szString , 20 , &iActualSize );
+			SetBreakOnLibraryErrors (1);
+				
+			if ( pValue )
+				*pValue = atof( szString );
+			
+	}
+	
+Error: 
+
+	if ( handle )
+		CmtReleaseTSVPtr ( handle );
+	
+	return SpectrumAnalyzer_GetErrorTextMessage(hInstrumentHandle,StdError.error,NULL);
+}
+
+void* DLLEXPORT SpectrumAnalyzer_SetMaxHold ( int hInstrumentHandle , int  iCounter )
+{
+	STD_ERROR               StdError                  			=   {0};        
+
+	char					szString[128]						=	{0};
+
+	tsHandle				*pLocalStorage						=	{0};
+
+	int						handle								=	0;
+	
+	IF (( hInstrumentHandle == 0 ) , "Handle is empty" );
+	
+	handle = hInstrumentHandle;
+	
+	CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalStorage ));
+	
+	switch ( pLocalStorage->tType )
+	{
+		case MODEL_TYPE_N9030A:
+		case MODEL_TYPE_N9020A:
+		case MODEL_TYPE_N9010A:
+		case MODEL_TYPE_N9000A:
+		case MODEL_TYPE_N8201A:
+		case MODEL_TYPE_E4448A:
+		case MODEL_TYPE_E4447A:
+		case MODEL_TYPE_E4446A:
+		case MODEL_TYPE_E4445A:
+		case MODEL_TYPE_E4443A:
+		case MODEL_TYPE_E4440A:
+		case MODEL_TYPE_E4406A:
+		case MODEL_TYPE_N9010B:
 		case MODEL_TYPE_E4411B:
 		case MODEL_TYPE_E4408B:
 		case MODEL_TYPE_E4407B:
@@ -1722,18 +1833,89 @@ void* DLLEXPORT SpectrumAnalyzer_SetMaxHold ( int hInstrumentHandle , int  iCoun
 			if ( iCounter > 0 )
 			{
 				sprintf( szString , ":TRAC:TYPE MAXH\n" );
-				CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , szString ));  
+				CHK_VSA ( viPrintf( pLocalStorage->sessionHandle , szString ));  
 
-				WaitForOperationCompletion( pLocalHandle->sessionHandle , pLocalHandle->lfTimeout  ,  pLocalHandle->lfOpcLowLevelTimeout ); 
+				WaitForOperationCompletion( pLocalStorage->sessionHandle , pLocalStorage->lfTimeout  ,  pLocalStorage->lfOpcLowLevelTimeout ); 
 				
 				sprintf( szString , ":SENS:AVER:COUN %d\n" , iCounter );  
-				CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , szString ));
+				CHK_VSA ( viPrintf( pLocalStorage->sessionHandle , szString ));
 				
 			}
 			else
 				sprintf( szString , ":TRAC:TYPE WRIT\n" );
 	
-			CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , szString ));
+			CHK_VSA ( viPrintf( pLocalStorage->sessionHandle , szString ));
+	}
+	
+Error: 
+
+	if ( handle )
+		CmtReleaseTSVPtr ( handle );
+	
+	return SpectrumAnalyzer_GetErrorTextMessage(hInstrumentHandle,StdError.error,NULL);
+} 
+
+void* DLLEXPORT SpectrumAnalyzer_PhaseNoise_SetIntegratedMarker_Start_Stop_Offsets ( int hInstrumentHandle , int iChannel , int marker , double lfTimeOut , double lfStartFreq , double lfStopFreq )
+{
+	STD_ERROR               StdError                  			=   {0};        
+
+	char					szString[128]						=	{0};
+
+	tsHandle				*pLocalStorage						=	{0};
+
+	int						handle								=	0;
+	
+	int						iCount								=	0;
+	
+	IF (( hInstrumentHandle == 0 ) , "Handle is empty" );
+	
+	handle = hInstrumentHandle;
+	
+	CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalStorage ));
+	
+	switch ( pLocalStorage->tType )
+	{
+		case MODEL_TYPE_N9030A:
+		case MODEL_TYPE_N9020A:
+		case MODEL_TYPE_N9010A:
+		case MODEL_TYPE_N9000A:
+		case MODEL_TYPE_N8201A:
+		case MODEL_TYPE_E4448A:
+		case MODEL_TYPE_E4447A:
+		case MODEL_TYPE_E4446A:
+		case MODEL_TYPE_E4445A:
+		case MODEL_TYPE_E4443A:
+		case MODEL_TYPE_E4440A:
+		case MODEL_TYPE_E4406A:
+		case MODEL_TYPE_N9010B:
+		case MODEL_TYPE_E4411B:
+		case MODEL_TYPE_E4408B:
+		case MODEL_TYPE_E4407B:
+		case MODEL_TYPE_E4405B:
+		case MODEL_TYPE_E4404B:
+		case MODEL_TYPE_E4403B:
+		case MODEL_TYPE_E4402B:
+		case MODEL_TYPE_E4401B:
+		case MODEL_TYPE_E7405A:
+		case MODEL_TYPE_E7404A:
+		case MODEL_TYPE_E7403A:
+		case MODEL_TYPE_E7402A:
+		case MODEL_TYPE_E7401A:
+		default:
+			
+
+			sprintf( szString , ":CALC:LPL:MARK:BAND:LEFT %lf kHz", lfStartFreq );
+
+			CHK_VSA ( viWrite( pLocalStorage->sessionHandle , szString , strlen(szString), &iCount));  
+
+			WaitForOperationCompletion( pLocalStorage->sessionHandle , pLocalStorage->lfTimeout  ,  pLocalStorage->lfOpcLowLevelTimeout ); 
+				
+			sprintf( szString , ":CALC:LPL:MARK:BAND:RIGH %lf kHz", lfStopFreq );
+
+			CHK_VSA ( viPrintf( pLocalStorage->sessionHandle , szString ));
+
+			WaitForOperationCompletion( pLocalStorage->sessionHandle , pLocalStorage->lfTimeout  ,  pLocalStorage->lfOpcLowLevelTimeout ); 
+
 	}
 	
 Error: 
@@ -1750,7 +1932,7 @@ void* DLLEXPORT SpectrumAnalyzer_ConfigChannelPowerMeasuring( int hInstrumentHan
 
 	char					szString[128]						=	{0};
 
-	tsHandle				*pLocalHandle						=	{0};
+	tsHandle				*pLocalStorage						=	{0};
 
 	int						handle								=	0;
 	
@@ -1758,9 +1940,9 @@ void* DLLEXPORT SpectrumAnalyzer_ConfigChannelPowerMeasuring( int hInstrumentHan
 	
 	handle = hInstrumentHandle;
 	
-	CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalHandle ));
+	CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalStorage ));
 	
-	switch ( pLocalHandle->tType )
+	switch ( pLocalStorage->tType )
 	{
 		case MODEL_TYPE_N9030A:
 		case MODEL_TYPE_N9020A:
@@ -1790,12 +1972,12 @@ void* DLLEXPORT SpectrumAnalyzer_ConfigChannelPowerMeasuring( int hInstrumentHan
 		default:
 			
 			sprintf( szString , ":CONF:CHP\n" );
-			CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , szString ));
+			CHK_VSA ( viPrintf( pLocalStorage->sessionHandle , szString ));
 
-			WaitForOperationCompletion( pLocalHandle->sessionHandle , pLocalHandle->lfTimeout  ,  pLocalHandle->lfOpcLowLevelTimeout ); 
+			WaitForOperationCompletion( pLocalStorage->sessionHandle , pLocalStorage->lfTimeout  ,  pLocalStorage->lfOpcLowLevelTimeout ); 
 	
 			sprintf( szString , ":SENS:CHP:BAND %E\n" , lfBandWidth );
-			CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , szString ));  
+			CHK_VSA ( viPrintf( pLocalStorage->sessionHandle , szString ));  
 	}
 	
 Error: 
@@ -1815,7 +1997,7 @@ void* DLLEXPORT SpectrumAnalyzer_GetChannelPowerResult( int hInstrumentHandle , 
 
 	int						iActualSize							=	0;
 	
-	tsHandle				*pLocalHandle						=	{0};
+	tsHandle				*pLocalStorage						=	{0};
 
 	int						handle								=	0;
 	
@@ -1823,9 +2005,9 @@ void* DLLEXPORT SpectrumAnalyzer_GetChannelPowerResult( int hInstrumentHandle , 
 	
 	handle = hInstrumentHandle;
 	
-	CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalHandle ));
+	CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalStorage ));
 	
-	switch ( pLocalHandle->tType )
+	switch ( pLocalStorage->tType )
 	{
 		case MODEL_TYPE_N9030A:
 		case MODEL_TYPE_N9020A:
@@ -1855,15 +2037,15 @@ void* DLLEXPORT SpectrumAnalyzer_GetChannelPowerResult( int hInstrumentHandle , 
 		default:
 			
 			sprintf( szString , ":INIT:CHP\n" );
-			CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , szString ));
+			CHK_VSA ( viPrintf( pLocalStorage->sessionHandle , szString ));
 
-			WaitForOperationCompletion( pLocalHandle->sessionHandle , pLocalHandle->lfTimeout  ,  pLocalHandle->lfOpcLowLevelTimeout ); 
+			WaitForOperationCompletion( pLocalStorage->sessionHandle , pLocalStorage->lfTimeout  ,  pLocalStorage->lfOpcLowLevelTimeout ); 
 			
 			sprintf( szString , ":MEAS:CHP?\n" );
-			CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , szString ));
+			CHK_VSA ( viPrintf( pLocalStorage->sessionHandle , szString ));
 	
 			SetBreakOnLibraryErrors (0);
-			viRead( pLocalHandle->sessionHandle, szString , 20 , &iActualSize );
+			viRead( pLocalStorage->sessionHandle, szString , 20 , &iActualSize );
 			SetBreakOnLibraryErrors (1);
 				
 			if ( plfValue )
@@ -1886,7 +2068,7 @@ void* DLLEXPORT SpectrumAnalyzer_GetStartStopFrequency( int hInstrumentHandle , 
 
 	int						iActualSize							=	0;
 	
-	tsHandle				*pLocalHandle						=	{0};
+	tsHandle				*pLocalStorage						=	{0};
 
 	int						handle								=	0;
 	
@@ -1894,9 +2076,9 @@ void* DLLEXPORT SpectrumAnalyzer_GetStartStopFrequency( int hInstrumentHandle , 
 	
 	handle = hInstrumentHandle;
 	
-	CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalHandle ));
+	CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalStorage ));
 	
-	switch ( pLocalHandle->tType )
+	switch ( pLocalStorage->tType )
 	{
 		case MODEL_TYPE_N9030A:
 		case MODEL_TYPE_N9020A:
@@ -1926,22 +2108,22 @@ void* DLLEXPORT SpectrumAnalyzer_GetStartStopFrequency( int hInstrumentHandle , 
 		default:
 
 			sprintf( szString , ":SENS:FREQ:STAR?\n" );
-			CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , szString ));
+			CHK_VSA ( viPrintf( pLocalStorage->sessionHandle , szString ));
 	
 			SetBreakOnLibraryErrors (0);
-			viRead( pLocalHandle->sessionHandle, szString , 20 , &iActualSize );
+			viRead( pLocalStorage->sessionHandle, szString , 20 , &iActualSize );
 			SetBreakOnLibraryErrors (1);
 				
 			if ( plfStartFrequency )
 				*plfStartFrequency = atof( szString );
 			
-			WaitForOperationCompletion( pLocalHandle->sessionHandle , pLocalHandle->lfTimeout  ,  pLocalHandle->lfOpcLowLevelTimeout ); 
+			WaitForOperationCompletion( pLocalStorage->sessionHandle , pLocalStorage->lfTimeout  ,  pLocalStorage->lfOpcLowLevelTimeout ); 
 			
 			sprintf( szString , ":SENS:FREQ:STOP?\n" );
-			CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , szString ));
+			CHK_VSA ( viPrintf( pLocalStorage->sessionHandle , szString ));
 	
 			SetBreakOnLibraryErrors (0);
-			viRead( pLocalHandle->sessionHandle, szString , 20 , &iActualSize );
+			viRead( pLocalStorage->sessionHandle, szString , 20 , &iActualSize );
 			SetBreakOnLibraryErrors (1);
 				
 			if ( plfStopFrequency )
@@ -1962,7 +2144,7 @@ void* DLLEXPORT SpectrumAnalyzer_SetStartStopFrequency( int hInstrumentHandle , 
 
 	char					szString[128]						=	{0};
 
-	tsHandle				*pLocalHandle						=	{0};
+	tsHandle				*pLocalStorage						=	{0};
 
 	int						handle								=	0;
 	
@@ -1970,9 +2152,9 @@ void* DLLEXPORT SpectrumAnalyzer_SetStartStopFrequency( int hInstrumentHandle , 
 	
 	handle = hInstrumentHandle;
 	
-	CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalHandle ));
+	CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalStorage ));
 	
-	switch ( pLocalHandle->tType )
+	switch ( pLocalStorage->tType )
 	{
 		case MODEL_TYPE_N9030A:
 		case MODEL_TYPE_N9020A:
@@ -2002,12 +2184,12 @@ void* DLLEXPORT SpectrumAnalyzer_SetStartStopFrequency( int hInstrumentHandle , 
 		default:
 
 			sprintf( szString , ":SENS:FREQ:STAR %0.6lf\n" , lfStartFrequency );
-			CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , szString ));
+			CHK_VSA ( viPrintf( pLocalStorage->sessionHandle , szString ));
 			
-			WaitForOperationCompletion( pLocalHandle->sessionHandle , pLocalHandle->lfTimeout  ,  pLocalHandle->lfOpcLowLevelTimeout ); 
+			WaitForOperationCompletion( pLocalStorage->sessionHandle , pLocalStorage->lfTimeout  ,  pLocalStorage->lfOpcLowLevelTimeout ); 
 			
 			sprintf( szString , ":SENS:FREQ:STOP %0.6lf\n" , lfStopFrequency );
-			CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , szString ));
+			CHK_VSA ( viPrintf( pLocalStorage->sessionHandle , szString ));
 	}
 	
 Error: 
@@ -2025,7 +2207,7 @@ void* DLLEXPORT SpectrumAnalyzer_SetRBW( int hInstrumentHandle , double lfResolu
 
 	char					szString[128]						=	{0};
 
-	tsHandle				*pLocalHandle						=	{0};
+	tsHandle				*pLocalStorage						=	{0};
 
 	int						handle								=	0;
 	
@@ -2033,9 +2215,9 @@ void* DLLEXPORT SpectrumAnalyzer_SetRBW( int hInstrumentHandle , double lfResolu
 	
 	handle = hInstrumentHandle;
 	
-	CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalHandle ));
+	CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalStorage ));
 	
-	switch ( pLocalHandle->tType )
+	switch ( pLocalStorage->tType )
 	{
 		case MODEL_TYPE_N9030A:
 		case MODEL_TYPE_N9020A:
@@ -2067,17 +2249,17 @@ void* DLLEXPORT SpectrumAnalyzer_SetRBW( int hInstrumentHandle , double lfResolu
 			if ( lfResolutionBandWidth > 0.0 )
 			{
 				sprintf( szString , ":SENS:BAND:RES:AUTO OFF\n" );
-				CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , szString )); 
+				CHK_VSA ( viPrintf( pLocalStorage->sessionHandle , szString )); 
 
-				WaitForOperationCompletion( pLocalHandle->sessionHandle , pLocalHandle->lfTimeout  ,  pLocalHandle->lfOpcLowLevelTimeout ); 
+				WaitForOperationCompletion( pLocalStorage->sessionHandle , pLocalStorage->lfTimeout  ,  pLocalStorage->lfOpcLowLevelTimeout ); 
 				
 				sprintf( szString , ":SENS:BAND:RES %E\n" , lfResolutionBandWidth );
-				CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , szString )); 
+				CHK_VSA ( viPrintf( pLocalStorage->sessionHandle , szString )); 
 			}
 			else
 			{
 				sprintf( szString , ":SENS:BAND:RES:AUTO ON\n" );
-				CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , szString )); 
+				CHK_VSA ( viPrintf( pLocalStorage->sessionHandle , szString )); 
 			}
 	}
 	
@@ -2095,7 +2277,7 @@ void* DLLEXPORT SpectrumAnalyzer_SetVBW( int hInstrumentHandle , double lfVideoB
 
 	char					szString[128]						=	{0};
 
-	tsHandle				*pLocalHandle						=	{0};
+	tsHandle				*pLocalStorage						=	{0};
 
 	int						handle								=	0;
 	
@@ -2103,9 +2285,9 @@ void* DLLEXPORT SpectrumAnalyzer_SetVBW( int hInstrumentHandle , double lfVideoB
 	
 	handle = hInstrumentHandle;
 	
-	CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalHandle ));
+	CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalStorage ));
 	
-	switch ( pLocalHandle->tType )
+	switch ( pLocalStorage->tType )
 	{
 		case MODEL_TYPE_N9030A:
 		case MODEL_TYPE_N9020A:
@@ -2137,17 +2319,17 @@ void* DLLEXPORT SpectrumAnalyzer_SetVBW( int hInstrumentHandle , double lfVideoB
 			if ( lfVideoBandWidth > 0.0 )
 			{
 				sprintf( szString , ":SENS:BAND:VID:AUTO OFF\n" );
-				CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , szString )); 
+				CHK_VSA ( viPrintf( pLocalStorage->sessionHandle , szString )); 
 
-				WaitForOperationCompletion( pLocalHandle->sessionHandle , pLocalHandle->lfTimeout  ,  pLocalHandle->lfOpcLowLevelTimeout ); 
+				WaitForOperationCompletion( pLocalStorage->sessionHandle , pLocalStorage->lfTimeout  ,  pLocalStorage->lfOpcLowLevelTimeout ); 
 				
 				sprintf( szString , ":SENS:BAND:VID %E\n" , lfVideoBandWidth );
-				CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , szString )); 
+				CHK_VSA ( viPrintf( pLocalStorage->sessionHandle , szString )); 
 			}
 			else
 			{
 				sprintf( szString , ":SENS:BAND:VID:AUTO ON\n" );
-				CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , szString )); 
+				CHK_VSA ( viPrintf( pLocalStorage->sessionHandle , szString )); 
 			}
 	}
 	
@@ -2165,7 +2347,7 @@ void* DLLEXPORT SpectrumAnalyzer_SetBW( int hInstrumentHandle , double lfResolut
 
 	char					szString[128]						=	{0};
 
-	tsHandle				*pLocalHandle						=	{0};
+	tsHandle				*pLocalStorage						=	{0};
 
 	int						handle								=	0;
 	
@@ -2173,9 +2355,9 @@ void* DLLEXPORT SpectrumAnalyzer_SetBW( int hInstrumentHandle , double lfResolut
 	
 	handle = hInstrumentHandle;
 	
-	CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalHandle ));
+	CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalStorage ));
 	
-	switch ( pLocalHandle->tType )
+	switch ( pLocalStorage->tType )
 	{
 		case MODEL_TYPE_N9030A:
 		case MODEL_TYPE_N9020A:
@@ -2207,35 +2389,35 @@ void* DLLEXPORT SpectrumAnalyzer_SetBW( int hInstrumentHandle , double lfResolut
 			if ( lfResolutionBandWidth > 0.0 )
 			{
 				sprintf( szString , ":SENS:BAND:RES:AUTO OFF\n" );
-				CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , szString )); 
+				CHK_VSA ( viPrintf( pLocalStorage->sessionHandle , szString )); 
 
-				WaitForOperationCompletion( pLocalHandle->sessionHandle , pLocalHandle->lfTimeout  ,  pLocalHandle->lfOpcLowLevelTimeout ); 
+				WaitForOperationCompletion( pLocalStorage->sessionHandle , pLocalStorage->lfTimeout  ,  pLocalStorage->lfOpcLowLevelTimeout ); 
 				
 				sprintf( szString , ":SENS:BAND:RES %E\n" , lfResolutionBandWidth );
-				CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , szString )); 
+				CHK_VSA ( viPrintf( pLocalStorage->sessionHandle , szString )); 
 			}
 			else
 			{
 				sprintf( szString , ":SENS:BAND:RES:AUTO ON\n" );
-				CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , szString )); 
+				CHK_VSA ( viPrintf( pLocalStorage->sessionHandle , szString )); 
 			}
 			
-			WaitForOperationCompletion( pLocalHandle->sessionHandle , pLocalHandle->lfTimeout  ,  pLocalHandle->lfOpcLowLevelTimeout ); 
+			WaitForOperationCompletion( pLocalStorage->sessionHandle , pLocalStorage->lfTimeout  ,  pLocalStorage->lfOpcLowLevelTimeout ); 
 			
 			if ( lfVideoBandWidth > 0.0 )
 			{
 				sprintf( szString , ":SENS:BAND:VID:AUTO OFF\n" );
-				CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , szString )); 
+				CHK_VSA ( viPrintf( pLocalStorage->sessionHandle , szString )); 
 
-				WaitForOperationCompletion( pLocalHandle->sessionHandle , pLocalHandle->lfTimeout  ,  pLocalHandle->lfOpcLowLevelTimeout ); 
+				WaitForOperationCompletion( pLocalStorage->sessionHandle , pLocalStorage->lfTimeout  ,  pLocalStorage->lfOpcLowLevelTimeout ); 
 				
 				sprintf( szString , ":SENS:BAND:VID %E\n" , lfVideoBandWidth );
-				CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , szString )); 
+				CHK_VSA ( viPrintf( pLocalStorage->sessionHandle , szString )); 
 			}
 			else
 			{
 				sprintf( szString , ":SENS:BAND:VID:AUTO ON\n" );
-				CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , szString )); 
+				CHK_VSA ( viPrintf( pLocalStorage->sessionHandle , szString )); 
 			}
 	}
 	
@@ -2254,7 +2436,7 @@ void* DLLEXPORT SpectrumAnalyzer_ConfigBandWidth( int hInstrumentHandle , double
 
 	char					szString[128]						=	{0};
 
-	tsHandle				*pLocalHandle						=	{0};
+	tsHandle				*pLocalStorage						=	{0};
 
 	int						handle								=	0;
 	
@@ -2262,9 +2444,9 @@ void* DLLEXPORT SpectrumAnalyzer_ConfigBandWidth( int hInstrumentHandle , double
 	
 	handle = hInstrumentHandle;
 	
-	CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalHandle ));
+	CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalStorage ));
 	
-	switch ( pLocalHandle->tType )
+	switch ( pLocalStorage->tType )
 	{
 		case MODEL_TYPE_N9030A:
 		case MODEL_TYPE_N9020A:
@@ -2296,35 +2478,35 @@ void* DLLEXPORT SpectrumAnalyzer_ConfigBandWidth( int hInstrumentHandle , double
 			if ( lfResolutionBandWidth > 0.0 )
 			{
 				sprintf( szString , ":SENS:BAND:RES:AUTO OFF\n" );
-				CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , szString )); 
+				CHK_VSA ( viPrintf( pLocalStorage->sessionHandle , szString )); 
 
-				WaitForOperationCompletion( pLocalHandle->sessionHandle , pLocalHandle->lfTimeout  ,  pLocalHandle->lfOpcLowLevelTimeout ); 
+				WaitForOperationCompletion( pLocalStorage->sessionHandle , pLocalStorage->lfTimeout  ,  pLocalStorage->lfOpcLowLevelTimeout ); 
 				
 				sprintf( szString , ":SENS:BAND:RES %E\n" , lfResolutionBandWidth );
-				CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , szString )); 
+				CHK_VSA ( viPrintf( pLocalStorage->sessionHandle , szString )); 
 			}
 			else
 			{
 				sprintf( szString , ":SENS:BAND:RES:AUTO ON\n" );
-				CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , szString )); 
+				CHK_VSA ( viPrintf( pLocalStorage->sessionHandle , szString )); 
 			}
 			
-			WaitForOperationCompletion( pLocalHandle->sessionHandle , pLocalHandle->lfTimeout  ,  pLocalHandle->lfOpcLowLevelTimeout ); 
+			WaitForOperationCompletion( pLocalStorage->sessionHandle , pLocalStorage->lfTimeout  ,  pLocalStorage->lfOpcLowLevelTimeout ); 
 			
 			if ( lfVideoBandWidth > 0.0 )
 			{
 				sprintf( szString , ":SENS:BAND:VID:AUTO OFF\n" );
-				CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , szString )); 
+				CHK_VSA ( viPrintf( pLocalStorage->sessionHandle , szString )); 
 
-				WaitForOperationCompletion( pLocalHandle->sessionHandle , pLocalHandle->lfTimeout  ,  pLocalHandle->lfOpcLowLevelTimeout ); 
+				WaitForOperationCompletion( pLocalStorage->sessionHandle , pLocalStorage->lfTimeout  ,  pLocalStorage->lfOpcLowLevelTimeout ); 
 				
 				sprintf( szString , ":SENS:BAND:VID %E\n" , lfVideoBandWidth );
-				CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , szString )); 
+				CHK_VSA ( viPrintf( pLocalStorage->sessionHandle , szString )); 
 			}
 			else
 			{
 				sprintf( szString , ":SENS:BAND:VID:AUTO ON\n" );
-				CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , szString )); 
+				CHK_VSA ( viPrintf( pLocalStorage->sessionHandle , szString )); 
 			}
 	}
 	
@@ -2342,7 +2524,7 @@ void* DLLEXPORT SpectrumAnalyzer_ConfigSource( int hInstrumentHandle , int bExte
 
 	char					szString[128]						=	{0};
 
-	tsHandle				*pLocalHandle						=	{0};
+	tsHandle				*pLocalStorage						=	{0};
 
 	int						handle								=	0;
 	
@@ -2350,9 +2532,9 @@ void* DLLEXPORT SpectrumAnalyzer_ConfigSource( int hInstrumentHandle , int bExte
 	
 	handle = hInstrumentHandle;
 	
-	CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalHandle ));
+	CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalStorage ));
 	
-	switch ( pLocalHandle->tType )
+	switch ( pLocalStorage->tType )
 	{
 		case MODEL_TYPE_N9030A:
 		case MODEL_TYPE_N9020A:
@@ -2384,12 +2566,12 @@ void* DLLEXPORT SpectrumAnalyzer_ConfigSource( int hInstrumentHandle , int bExte
 			if ( bExternal > 0 ) 
 			{
 				sprintf( szString , ":SENS:ROSC:SOUR:TYPE EXT\n" );
-				CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , szString ));
+				CHK_VSA ( viPrintf( pLocalStorage->sessionHandle , szString ));
 			}
 			else
 			{
 				sprintf( szString , ":SENS:ROSC:SOUR:TYPE INT\n" );
-				CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , szString ));
+				CHK_VSA ( viPrintf( pLocalStorage->sessionHandle , szString ));
 			}															   
 	}
 	
@@ -2409,7 +2591,7 @@ void* DLLEXPORT SpectrumAnalyzer_SetNumberOfPoints( int hInstrumentHandle , int 
 
 	char					szString[128]						=	{0};
 
-	tsHandle				*pLocalHandle						=	{0};
+	tsHandle				*pLocalStorage						=	{0};
 
 	int						handle								=	0;
 	
@@ -2417,9 +2599,9 @@ void* DLLEXPORT SpectrumAnalyzer_SetNumberOfPoints( int hInstrumentHandle , int 
 	
 	handle = hInstrumentHandle;
 	
-	CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalHandle ));
+	CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalStorage ));
 	
-	switch ( pLocalHandle->tType )
+	switch ( pLocalStorage->tType )
 	{
 		case MODEL_TYPE_N9030A:
 		case MODEL_TYPE_N9020A:
@@ -2449,7 +2631,7 @@ void* DLLEXPORT SpectrumAnalyzer_SetNumberOfPoints( int hInstrumentHandle , int 
 		default:
 
 			sprintf( szString , ":SENS:SWE:POIN %d\n" , points );
-			CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , szString ));
+			CHK_VSA ( viPrintf( pLocalStorage->sessionHandle , szString ));
 	}
 	
 Error: 
@@ -2466,7 +2648,7 @@ void* DLLEXPORT SpectrumAnalyzer_SetScaleDev( int hInstrumentHandle , double lfS
 {
 	STD_ERROR				StdError							=	{0};
 	
-	tsHandle				*pLocalHandle						=	{0};
+	tsHandle				*pLocalStorage						=	{0};
 
 	int						handle								=	0;
 	
@@ -2474,9 +2656,9 @@ void* DLLEXPORT SpectrumAnalyzer_SetScaleDev( int hInstrumentHandle , double lfS
 	
 	handle = hInstrumentHandle;
 	
-	CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalHandle ));
+	CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalStorage ));
 	
-	switch ( pLocalHandle->tType )
+	switch ( pLocalStorage->tType )
 	{
 		case MODEL_TYPE_N9030A:
 		case MODEL_TYPE_N9020A:
@@ -2505,7 +2687,7 @@ void* DLLEXPORT SpectrumAnalyzer_SetScaleDev( int hInstrumentHandle , double lfS
 		case MODEL_TYPE_E7401A:
 		default :
 				{
-						CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , ":DISP:WIND:TRAC:Y:SCAL:RLEV:OFFS %E\n" , lfScaleDev ));
+						CHK_VSA ( viPrintf( pLocalStorage->sessionHandle , ":DISP:WIND:TRAC:Y:SCAL:RLEV:OFFS %E\n" , lfScaleDev ));
 				}
 	}
 	
@@ -2523,7 +2705,7 @@ void* DLLEXPORT SpectrumAnalyzer_Attenuator( int hInstrumentHandle , double lfAt
 
 	char					szString[128]						=	{0};
 
-	tsHandle				*pLocalHandle						=	{0};
+	tsHandle				*pLocalStorage						=	{0};
 
 	int						handle								=	0;
 	
@@ -2531,9 +2713,9 @@ void* DLLEXPORT SpectrumAnalyzer_Attenuator( int hInstrumentHandle , double lfAt
 	
 	handle = hInstrumentHandle;
 	
-	CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalHandle ));
+	CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalStorage ));
 	
-	switch ( pLocalHandle->tType )
+	switch ( pLocalStorage->tType )
 	{
 		case MODEL_TYPE_N9030A:
 		case MODEL_TYPE_N9020A:
@@ -2565,17 +2747,17 @@ void* DLLEXPORT SpectrumAnalyzer_Attenuator( int hInstrumentHandle , double lfAt
 			if ( lfAttenuator > 0.0 )
 			{
 				sprintf( szString , ":SENS:POW:RF:ATT:AUTO OFF\n" );
-				CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , szString )); 
+				CHK_VSA ( viPrintf( pLocalStorage->sessionHandle , szString )); 
 
-				WaitForOperationCompletion( pLocalHandle->sessionHandle , pLocalHandle->lfTimeout  ,  pLocalHandle->lfOpcLowLevelTimeout ); 
+				WaitForOperationCompletion( pLocalStorage->sessionHandle , pLocalStorage->lfTimeout  ,  pLocalStorage->lfOpcLowLevelTimeout ); 
 				
 				sprintf( szString , ":SENS:POW:RF:ATT %E\n" , lfAttenuator );
-				CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , szString )); 
+				CHK_VSA ( viPrintf( pLocalStorage->sessionHandle , szString )); 
 			}
 			else
 			{
 				sprintf( szString , ":SENS:POW:RF:ATT:AUTO ON\n" );
-				CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , szString )); 
+				CHK_VSA ( viPrintf( pLocalStorage->sessionHandle , szString )); 
 			}
 	}
 	
@@ -2591,7 +2773,7 @@ void* DLLEXPORT SpectrumAnalyzer_SetReferenceLevel( int hInstrumentHandle , doub
 {
 	STD_ERROR				StdError							=	{0};
 	
-	tsHandle				*pLocalHandle						=	{0};
+	tsHandle				*pLocalStorage						=	{0};
 
 	int						handle								=	0;
 	
@@ -2599,9 +2781,9 @@ void* DLLEXPORT SpectrumAnalyzer_SetReferenceLevel( int hInstrumentHandle , doub
 	
 	handle = hInstrumentHandle;
 	
-	CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalHandle ));
+	CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalStorage ));
 	
-	switch ( pLocalHandle->tType )
+	switch ( pLocalStorage->tType )
 	{
 		case MODEL_TYPE_N9030A:
 		case MODEL_TYPE_N9020A:
@@ -2630,7 +2812,7 @@ void* DLLEXPORT SpectrumAnalyzer_SetReferenceLevel( int hInstrumentHandle , doub
 		case MODEL_TYPE_E7401A:
 		default :
 				{
-					CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , ":DISP:WIND:TRAC:Y:RLEV %E\n" , lfReferenceLevel ));
+					CHK_VSA ( viPrintf( pLocalStorage->sessionHandle , ":DISP:WIND:TRAC:Y:RLEV %E\n" , lfReferenceLevel ));
 				}
 	}
 	
@@ -2650,7 +2832,7 @@ void* DLLEXPORT SpectrumAnalyzer_GetReferenceLevel( int hInstrumentHandle , doub
 	
 	int						iActualSize							=	0;
 	
-	tsHandle				*pLocalHandle						=	{0};
+	tsHandle				*pLocalStorage						=	{0};
 
 	int						handle								=	0;
 	
@@ -2658,9 +2840,9 @@ void* DLLEXPORT SpectrumAnalyzer_GetReferenceLevel( int hInstrumentHandle , doub
 	
 	handle = hInstrumentHandle;
 	
-	CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalHandle ));
+	CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalStorage ));
 	
-	switch ( pLocalHandle->tType )
+	switch ( pLocalStorage->tType )
 	{
 		case MODEL_TYPE_N9030A:
 		case MODEL_TYPE_N9020A:
@@ -2690,10 +2872,10 @@ void* DLLEXPORT SpectrumAnalyzer_GetReferenceLevel( int hInstrumentHandle , doub
 		default :
 				{
 					sprintf( szString , ":DISP:WIND:TRAC:Y:RLEV?\n" );
-					CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , szString ));
+					CHK_VSA ( viPrintf( pLocalStorage->sessionHandle , szString ));
 	
 					SetBreakOnLibraryErrors (0);
-					viRead( pLocalHandle->sessionHandle, szString , 20 , &iActualSize );
+					viRead( pLocalStorage->sessionHandle, szString , 20 , &iActualSize );
 					SetBreakOnLibraryErrors (1);
 				
 					if ( vlfReferenceLevel )
@@ -2715,7 +2897,7 @@ void* DLLEXPORT SpectrumAnalyzer_SetMarkerType( int hInstrumentHandle , int bDel
 
 	char					szString[128]						=	{0};
 
-	tsHandle				*pLocalHandle						=	{0};
+	tsHandle				*pLocalStorage						=	{0};
 
 	int						handle								=	0;
 	
@@ -2723,9 +2905,9 @@ void* DLLEXPORT SpectrumAnalyzer_SetMarkerType( int hInstrumentHandle , int bDel
 	
 	handle = hInstrumentHandle;
 	
-	CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalHandle ));
+	CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalStorage ));
 	
-	switch ( pLocalHandle->tType )
+	switch ( pLocalStorage->tType )
 	{
 		case MODEL_TYPE_N9030A:
 		case MODEL_TYPE_N9020A:
@@ -2759,7 +2941,7 @@ void* DLLEXPORT SpectrumAnalyzer_SetMarkerType( int hInstrumentHandle , int bDel
 			else
 				sprintf( szString , ":CALC:MARK:MODE POS\n" );
 			
-			CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , szString )); 
+			CHK_VSA ( viPrintf( pLocalStorage->sessionHandle , szString )); 
 	}
 	
 Error: 
@@ -2776,7 +2958,7 @@ void* DLLEXPORT SpectrumAnalyzer_SetMarkerFrequency( int hInstrumentHandle , int
 
 	char					szString[128]						=	{0};
 
-	tsHandle				*pLocalHandle						=	{0};
+	tsHandle				*pLocalStorage						=	{0};
 
 	int						handle								=	0;
 	
@@ -2784,9 +2966,9 @@ void* DLLEXPORT SpectrumAnalyzer_SetMarkerFrequency( int hInstrumentHandle , int
 	
 	handle = hInstrumentHandle;
 	
-	CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalHandle ));
+	CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalStorage ));
 	
-	switch ( pLocalHandle->tType )
+	switch ( pLocalStorage->tType )
 	{
 		case MODEL_TYPE_N9030A:
 		case MODEL_TYPE_N9020A:
@@ -2816,14 +2998,14 @@ void* DLLEXPORT SpectrumAnalyzer_SetMarkerFrequency( int hInstrumentHandle , int
 		default:
 			
 			sprintf( szString , ":CALC:MARK%d:STAT ON\n" , iMarkerNr );
-			CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , szString ));
+			CHK_VSA ( viPrintf( pLocalStorage->sessionHandle , szString ));
 
-			WaitForOperationCompletion( pLocalHandle->sessionHandle , pLocalHandle->lfTimeout  ,  pLocalHandle->lfOpcLowLevelTimeout ); 
+			WaitForOperationCompletion( pLocalStorage->sessionHandle , pLocalStorage->lfTimeout  ,  pLocalStorage->lfOpcLowLevelTimeout ); 
 			
 			if ( lfFrequency > 0.0 )
 			{
 				sprintf( szString , ":CALC:MARK%d:X %E\n" , iMarkerNr , lfFrequency );
-				CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , szString ));
+				CHK_VSA ( viPrintf( pLocalStorage->sessionHandle , szString ));
 			}
 	}
 	
@@ -2841,7 +3023,7 @@ void* DLLEXPORT SpectrumAnalyzer_SetMarker ( int hInstrumentHandle, int MarkerSe
 
 	char					szString[128]						=	{0};
 
-	tsHandle				*pLocalHandle						=	{0};
+	tsHandle				*pLocalStorage						=	{0};
 
 	int						handle								=	0;
 	
@@ -2849,9 +3031,9 @@ void* DLLEXPORT SpectrumAnalyzer_SetMarker ( int hInstrumentHandle, int MarkerSe
 	
 	handle = hInstrumentHandle;
 	
-	CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalHandle ));
+	CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalStorage ));
 	
-	switch ( pLocalHandle->tType )
+	switch ( pLocalStorage->tType )
 	{
 		case MODEL_TYPE_N9030A:
 		case MODEL_TYPE_N9020A:
@@ -2881,23 +3063,23 @@ void* DLLEXPORT SpectrumAnalyzer_SetMarker ( int hInstrumentHandle, int MarkerSe
 		default:
 			
 			sprintf( szString , ":CALC:MARK%d:STAT ON\n" , iMarkerNr );
-			CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , szString ));
+			CHK_VSA ( viPrintf( pLocalStorage->sessionHandle , szString ));
 			
-			WaitForOperationCompletion( pLocalHandle->sessionHandle , pLocalHandle->lfTimeout  ,  pLocalHandle->lfOpcLowLevelTimeout ); 
+			WaitForOperationCompletion( pLocalStorage->sessionHandle , pLocalStorage->lfTimeout  ,  pLocalStorage->lfOpcLowLevelTimeout ); 
 			
 			if ( MarkerSetType > 0 )
 				sprintf( szString , ":CALC:MARK%d:MODE DELT\n" , iMarkerNr );
 			else
 				sprintf( szString , ":CALC:MARK%d:MODE POS\n" , iMarkerNr );
 			
-			CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , szString )); 
+			CHK_VSA ( viPrintf( pLocalStorage->sessionHandle , szString )); 
 			
-			WaitForOperationCompletion( pLocalHandle->sessionHandle , pLocalHandle->lfTimeout  ,  pLocalHandle->lfOpcLowLevelTimeout ); 
+			WaitForOperationCompletion( pLocalStorage->sessionHandle , pLocalStorage->lfTimeout  ,  pLocalStorage->lfOpcLowLevelTimeout ); 
 			
 			if ( lfMarkerFreq > 0.0 )
 			{
 				sprintf( szString , ":CALC:MARK%d:X %E\n" , lfMarkerFreq );
-				CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , szString ));
+				CHK_VSA ( viPrintf( pLocalStorage->sessionHandle , szString ));
 			}
 	}
 	
@@ -2916,7 +3098,7 @@ void* DLLEXPORT SpectrumAnalyzer_SearchMarkerPeak( int hInstrumentHandle , int i
 
 	char					szString[128]						=	{0};
 
-	tsHandle				*pLocalHandle						=	{0};
+	tsHandle				*pLocalStorage						=	{0};
 
 	int						handle								=	0;
 	
@@ -2924,9 +3106,9 @@ void* DLLEXPORT SpectrumAnalyzer_SearchMarkerPeak( int hInstrumentHandle , int i
 	
 	handle = hInstrumentHandle;
 	
-	CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalHandle ));
+	CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalStorage ));
 	
-	switch ( pLocalHandle->tType )
+	switch ( pLocalStorage->tType )
 	{
 		case MODEL_TYPE_N9030A:
 		case MODEL_TYPE_N9020A:
@@ -2956,12 +3138,12 @@ void* DLLEXPORT SpectrumAnalyzer_SearchMarkerPeak( int hInstrumentHandle , int i
 		default:
 			
 			sprintf( szString , ":CALC:MARK%d:STAT ON\n" , iMarkerNr );
-			CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , szString ));
+			CHK_VSA ( viPrintf( pLocalStorage->sessionHandle , szString ));
 			
-			WaitForOperationCompletion( pLocalHandle->sessionHandle , pLocalHandle->lfTimeout  ,  pLocalHandle->lfOpcLowLevelTimeout ); 
+			WaitForOperationCompletion( pLocalStorage->sessionHandle , pLocalStorage->lfTimeout  ,  pLocalStorage->lfOpcLowLevelTimeout ); 
 			
 			sprintf( szString , ":CALC:MARK%d:MAX\n" , iMarkerNr );
-			CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , szString ));
+			CHK_VSA ( viPrintf( pLocalStorage->sessionHandle , szString ));
 	}
 	
 Error: 
@@ -2978,7 +3160,7 @@ void* DLLEXPORT SpectrumAnalyzer_SearchMarkerNextPeak( int hInstrumentHandle , i
 
 	char					szString[128]						=	{0};
 
-	tsHandle				*pLocalHandle						=	{0};
+	tsHandle				*pLocalStorage						=	{0};
 
 	int						handle								=	0;
 	
@@ -2986,9 +3168,9 @@ void* DLLEXPORT SpectrumAnalyzer_SearchMarkerNextPeak( int hInstrumentHandle , i
 	
 	handle = hInstrumentHandle;
 	
-	CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalHandle ));
+	CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalStorage ));
 	
-	switch ( pLocalHandle->tType )
+	switch ( pLocalStorage->tType )
 	{
 		case MODEL_TYPE_N9030A:
 		case MODEL_TYPE_N9020A:
@@ -3018,12 +3200,12 @@ void* DLLEXPORT SpectrumAnalyzer_SearchMarkerNextPeak( int hInstrumentHandle , i
 		default:
 			
 			sprintf( szString , ":CALC:MARK%d:STAT ON\n" , iMarkerNr );
-			CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , szString ));
+			CHK_VSA ( viPrintf( pLocalStorage->sessionHandle , szString ));
 			
-			WaitForOperationCompletion( pLocalHandle->sessionHandle , pLocalHandle->lfTimeout  ,  pLocalHandle->lfOpcLowLevelTimeout ); 
+			WaitForOperationCompletion( pLocalStorage->sessionHandle , pLocalStorage->lfTimeout  ,  pLocalStorage->lfOpcLowLevelTimeout ); 
 			
 			sprintf( szString , ":CALC:MARK%d:MAX:NEXT\n" , iMarkerNr );
-			CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , szString ));
+			CHK_VSA ( viPrintf( pLocalStorage->sessionHandle , szString ));
 	}
 	
 Error: 
@@ -3042,7 +3224,7 @@ void* DLLEXPORT SpectrumAnalyzer_GetMarkerFrequency( int hInstrumentHandle , int
 
 	int						iActualSize							=	0;
 	
-	tsHandle				*pLocalHandle						=	{0};
+	tsHandle				*pLocalStorage						=	{0};
 
 	int						handle								=	0;
 	
@@ -3050,9 +3232,9 @@ void* DLLEXPORT SpectrumAnalyzer_GetMarkerFrequency( int hInstrumentHandle , int
 	
 	handle = hInstrumentHandle;
 	
-	CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalHandle ));
+	CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalStorage ));
 	
-	switch ( pLocalHandle->tType )
+	switch ( pLocalStorage->tType )
 	{
 		case MODEL_TYPE_N9030A:
 		case MODEL_TYPE_N9020A:
@@ -3082,15 +3264,15 @@ void* DLLEXPORT SpectrumAnalyzer_GetMarkerFrequency( int hInstrumentHandle , int
 		default:
 			
 			sprintf( szString , ":CALC:MARK%d:STAT ON\n" , iMarkerNr );
-			CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , szString ));
+			CHK_VSA ( viPrintf( pLocalStorage->sessionHandle , szString ));
 
-			WaitForOperationCompletion( pLocalHandle->sessionHandle , pLocalHandle->lfTimeout  ,  pLocalHandle->lfOpcLowLevelTimeout ); 
+			WaitForOperationCompletion( pLocalStorage->sessionHandle , pLocalStorage->lfTimeout  ,  pLocalStorage->lfOpcLowLevelTimeout ); 
 			
 			sprintf( szString , ":CALC:MARK%d:X?\n" , iMarkerNr );
-			CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , szString ));
+			CHK_VSA ( viPrintf( pLocalStorage->sessionHandle , szString ));
 	
 			SetBreakOnLibraryErrors (0);
-			viRead( pLocalHandle->sessionHandle, szString , 20 , &iActualSize );
+			viRead( pLocalStorage->sessionHandle, szString , 20 , &iActualSize );
 			SetBreakOnLibraryErrors (1);
 				
 			if ( vlfFrequency )
@@ -3113,7 +3295,7 @@ void* DLLEXPORT SpectrumAnalyzer_GetMarkerAmplitude( int hInstrumentHandle , int
 
 	int						iActualSize							=	0;
 	
-	tsHandle				*pLocalHandle						=	{0};
+	tsHandle				*pLocalStorage						=	{0};
 
 	int						handle								=	0;
 	
@@ -3121,9 +3303,9 @@ void* DLLEXPORT SpectrumAnalyzer_GetMarkerAmplitude( int hInstrumentHandle , int
 	
 	handle = hInstrumentHandle;
 	
-	CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalHandle ));
+	CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalStorage ));
 	
-	switch ( pLocalHandle->tType )
+	switch ( pLocalStorage->tType )
 	{
 		case MODEL_TYPE_N9030A:
 		case MODEL_TYPE_N9020A:
@@ -3153,15 +3335,15 @@ void* DLLEXPORT SpectrumAnalyzer_GetMarkerAmplitude( int hInstrumentHandle , int
 		default:
 			
 			sprintf( szString , ":CALC:MARK%d:STAT ON\n" , iMarkerNr );
-			CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , szString ));
+			CHK_VSA ( viPrintf( pLocalStorage->sessionHandle , szString ));
 
-			WaitForOperationCompletion( pLocalHandle->sessionHandle , pLocalHandle->lfTimeout  ,  pLocalHandle->lfOpcLowLevelTimeout ); 
+			WaitForOperationCompletion( pLocalStorage->sessionHandle , pLocalStorage->lfTimeout  ,  pLocalStorage->lfOpcLowLevelTimeout ); 
 			
 			sprintf( szString , ":CALC:MARK%d:Y?\n" , iMarkerNr );
-			CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , szString ));
+			CHK_VSA ( viPrintf( pLocalStorage->sessionHandle , szString ));
 	
 			SetBreakOnLibraryErrors (0);
-			viRead( pLocalHandle->sessionHandle, szString , 20 , &iActualSize );
+			viRead( pLocalStorage->sessionHandle, szString , 20 , &iActualSize );
 			SetBreakOnLibraryErrors (1);
 				
 			if ( vlfAmplitude )
@@ -3185,7 +3367,7 @@ void* DLLEXPORT SpectrumAnalyzer_GetMarkerFrequencyCounter( int hInstrumentHandl
 
 	int						iActualSize							=	0;
 	
-	tsHandle				*pLocalHandle						=	{0};
+	tsHandle				*pLocalStorage						=	{0};
 
 	int						handle								=	0;
 	
@@ -3193,9 +3375,9 @@ void* DLLEXPORT SpectrumAnalyzer_GetMarkerFrequencyCounter( int hInstrumentHandl
 	
 	handle = hInstrumentHandle;
 	
-	CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalHandle ));
+	CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalStorage ));
 	
-	switch ( pLocalHandle->tType )
+	switch ( pLocalStorage->tType )
 	{
 		case MODEL_TYPE_N9030A:
 		case MODEL_TYPE_N9020A:
@@ -3225,19 +3407,19 @@ void* DLLEXPORT SpectrumAnalyzer_GetMarkerFrequencyCounter( int hInstrumentHandl
 		default:
 			
 			sprintf( szString , ":CALC:MARK%d:STAT ON\n" , iMarkerNr );
-			CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , szString ));
+			CHK_VSA ( viPrintf( pLocalStorage->sessionHandle , szString ));
 
-			WaitForOperationCompletion( pLocalHandle->sessionHandle , pLocalHandle->lfTimeout  ,  pLocalHandle->lfOpcLowLevelTimeout ); 
+			WaitForOperationCompletion( pLocalStorage->sessionHandle , pLocalStorage->lfTimeout  ,  pLocalStorage->lfOpcLowLevelTimeout ); 
 			
-			CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , ":INIT:REST\n" ));
+			CHK_VSA ( viPrintf( pLocalStorage->sessionHandle , ":INIT:REST\n" ));
 
-			WaitForOperationCompletion( pLocalHandle->sessionHandle , pLocalHandle->lfTimeout  ,  pLocalHandle->lfOpcLowLevelTimeout ); 
+			WaitForOperationCompletion( pLocalStorage->sessionHandle , pLocalStorage->lfTimeout  ,  pLocalStorage->lfOpcLowLevelTimeout ); 
 			
 			sprintf( szString , ":CALC:MARK%d:FCO:X?\n" , iMarkerNr );
-			CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , szString ));
+			CHK_VSA ( viPrintf( pLocalStorage->sessionHandle , szString ));
 	
 			SetBreakOnLibraryErrors (0);
-			viRead( pLocalHandle->sessionHandle, szString , 20 , &iActualSize );
+			viRead( pLocalStorage->sessionHandle, szString , 20 , &iActualSize );
 			SetBreakOnLibraryErrors (1);
 				
 			if ( vlfFrequency )
@@ -3256,7 +3438,7 @@ void* DLLEXPORT SpectrumAnalyzer_MeasureMarkerFrequencyCounter( int hInstrumentH
 {
 	STD_ERROR               StdError                  			=   {0};        
 
-	tsHandle				*pLocalHandle						=	{0};
+	tsHandle				*pLocalStorage						=	{0};
 
 	int						handle								=	0;
 	
@@ -3274,9 +3456,9 @@ void* DLLEXPORT SpectrumAnalyzer_MeasureMarkerFrequencyCounter( int hInstrumentH
 	
 	handle = hInstrumentHandle;
 	
-	CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalHandle ));
+	CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalStorage ));
 	
-	switch ( pLocalHandle->tType )
+	switch ( pLocalStorage->tType )
 	{
 		case MODEL_TYPE_N9030A:
 		case MODEL_TYPE_N9020A:
@@ -3306,33 +3488,33 @@ void* DLLEXPORT SpectrumAnalyzer_MeasureMarkerFrequencyCounter( int hInstrumentH
 		default:
 			
 			sprintf( szString , ":CALC:MARK%d:STAT ON\n" , iMarkerNr );
-			CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , szString ));
+			CHK_VSA ( viPrintf( pLocalStorage->sessionHandle , szString ));
 
-			WaitForOperationCompletion( pLocalHandle->sessionHandle , pLocalHandle->lfTimeout  ,  pLocalHandle->lfOpcLowLevelTimeout ); 
+			WaitForOperationCompletion( pLocalStorage->sessionHandle , pLocalStorage->lfTimeout  ,  pLocalStorage->lfOpcLowLevelTimeout ); 
 			
 			sprintf( szString , ":CALC:MARK%d:FCO OFF\n" , iMarkerNr ); 
-			CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , szString ));
+			CHK_VSA ( viPrintf( pLocalStorage->sessionHandle , szString ));
 	
-			WaitForOperationCompletion( pLocalHandle->sessionHandle , pLocalHandle->lfTimeout  ,  pLocalHandle->lfOpcLowLevelTimeout ); 
+			WaitForOperationCompletion( pLocalStorage->sessionHandle , pLocalStorage->lfTimeout  ,  pLocalStorage->lfOpcLowLevelTimeout ); 
 			
 			sprintf( szString , ":CALC:MARK%d:FCO ON\n" , iMarkerNr ); 
-			CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , szString ));
+			CHK_VSA ( viPrintf( pLocalStorage->sessionHandle , szString ));
 	
-			WaitForOperationCompletion( pLocalHandle->sessionHandle , pLocalHandle->lfTimeout  ,  pLocalHandle->lfOpcLowLevelTimeout );
+			WaitForOperationCompletion( pLocalStorage->sessionHandle , pLocalStorage->lfTimeout  ,  pLocalStorage->lfOpcLowLevelTimeout );
 			
-			CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , ":INIT:REST\n" )); 
+			CHK_VSA ( viPrintf( pLocalStorage->sessionHandle , ":INIT:REST\n" )); 
 			
-			WaitForOperationCompletion( pLocalHandle->sessionHandle , pLocalHandle->lfTimeout  ,  pLocalHandle->lfOpcLowLevelTimeout ); 
+			WaitForOperationCompletion( pLocalStorage->sessionHandle , pLocalStorage->lfTimeout  ,  pLocalStorage->lfOpcLowLevelTimeout ); 
 			
 			GetCurrentDateTime( &lfStartTime );
 	
 			do
 			{
 				sprintf( szString , ":CALC:MARK%d:FCO:X?\n" , iMarkerNr );
-				CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , szString ));
+				CHK_VSA ( viPrintf( pLocalStorage->sessionHandle , szString ));
 	
 				SetBreakOnLibraryErrors (0);
-				viRead( pLocalHandle->sessionHandle, szReadBuffer , 128 , &iNumberOfBytesReaded );
+				viRead( pLocalStorage->sessionHandle, szReadBuffer , 128 , &iNumberOfBytesReaded );
 				SetBreakOnLibraryErrors (1);
 			
 				lfFrequency = atof( szReadBuffer ); 
@@ -3365,7 +3547,7 @@ void* DLLEXPORT SpectrumAnalyzer_GetMarkerDeltaFrequency( int hInstrumentHandle 
 
 	int						iActualSize							=	0;
 	
-	tsHandle				*pLocalHandle						=	{0};
+	tsHandle				*pLocalStorage						=	{0};
 
 	int						handle								=	0;
 	
@@ -3373,9 +3555,9 @@ void* DLLEXPORT SpectrumAnalyzer_GetMarkerDeltaFrequency( int hInstrumentHandle 
 	
 	handle = hInstrumentHandle;
 	
-	CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalHandle ));
+	CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalStorage ));
 	
-	switch ( pLocalHandle->tType )
+	switch ( pLocalStorage->tType )
 	{
 		case MODEL_TYPE_N9030A:
 		case MODEL_TYPE_N9020A:
@@ -3405,10 +3587,10 @@ void* DLLEXPORT SpectrumAnalyzer_GetMarkerDeltaFrequency( int hInstrumentHandle 
 		default:
 			
 			sprintf( szString , ":CALC:MARK:X?\n" );
-			CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , szString ));
+			CHK_VSA ( viPrintf( pLocalStorage->sessionHandle , szString ));
 	
 			SetBreakOnLibraryErrors (0);
-			viRead( pLocalHandle->sessionHandle, szString , 20 , &iActualSize );
+			viRead( pLocalStorage->sessionHandle, szString , 20 , &iActualSize );
 			SetBreakOnLibraryErrors (1);
 				
 			if ( vlfFrequency )
@@ -3431,7 +3613,7 @@ void* DLLEXPORT SpectrumAnalyzer_GetMarkerDeltaAmplitude( int hInstrumentHandle 
 
 	int						iActualSize							=	0;
 	
-	tsHandle				*pLocalHandle						=	{0};
+	tsHandle				*pLocalStorage						=	{0};
 
 	int						handle								=	0;
 	
@@ -3439,9 +3621,9 @@ void* DLLEXPORT SpectrumAnalyzer_GetMarkerDeltaAmplitude( int hInstrumentHandle 
 	
 	handle = hInstrumentHandle;
 	
-	CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalHandle ));
+	CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalStorage ));
 	
-	switch ( pLocalHandle->tType )
+	switch ( pLocalStorage->tType )
 	{
 		case MODEL_TYPE_N9030A:
 		case MODEL_TYPE_N9020A:
@@ -3471,10 +3653,10 @@ void* DLLEXPORT SpectrumAnalyzer_GetMarkerDeltaAmplitude( int hInstrumentHandle 
 		default:
 			
 			sprintf( szString , ":CALC:MARK:Y?\n" );
-			CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , szString ));
+			CHK_VSA ( viPrintf( pLocalStorage->sessionHandle , szString ));
 	
 			SetBreakOnLibraryErrors (0);
-			viRead( pLocalHandle->sessionHandle, szString , 20 , &iActualSize );
+			viRead( pLocalStorage->sessionHandle, szString , 20 , &iActualSize );
 			SetBreakOnLibraryErrors (1);
 				
 			if ( vlfAmplitude )
@@ -3496,7 +3678,7 @@ void* DLLEXPORT SpectrumAnalyzer_SetCenterFrequencyFromMarker( int hInstrumentHa
 
 	char					szString[128]						=	{0};
 
-	tsHandle				*pLocalHandle						=	{0};
+	tsHandle				*pLocalStorage						=	{0};
 
 	int						handle								=	0;
 	
@@ -3504,9 +3686,9 @@ void* DLLEXPORT SpectrumAnalyzer_SetCenterFrequencyFromMarker( int hInstrumentHa
 	
 	handle = hInstrumentHandle;
 	
-	CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalHandle ));
+	CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalStorage ));
 	
-	switch ( pLocalHandle->tType )
+	switch ( pLocalStorage->tType )
 	{
 		case MODEL_TYPE_N9030A:
 		case MODEL_TYPE_N9020A:
@@ -3536,12 +3718,12 @@ void* DLLEXPORT SpectrumAnalyzer_SetCenterFrequencyFromMarker( int hInstrumentHa
 		default:
 			
 			sprintf( szString , ":CALC:MARK%d:STAT ON\n" , iMarkerNr );
-			CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , szString ));
+			CHK_VSA ( viPrintf( pLocalStorage->sessionHandle , szString ));
 			
-			WaitForOperationCompletion( pLocalHandle->sessionHandle , pLocalHandle->lfTimeout  ,  pLocalHandle->lfOpcLowLevelTimeout ); 
+			WaitForOperationCompletion( pLocalStorage->sessionHandle , pLocalStorage->lfTimeout  ,  pLocalStorage->lfOpcLowLevelTimeout ); 
 			
 			sprintf( szString , ":CALC:MARK%d:SET:CENT\n" , iMarkerNr );
-			CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , szString ));
+			CHK_VSA ( viPrintf( pLocalStorage->sessionHandle , szString ));
 	}
 	
 Error: 
@@ -3558,7 +3740,7 @@ void* DLLEXPORT SpectrumAnalyzer_SetReferenceLevelFrequencyFromMarker( int hInst
 
 	char					szString[128]						=	{0};
 
-	tsHandle				*pLocalHandle						=	{0};
+	tsHandle				*pLocalStorage						=	{0};
 
 	int						handle								=	0;
 	
@@ -3566,9 +3748,9 @@ void* DLLEXPORT SpectrumAnalyzer_SetReferenceLevelFrequencyFromMarker( int hInst
 	
 	handle = hInstrumentHandle;
 	
-	CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalHandle ));
+	CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalStorage ));
 	
-	switch ( pLocalHandle->tType )
+	switch ( pLocalStorage->tType )
 	{
 		case MODEL_TYPE_N9030A:
 		case MODEL_TYPE_N9020A:
@@ -3598,12 +3780,12 @@ void* DLLEXPORT SpectrumAnalyzer_SetReferenceLevelFrequencyFromMarker( int hInst
 		default:
 			
 			sprintf( szString , ":CALC:MARK%d:STAT ON\n" , iMarkerNr );
-			CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , szString ));
+			CHK_VSA ( viPrintf( pLocalStorage->sessionHandle , szString ));
 			
-			WaitForOperationCompletion( pLocalHandle->sessionHandle , pLocalHandle->lfTimeout  ,  pLocalHandle->lfOpcLowLevelTimeout ); 
+			WaitForOperationCompletion( pLocalStorage->sessionHandle , pLocalStorage->lfTimeout  ,  pLocalStorage->lfOpcLowLevelTimeout ); 
 			
 			sprintf( szString , ":CALC:MARK%d:SET:RLEV\n" , iMarkerNr );
-			CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , szString ));
+			CHK_VSA ( viPrintf( pLocalStorage->sessionHandle , szString ));
 	}
 	
 Error: 
@@ -3618,7 +3800,7 @@ void* DLLEXPORT SpectrumAnalyzer_WaitForIntrumentDone( int hInstrumentHandle , d
 {
 	STD_ERROR               StdError                  			=   {0};        
 
-	tsHandle				*pLocalHandle						=	{0};
+	tsHandle				*pLocalStorage						=	{0};
 
 	int						handle								=	0;
 	
@@ -3626,9 +3808,9 @@ void* DLLEXPORT SpectrumAnalyzer_WaitForIntrumentDone( int hInstrumentHandle , d
 	
 	handle = hInstrumentHandle;
 	
-	CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalHandle ));
+	CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalStorage ));
 	
-	switch ( pLocalHandle->tType )
+	switch ( pLocalStorage->tType )
 	{
 		case MODEL_TYPE_N9030A:
 		case MODEL_TYPE_N9020A:
@@ -3657,7 +3839,7 @@ void* DLLEXPORT SpectrumAnalyzer_WaitForIntrumentDone( int hInstrumentHandle , d
 		case MODEL_TYPE_E7401A:
 		default:
 			
-			WaitForOperationCompletion( pLocalHandle->sessionHandle , pLocalHandle->lfTimeout ,  lfTimeOut );  
+			WaitForOperationCompletion( pLocalStorage->sessionHandle , pLocalStorage->lfTimeout ,  lfTimeOut );  
 			
 			break;
 	}
@@ -3676,7 +3858,7 @@ void* DLLEXPORT SpectrumAnalyzer_SetSweepMode( int hInstrumentHandle , int bCont
 
 	char					szString[128]						=	{0};
 
-	tsHandle				*pLocalHandle						=	{0};
+	tsHandle				*pLocalStorage						=	{0};
 
 	int						handle								=	0;
 	
@@ -3684,9 +3866,9 @@ void* DLLEXPORT SpectrumAnalyzer_SetSweepMode( int hInstrumentHandle , int bCont
 	
 	handle = hInstrumentHandle;
 	
-	CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalHandle ));
+	CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalStorage ));
 	
-	switch ( pLocalHandle->tType )
+	switch ( pLocalStorage->tType )
 	{
 		case MODEL_TYPE_N9030A:
 		case MODEL_TYPE_N9020A:
@@ -3720,7 +3902,7 @@ void* DLLEXPORT SpectrumAnalyzer_SetSweepMode( int hInstrumentHandle , int bCont
 			else
 				sprintf( szString , ":INIT:CONT OFF\n" );
 	
-			CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , szString ));
+			CHK_VSA ( viPrintf( pLocalStorage->sessionHandle , szString ));
 	}
 	
 Error: 
@@ -3736,7 +3918,7 @@ void* DLLEXPORT SpectrumAnalyzer_GetSweep( int hInstrumentHandle , double lfTime
 {
 	STD_ERROR               StdError                  			=   {0};        
 
-	tsHandle				*pLocalHandle						=	{0};
+	tsHandle				*pLocalStorage						=	{0};
 
 	int						handle								=	0;
 	
@@ -3750,9 +3932,9 @@ void* DLLEXPORT SpectrumAnalyzer_GetSweep( int hInstrumentHandle , double lfTime
 	
 	handle = hInstrumentHandle;
 	
-	CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalHandle ));
+	CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalStorage ));
 	
-	switch ( pLocalHandle->tType )
+	switch ( pLocalStorage->tType )
 	{
 		case MODEL_TYPE_N9030A:
 		case MODEL_TYPE_N9020A:
@@ -3781,11 +3963,11 @@ void* DLLEXPORT SpectrumAnalyzer_GetSweep( int hInstrumentHandle , double lfTime
 		case MODEL_TYPE_E7401A:
 		default:
 			
-			CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , "SENS:SWE:TIME?\n" ));
-			DelayWithEventProcessing( pLocalHandle->lfDelay );
+			CHK_VSA ( viPrintf( pLocalStorage->sessionHandle , "SENS:SWE:TIME?\n" ));
+			DelayWithEventProcessing( pLocalStorage->lfDelay );
 			
 			SetBreakOnLibraryErrors (0); 
-			viRead( pLocalHandle->sessionHandle, szReadFeedback , LOW_STRING , &count );
+			viRead( pLocalStorage->sessionHandle, szReadFeedback , LOW_STRING , &count );
 			SetBreakOnLibraryErrors (1); 
 	
 			lfSweepTime = atof(szReadFeedback);
@@ -3795,7 +3977,7 @@ void* DLLEXPORT SpectrumAnalyzer_GetSweep( int hInstrumentHandle , double lfTime
 			
 			DelayWithEventProcessing(lfSweepTime);
 			
-			WaitForOperationCompletion( pLocalHandle->sessionHandle , pLocalHandle->lfTimeout  ,  pLocalHandle->lfOpcLowLevelTimeout );
+			WaitForOperationCompletion( pLocalStorage->sessionHandle , pLocalStorage->lfTimeout  ,  pLocalStorage->lfOpcLowLevelTimeout );
 			
 			break;
 	}
@@ -3812,7 +3994,7 @@ void* DLLEXPORT SpectrumAnalyzer_InitiateMeasure( int hInstrumentHandle )
 {
 	STD_ERROR               StdError                  			=   {0};        
 
-	tsHandle				*pLocalHandle						=	{0};
+	tsHandle				*pLocalStorage						=	{0};
 
 	int						handle								=	0;
 	
@@ -3820,9 +4002,9 @@ void* DLLEXPORT SpectrumAnalyzer_InitiateMeasure( int hInstrumentHandle )
 	
 	handle = hInstrumentHandle;
 	
-	CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalHandle ));
+	CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalStorage ));
 	
-	switch ( pLocalHandle->tType )
+	switch ( pLocalStorage->tType )
 	{
 		case MODEL_TYPE_N9030A:
 		case MODEL_TYPE_N9020A:
@@ -3851,7 +4033,7 @@ void* DLLEXPORT SpectrumAnalyzer_InitiateMeasure( int hInstrumentHandle )
 		case MODEL_TYPE_E7401A:
 		default:
 			
-			CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , ":INIT:IMM\n" ));
+			CHK_VSA ( viPrintf( pLocalStorage->sessionHandle , ":INIT:IMM\n" ));
 	}
 	
 Error: 
@@ -3868,7 +4050,7 @@ void* DLLEXPORT SpectrumAnalyzer_SetAverage( int hInstrumentHandle , int iAverag
 
 	char					szString[512]						=	{0};
 	
-	tsHandle				*pLocalHandle						=	{0};
+	tsHandle				*pLocalStorage						=	{0};
 
 	int						handle								=	0;
 	
@@ -3876,9 +4058,9 @@ void* DLLEXPORT SpectrumAnalyzer_SetAverage( int hInstrumentHandle , int iAverag
 	
 	handle = hInstrumentHandle;
 	
-	CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalHandle ));
+	CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalStorage ));
 	
-	switch ( pLocalHandle->tType )
+	switch ( pLocalStorage->tType )
 	{
 		case MODEL_TYPE_N9030A:
 		case MODEL_TYPE_N9020A:
@@ -3911,7 +4093,7 @@ void* DLLEXPORT SpectrumAnalyzer_SetAverage( int hInstrumentHandle , int iAverag
 			{
 				sprintf( szString , ":SENS:AVER:TYPE:AUTO ON\n" );
 
-				CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , szString ));  
+				CHK_VSA ( viPrintf( pLocalStorage->sessionHandle , szString ));  
 				
 				sprintf( szString , ":SENS:AVER:COUN %d\n" , iAverage ); 
 			}
@@ -3920,7 +4102,7 @@ void* DLLEXPORT SpectrumAnalyzer_SetAverage( int hInstrumentHandle , int iAverag
 				sprintf( szString , ":SENS:AVER:TYPE:AUTO OFF\n" );
 			}
 	
-			CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , szString ));
+			CHK_VSA ( viPrintf( pLocalStorage->sessionHandle , szString ));
 	}
 	
 Error: 
@@ -3940,7 +4122,7 @@ void* DLLEXPORT SpectrumAnalyzer_SendFile( int hInstrumentHandle ,char *szLocalF
 							szDirectoryPath[512]				=	{0},
 							szFileSize[32]						=	{0};
 	
-	tsHandle				*pLocalHandle						=	{0};
+	tsHandle				*pLocalStorage						=	{0};
 
 	int						handle								=	0;
 	
@@ -3974,9 +4156,9 @@ void* DLLEXPORT SpectrumAnalyzer_SendFile( int hInstrumentHandle ,char *szLocalF
 	
 	handle = hInstrumentHandle;
 	
-	CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalHandle ));
+	CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalStorage ));
 	
-	switch ( pLocalHandle->tType )
+	switch ( pLocalStorage->tType )
 	{
 		case MODEL_TYPE_N9030A:
 		case MODEL_TYPE_N9020A:
@@ -4005,7 +4187,7 @@ void* DLLEXPORT SpectrumAnalyzer_SendFile( int hInstrumentHandle ,char *szLocalF
 		case MODEL_TYPE_E7401A:
 		default:		
 
-			viPrintf( pLocalHandle->sessionHandle , "*CLS\n" );
+			viPrintf( pLocalStorage->sessionHandle , "*CLS\n" );
 			
 			strcpy( szDirectoryPath , szStateFileName );
 			
@@ -4018,18 +4200,18 @@ void* DLLEXPORT SpectrumAnalyzer_SendFile( int hInstrumentHandle ,char *szLocalF
 			
 			if ( strstr( szDirectoryPath , ":\\" ))
 			{
-				RecursiveMakeDirectory( pLocalHandle->sessionHandle , szDirectoryPath );
+				RecursiveMakeDirectory( pLocalStorage->sessionHandle , szDirectoryPath );
 			}
 			
-			viPrintf( pLocalHandle->sessionHandle , "*CLS\n" );
+			viPrintf( pLocalStorage->sessionHandle , "*CLS\n" );
 			
 			sprintf( szLoadSpectrumState , ":MMEM:DATA \"%s\",#%d%s" , szStateFileName , strlen(szFileSize) , szFileSize );   
 	
-			CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , szLoadSpectrumState ));
+			CHK_VSA ( viPrintf( pLocalStorage->sessionHandle , szLoadSpectrumState ));
 			
-			CHK_VSA ( viBufWrite( pLocalHandle->sessionHandle , pFileBuffer , iFileSize ,&iWriteCount ));
+			CHK_VSA ( viBufWrite( pLocalStorage->sessionHandle , pFileBuffer , iFileSize ,&iWriteCount ));
 			
-			CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , "\n" )); 
+			CHK_VSA ( viPrintf( pLocalStorage->sessionHandle , "\n" )); 
 	}
 	
 Error: 
@@ -4057,7 +4239,7 @@ void* DLLEXPORT SpectrumAnalyzer_ReceiveFile( int hInstrumentHandle ,char *szLoc
 	char					szLoadSpectrumState[512]			=	{0},
 							szReadFeedback[LOW_STRING]			=	{0};
 	
-	tsHandle				*pLocalHandle						=	{0};
+	tsHandle				*pLocalStorage						=	{0};
 
 	int						handle								=	0;
 	
@@ -4081,9 +4263,9 @@ void* DLLEXPORT SpectrumAnalyzer_ReceiveFile( int hInstrumentHandle ,char *szLoc
 	
 	handle = hInstrumentHandle;
 	
-	CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalHandle ));
+	CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalStorage ));
 	
-	switch ( pLocalHandle->tType )
+	switch ( pLocalStorage->tType )
 	{
 		case MODEL_TYPE_N9030A:
 		case MODEL_TYPE_N9020A:
@@ -4112,16 +4294,16 @@ void* DLLEXPORT SpectrumAnalyzer_ReceiveFile( int hInstrumentHandle ,char *szLoc
 		case MODEL_TYPE_E7401A:
 		default:		
 
-			viPrintf( pLocalHandle->sessionHandle , "*CLS\n" );
+			viPrintf( pLocalStorage->sessionHandle , "*CLS\n" );
 			
 			sprintf( szLoadSpectrumState , ":MMEM:DATA? \"%s\"\n" , szStateFileName );   
 	
-			CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , szLoadSpectrumState ));
+			CHK_VSA ( viPrintf( pLocalStorage->sessionHandle , szLoadSpectrumState ));
 			
 			do 
 			{
 				SetBreakOnLibraryErrors (0); 
-				viRead ( pLocalHandle->sessionHandle ,(ViPBuf)szReadFeedback , 1 , &uiCount );
+				viRead ( pLocalStorage->sessionHandle ,(ViPBuf)szReadFeedback , 1 , &uiCount );
 				SetBreakOnLibraryErrors (1); 
 
 				if ( szReadFeedback[0] == '#' )
@@ -4134,7 +4316,7 @@ void* DLLEXPORT SpectrumAnalyzer_ReceiveFile( int hInstrumentHandle ,char *szLoc
 			memset( szReadFeedback , 0 , LOW_STRING );
 
 			SetBreakOnLibraryErrors (0); 
-			viRead ( pLocalHandle->sessionHandle ,(ViPBuf)szReadFeedback , 1 , &uiCount );
+			viRead ( pLocalStorage->sessionHandle ,(ViPBuf)szReadFeedback , 1 , &uiCount );
 			SetBreakOnLibraryErrors (1); 
 
 			IF (( uiCount == 0 ) , "Wrong trace reading format" );  
@@ -4144,7 +4326,7 @@ void* DLLEXPORT SpectrumAnalyzer_ReceiveFile( int hInstrumentHandle ,char *szLoc
 			memset( szReadFeedback , 0 , LOW_STRING );
 
 			SetBreakOnLibraryErrors (0); 
-			viRead ( pLocalHandle->sessionHandle ,(ViPBuf)szReadFeedback , uiCount , &uiCount );  
+			viRead ( pLocalStorage->sessionHandle ,(ViPBuf)szReadFeedback , uiCount , &uiCount );  
 			SetBreakOnLibraryErrors (1); 
 
 			uiNumberOfBinaryData = atoi(szReadFeedback); 
@@ -4153,7 +4335,7 @@ void* DLLEXPORT SpectrumAnalyzer_ReceiveFile( int hInstrumentHandle ,char *szLoc
 	
 			CALLOC_ERR( pReadBuffer , uiNumberOfBinaryData , sizeof(char)); 
 	
-			viRead ( pLocalHandle->sessionHandle ,(ViPBuf)pReadBuffer , uiNumberOfBinaryData , &uiCount ); 
+			viRead ( pLocalStorage->sessionHandle ,(ViPBuf)pReadBuffer , uiNumberOfBinaryData , &uiCount ); 
 	
 			SetBreakOnLibraryErrors (1);
 
@@ -4164,7 +4346,7 @@ void* DLLEXPORT SpectrumAnalyzer_ReceiveFile( int hInstrumentHandle ,char *szLoc
 			IF (( iWriteSize != uiNumberOfBinaryData ) , "Write File error" ); 
 	
 			SetBreakOnLibraryErrors (0);
-			viRead ( pLocalHandle->sessionHandle ,(ViPBuf)szReadFeedback , 1 , &uiCount );  
+			viRead ( pLocalStorage->sessionHandle ,(ViPBuf)szReadFeedback , 1 , &uiCount );  
 			SetBreakOnLibraryErrors (1);
 	}
 	
@@ -4198,7 +4380,7 @@ void* DLLEXPORT SpectrumAnalyzer_GetFileCatalog ( int hInstrumentHandle , char *
 							szCurrentBuffer[512]				=	{0},
 							szLoadPath[512]						=	{0};  
 																	
-	tsHandle				*pLocalHandle						=	{0};
+	tsHandle				*pLocalStorage						=	{0};
 
 	int						handle								=	0;
 	
@@ -4222,9 +4404,9 @@ void* DLLEXPORT SpectrumAnalyzer_GetFileCatalog ( int hInstrumentHandle , char *
 	
 	handle = hInstrumentHandle;
 	
-	CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalHandle ));
+	CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalStorage ));
 	
-	switch ( pLocalHandle->tType )
+	switch ( pLocalStorage->tType )
 	{
 		case MODEL_TYPE_N9030A:
 		case MODEL_TYPE_N9020A:
@@ -4253,7 +4435,7 @@ void* DLLEXPORT SpectrumAnalyzer_GetFileCatalog ( int hInstrumentHandle , char *
 		case MODEL_TYPE_E7401A:
 		default:		
 
-			viPrintf( pLocalHandle->sessionHandle , "*CLS\n" );
+			viPrintf( pLocalStorage->sessionHandle , "*CLS\n" );
 
 			if ( szPath )
 			{
@@ -4264,16 +4446,16 @@ void* DLLEXPORT SpectrumAnalyzer_GetFileCatalog ( int hInstrumentHandle , char *
 				if ( szLoadPath[iLength-1] != '\\' )
 					strcat( szLoadPath , "\\" );
 				
-				sprintf( szLoadSpectrumCatalog , ":MMEM:CAT? \"%s\"\n" , szLoadPath );   
+				sprintf( szLoadSpectrumCatalog , ":MMEM:CAT? \"%s\"\n" , szLoadPath );   							
 			}
 			else
 				sprintf( szLoadSpectrumCatalog , ":MMEM:CAT? \"C:\\\"\n" );   
 			
-			CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , szLoadSpectrumCatalog ));
+			CHK_VSA ( viPrintf( pLocalStorage->sessionHandle , szLoadSpectrumCatalog ));
 			
-			viGetAttribute ( pLocalHandle->sessionHandle , VI_ATTR_TMO_VALUE , &iTimeout );    
+			viGetAttribute ( pLocalStorage->sessionHandle , VI_ATTR_TMO_VALUE , &iTimeout );    
 	
-			viSetAttribute ( pLocalHandle->sessionHandle , VI_ATTR_TMO_VALUE , 2000 );  
+			viSetAttribute ( pLocalStorage->sessionHandle , VI_ATTR_TMO_VALUE , 2000 );  
 
 			do
 			{
@@ -4282,7 +4464,7 @@ void* DLLEXPORT SpectrumAnalyzer_GetFileCatalog ( int hInstrumentHandle , char *
 				memset( szReadFeedback , 0 , LOW_STRING );
 
 				SetBreakOnLibraryErrors (0); 
-				viRead ( pLocalHandle->sessionHandle ,(ViPBuf)szReadFeedback , (LOW_STRING-1) , &uiCount );  
+				viRead ( pLocalStorage->sessionHandle ,(ViPBuf)szReadFeedback , (LOW_STRING-1) , &uiCount );  
 				SetBreakOnLibraryErrors (1); 
 	
 				if (( uiCount == 0 ) && ( uiPreviousCount == uiCurrentCount ))
@@ -4357,8 +4539,8 @@ Error:
 	
 	if ( handle )
 	{
-		if ( pLocalHandle->sessionHandle )
-			viSetAttribute ( pLocalHandle->sessionHandle , VI_ATTR_TMO_VALUE , iTimeout );  
+		if ( pLocalStorage->sessionHandle )
+			viSetAttribute ( pLocalStorage->sessionHandle , VI_ATTR_TMO_VALUE , iTimeout );  
 		
 		CmtReleaseTSVPtr ( handle );  
 	}
@@ -4383,7 +4565,7 @@ void* DLLEXPORT SpectrumAnalyzer_DeleteFile( int hInstrumentHandle , char *szSta
 	char					szDeleteSpectrumState[512]			=	{0},
 							szMessage[LOW_STRING]				=	{0};
 	
-	tsHandle				*pLocalHandle						=	{0};
+	tsHandle				*pLocalStorage						=	{0};
 
 	int						handle								=	0;
 
@@ -4393,9 +4575,9 @@ void* DLLEXPORT SpectrumAnalyzer_DeleteFile( int hInstrumentHandle , char *szSta
 	
 	handle = hInstrumentHandle;
 	
-	CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalHandle ));
+	CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalStorage ));
 	
-	switch ( pLocalHandle->tType )
+	switch ( pLocalStorage->tType )
 	{
 		case MODEL_TYPE_N9030A:
 		case MODEL_TYPE_N9020A:
@@ -4424,7 +4606,7 @@ void* DLLEXPORT SpectrumAnalyzer_DeleteFile( int hInstrumentHandle , char *szSta
 		case MODEL_TYPE_E7401A:
 		default:		
 
-			viPrintf( pLocalHandle->sessionHandle , "*CLS\n" );
+			viPrintf( pLocalStorage->sessionHandle , "*CLS\n" );
 
 			sprintf( szDeleteSpectrumState , ":MMEM:DEL \"%s\"\n" , szStateFileName );   
 			
@@ -4432,7 +4614,7 @@ void* DLLEXPORT SpectrumAnalyzer_DeleteFile( int hInstrumentHandle , char *szSta
 	
 			if ( ConfirmPopup ("Deleting Equipment State File", szMessage) )
 			{
-				CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , szDeleteSpectrumState ));
+				CHK_VSA ( viPrintf( pLocalStorage->sessionHandle , szDeleteSpectrumState ));
 			}
 		
 	}
@@ -4457,7 +4639,7 @@ void* DLLEXPORT SpectrumAnalyzer_DeleteFileCatalog( int hInstrumentHandle , char
 	char					szDeleteSpectrumCatalog[512]		=	{0},
 							szMessage[LOW_STRING]				=	{0};
 	
-	tsHandle				*pLocalHandle						=	{0};
+	tsHandle				*pLocalStorage						=	{0};
 
 	int						handle								=	0;
 
@@ -4467,9 +4649,9 @@ void* DLLEXPORT SpectrumAnalyzer_DeleteFileCatalog( int hInstrumentHandle , char
 	
 	handle = hInstrumentHandle;
 	
-	CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalHandle ));
+	CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalStorage ));
 	
-	switch ( pLocalHandle->tType )
+	switch ( pLocalStorage->tType )
 	{
 		case MODEL_TYPE_N9030A:
 		case MODEL_TYPE_N9020A:
@@ -4498,7 +4680,7 @@ void* DLLEXPORT SpectrumAnalyzer_DeleteFileCatalog( int hInstrumentHandle , char
 		case MODEL_TYPE_E7401A:
 		default:		
 
-			viPrintf( pLocalHandle->sessionHandle , "*CLS\n" );
+			viPrintf( pLocalStorage->sessionHandle , "*CLS\n" );
 
 			sprintf( szDeleteSpectrumCatalog , ":MMEM:RDIR \"%s\"\n" , szCatalogName );   
 			
@@ -4506,7 +4688,7 @@ void* DLLEXPORT SpectrumAnalyzer_DeleteFileCatalog( int hInstrumentHandle , char
 	
 			if ( ConfirmPopup ("Deleting Equipment State File", szMessage) )
 			{
-				CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , szDeleteSpectrumCatalog ));
+				CHK_VSA ( viPrintf( pLocalStorage->sessionHandle , szDeleteSpectrumCatalog ));
 			}
 		
 	}
@@ -4531,7 +4713,7 @@ void* DLLEXPORT SpectrumAnalyzer_RecallState( int hInstrumentHandle ,char *szFil
 	char							szLoadSpectrumState[512]						=	{0},
 									szReadBuffer[LOW_STRING]						=	{0};
 	
-	tsHandle						*pLocalHandle									=	{0};
+	tsHandle						*pLocalStorage									=	{0};
 
 	int								handle											=	0;
 	
@@ -4551,12 +4733,12 @@ void* DLLEXPORT SpectrumAnalyzer_RecallState( int hInstrumentHandle ,char *szFil
 	
 	handle = hInstrumentHandle;
 	
-	CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalHandle ));
+	CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalStorage ));
 	bGetLock = 1;
 	
-	STDF_UPDATE_CALLBACK_DATA(pLocalHandle->ptCallbacks);   
+	STDF_UPDATE_CALLBACK_DATA(pLocalStorage->ptCallbacks);   
 	
-	switch ( pLocalHandle->tType )
+	switch ( pLocalStorage->tType )
 	{
 		case MODEL_TYPE_N9030A:
 		case MODEL_TYPE_N9020A:
@@ -4587,25 +4769,25 @@ void* DLLEXPORT SpectrumAnalyzer_RecallState( int hInstrumentHandle ,char *szFil
 			
 			for ( iTryIndex = 0; iTryIndex < 3; iTryIndex++ )
 			{
-				viPrintf( pLocalHandle->sessionHandle , "*CLS\n" );
+				viPrintf( pLocalStorage->sessionHandle , "*CLS\n" );
 			
 				sprintf( szLoadSpectrumState , ":MMEM:LOAD:STAT \"%s\"\n" , szFileName );
 	
-				CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , szLoadSpectrumState ));
+				CHK_VSA ( viPrintf( pLocalStorage->sessionHandle , szLoadSpectrumState ));
 			
-				DelayWithEventProcessing(pLocalHandle->lfStateFileDelay);
+				DelayWithEventProcessing(pLocalStorage->lfStateFileDelay);
 			
-				viPrintf( pLocalHandle->sessionHandle , ":SYST:ERR?\n" );
+				viPrintf( pLocalStorage->sessionHandle , ":SYST:ERR?\n" );
 	
 				SetBreakOnLibraryErrors (0);
-				viRead( pLocalHandle->sessionHandle, szReadBuffer , LOW_STRING , &count );
+				viRead( pLocalStorage->sessionHandle, szReadBuffer , LOW_STRING , &count );
 				SetBreakOnLibraryErrors (1);
 	
 				iError = atoi(szReadBuffer);
 	
 				if ( iError != -256 )
 				{
-					FREE_CALLOC_COPY_STRING(pLocalHandle->pLastStateFile,szFileName); 
+					FREE_CALLOC_COPY_STRING(pLocalStorage->pLastStateFile,szFileName); 
 					
 					break;
 				}
@@ -4619,7 +4801,7 @@ void* DLLEXPORT SpectrumAnalyzer_RecallState( int hInstrumentHandle ,char *szFil
 				
 				FREE(pFileNamePath);
 				
-				CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalHandle ));
+				CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalStorage ));
 				bGetLock = 1;
 			}																   
 	}
@@ -4638,7 +4820,7 @@ void* DLLEXPORT SpectrumAnalyzer_SaveState( int hInstrumentHandle ,char *szFileN
 
 	char					szLoadSpectrumState[512]			=	{0};
 	
-	tsHandle				*pLocalHandle						=	{0};
+	tsHandle				*pLocalStorage						=	{0};
 
 	int						handle								=	0;
 	
@@ -4646,9 +4828,9 @@ void* DLLEXPORT SpectrumAnalyzer_SaveState( int hInstrumentHandle ,char *szFileN
 	
 	handle = hInstrumentHandle;
 	
-	CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalHandle ));
+	CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalStorage ));
 	
-	switch ( pLocalHandle->tType )
+	switch ( pLocalStorage->tType )
 	{
 		case MODEL_TYPE_N9030A:
 		case MODEL_TYPE_N9020A:
@@ -4677,13 +4859,13 @@ void* DLLEXPORT SpectrumAnalyzer_SaveState( int hInstrumentHandle ,char *szFileN
 		case MODEL_TYPE_E7401A:
 		default:
 			
-			viPrintf( pLocalHandle->sessionHandle , "*CLS\n" );
+			viPrintf( pLocalStorage->sessionHandle , "*CLS\n" );
 			
 			sprintf( szLoadSpectrumState , ":MMEM:STOR:STAT \"%s\"\n" , szFileName );   
 	
-			CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , szLoadSpectrumState ));
+			CHK_VSA ( viPrintf( pLocalStorage->sessionHandle , szLoadSpectrumState ));
 			
-			FREE_CALLOC_COPY_STRING(pLocalHandle->pLastStateFile,szFileName); 
+			FREE_CALLOC_COPY_STRING(pLocalStorage->pLastStateFile,szFileName); 
 	}
 	
 Error: 
@@ -4704,7 +4886,7 @@ void* DLLEXPORT   SpectrumAnalyzer_GetLastStateFileName(int hInstrumentHandle, c
 {
 	STD_ERROR		StdError							=	{0};
 	
-	tsHandle		*pLocalHandle						=	{0};
+	tsHandle		*pLocalStorage						=	{0};
 
 	int				handle								=	0;
 	
@@ -4713,9 +4895,9 @@ void* DLLEXPORT   SpectrumAnalyzer_GetLastStateFileName(int hInstrumentHandle, c
 	
 	handle = hInstrumentHandle;
 	
-	CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalHandle ));
+	CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalStorage ));
 	
-	FREE_CALLOC_COPY_STRING(*pszFileName,pLocalHandle->pLastStateFile); 
+	FREE_CALLOC_COPY_STRING(*pszFileName,pLocalStorage->pLastStateFile); 
 	
 Error:
 	
@@ -4733,7 +4915,7 @@ void* DLLEXPORT SpectrumAnalyzer_Read_EVM( int hInstrumentHandle , double *plfEV
 
 	int						iActualSize							=	0;
 	
-	tsHandle				*pLocalHandle						=	{0};
+	tsHandle				*pLocalStorage						=	{0};
 
 	int						handle								=	0;
 	
@@ -4741,9 +4923,9 @@ void* DLLEXPORT SpectrumAnalyzer_Read_EVM( int hInstrumentHandle , double *plfEV
 	
 	handle = hInstrumentHandle;
 	
-	CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalHandle ));
+	CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalStorage ));
 	
-	switch ( pLocalHandle->tType )
+	switch ( pLocalStorage->tType )
 	{
 		case MODEL_TYPE_N9030A:
 		case MODEL_TYPE_N9020A:
@@ -4774,10 +4956,10 @@ void* DLLEXPORT SpectrumAnalyzer_Read_EVM( int hInstrumentHandle , double *plfEV
 			
 			sprintf( szString , ":FETCH:DDEMod?\n" );
 	
-			CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , szString ));
+			CHK_VSA ( viPrintf( pLocalStorage->sessionHandle , szString ));
 	
 			SetBreakOnLibraryErrors (0);
-			viRead( pLocalHandle->sessionHandle, szString , 20 , &iActualSize );
+			viRead( pLocalStorage->sessionHandle, szString , 20 , &iActualSize );
 			SetBreakOnLibraryErrors (1);
 				
 			if ( plfEVM_Value )
@@ -4800,7 +4982,7 @@ void* DLLEXPORT SpectrumAnalyzer_Read_IP3( int hInstrumentHandle , double *plfIP
 
 	int						iActualSize							=	0;
 	
-	tsHandle				*pLocalHandle						=	{0};
+	tsHandle				*pLocalStorage						=	{0};
 
 	int						handle								=	0;
 	
@@ -4808,9 +4990,9 @@ void* DLLEXPORT SpectrumAnalyzer_Read_IP3( int hInstrumentHandle , double *plfIP
 	
 	handle = hInstrumentHandle;
 	
-	CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalHandle ));
+	CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalStorage ));
 	
-	switch ( pLocalHandle->tType )
+	switch ( pLocalStorage->tType )
 	{
 		case MODEL_TYPE_N9030A:
 		case MODEL_TYPE_N9020A:
@@ -4841,10 +5023,10 @@ void* DLLEXPORT SpectrumAnalyzer_Read_IP3( int hInstrumentHandle , double *plfIP
 			
 			sprintf( szString , ":FETCH:TOI:IP3?\n" );
 	
-			CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , szString ));
+			CHK_VSA ( viPrintf( pLocalStorage->sessionHandle , szString ));
 	
 			SetBreakOnLibraryErrors (0);
-			viRead( pLocalHandle->sessionHandle, szString , 20 , &iActualSize );
+			viRead( pLocalStorage->sessionHandle, szString , 20 , &iActualSize );
 			SetBreakOnLibraryErrors (1);
 				
 			if ( plfIP3_Value )
@@ -4867,7 +5049,7 @@ void* DLLEXPORT SpectrumAnalyzer_Read_IP2( int hInstrumentHandle , double *plfIP
 
 	int						iActualSize							=	0;
 	
-	tsHandle				*pLocalHandle						=	{0};
+	tsHandle				*pLocalStorage						=	{0};
 
 	int						handle								=	0;
 	
@@ -4875,9 +5057,9 @@ void* DLLEXPORT SpectrumAnalyzer_Read_IP2( int hInstrumentHandle , double *plfIP
 	
 	handle = hInstrumentHandle;
 	
-	CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalHandle ));
+	CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalStorage ));
 	
-	switch ( pLocalHandle->tType )
+	switch ( pLocalStorage->tType )
 	{
 		case MODEL_TYPE_N9030A:
 		case MODEL_TYPE_N9020A:
@@ -4908,10 +5090,10 @@ void* DLLEXPORT SpectrumAnalyzer_Read_IP2( int hInstrumentHandle , double *plfIP
 			
 			sprintf( szString , ":FETCH:TOI:IP2?\n" );
 	
-			CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , szString ));
+			CHK_VSA ( viPrintf( pLocalStorage->sessionHandle , szString ));
 	
 			SetBreakOnLibraryErrors (0);
-			viRead( pLocalHandle->sessionHandle, szString , 20 , &iActualSize );
+			viRead( pLocalStorage->sessionHandle, szString , 20 , &iActualSize );
 			SetBreakOnLibraryErrors (1);
 				
 			if ( plfIP2_Value )
@@ -4935,7 +5117,7 @@ void* DLLEXPORT SpectrumAnalyzer_Read_Harmonics_Distortion( int hInstrumentHandl
 
 	int						iActualSize							=	0;
 	
-	tsHandle				*pLocalHandle						=	{0};
+	tsHandle				*pLocalStorage						=	{0};
 
 	int						handle								=	0;
 	
@@ -4943,9 +5125,9 @@ void* DLLEXPORT SpectrumAnalyzer_Read_Harmonics_Distortion( int hInstrumentHandl
 	
 	handle = hInstrumentHandle;
 	
-	CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalHandle ));
+	CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalStorage ));
 	
-	switch ( pLocalHandle->tType )
+	switch ( pLocalStorage->tType )
 	{
 		case MODEL_TYPE_N9030A:
 		case MODEL_TYPE_N9020A:
@@ -4976,10 +5158,10 @@ void* DLLEXPORT SpectrumAnalyzer_Read_Harmonics_Distortion( int hInstrumentHandl
 			
 			sprintf( szString , ":FETCH:HARM1?\n" );
 	
-			CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , szString ));
+			CHK_VSA ( viPrintf( pLocalStorage->sessionHandle , szString ));
 	
 			SetBreakOnLibraryErrors (0);
-			viRead( pLocalHandle->sessionHandle, szString , 20 , &iActualSize );
+			viRead( pLocalStorage->sessionHandle, szString , 20 , &iActualSize );
 			SetBreakOnLibraryErrors (1);
 				
 			if ( plfTHD_Value )
@@ -5002,7 +5184,7 @@ void* DLLEXPORT SpectrumAnalyzer_Read_Harmonics_dBc( int hInstrumentHandle , dou
 
 	int						iActualSize							=	0;
 	
-	tsHandle				*pLocalHandle						=	{0};
+	tsHandle				*pLocalStorage						=	{0};
 
 	int						handle								=	0;
 	
@@ -5010,9 +5192,9 @@ void* DLLEXPORT SpectrumAnalyzer_Read_Harmonics_dBc( int hInstrumentHandle , dou
 	
 	handle = hInstrumentHandle;
 	
-	CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalHandle ));
+	CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalStorage ));
 	
-	switch ( pLocalHandle->tType )
+	switch ( pLocalStorage->tType )
 	{
 		case MODEL_TYPE_N9030A:
 		case MODEL_TYPE_N9020A:
@@ -5043,10 +5225,10 @@ void* DLLEXPORT SpectrumAnalyzer_Read_Harmonics_dBc( int hInstrumentHandle , dou
 			
 			sprintf( szString , ":FETCH:HARM2?\n" );
 	
-			CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , szString ));
+			CHK_VSA ( viPrintf( pLocalStorage->sessionHandle , szString ));
 	
 			SetBreakOnLibraryErrors (0);
-			viRead( pLocalHandle->sessionHandle, szString , 20 , &iActualSize );
+			viRead( pLocalStorage->sessionHandle, szString , 20 , &iActualSize );
 			SetBreakOnLibraryErrors (1);
 				
 			if ( plfTHD_Value )
@@ -5069,7 +5251,7 @@ void* DLLEXPORT SpectrumAnalyzer_Read_Harmonics_Amplitude( int hInstrumentHandle
 
 	int						iActualSize							=	0;
 	
-	tsHandle				*pLocalHandle						=	{0};
+	tsHandle				*pLocalStorage						=	{0};
 
 	int						handle								=	0;
 	
@@ -5077,9 +5259,9 @@ void* DLLEXPORT SpectrumAnalyzer_Read_Harmonics_Amplitude( int hInstrumentHandle
 	
 	handle = hInstrumentHandle;
 	
-	CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalHandle ));
+	CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalStorage ));
 	
-	switch ( pLocalHandle->tType )
+	switch ( pLocalStorage->tType )
 	{
 		case MODEL_TYPE_N9030A:
 		case MODEL_TYPE_N9020A:
@@ -5110,10 +5292,10 @@ void* DLLEXPORT SpectrumAnalyzer_Read_Harmonics_Amplitude( int hInstrumentHandle
 			
 				sprintf( szString , ":FETCH:HARM:AMPL%d?\n" , (iHarmonicIndex+1) );     
 	
-				CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , szString ));
+				CHK_VSA ( viPrintf( pLocalStorage->sessionHandle , szString ));
 	
 				SetBreakOnLibraryErrors (0);
-				viRead( pLocalHandle->sessionHandle, szString , 20 , &iActualSize );
+				viRead( pLocalStorage->sessionHandle, szString , 20 , &iActualSize );
 				SetBreakOnLibraryErrors (1);
 	
 				if ( plfValue )
@@ -5150,7 +5332,7 @@ void* DLLEXPORT SpectrumAnalyzer_Read_Spurious_Emissions_List( int hInstrumentHa
 							*pString							=	NULL,
 							*pNext								=	NULL;
 	
-	tsHandle				*pLocalHandle						=	{0};
+	tsHandle				*pLocalStorage						=	{0};
 
 	int						handle								=	0;
 	
@@ -5164,15 +5346,15 @@ void* DLLEXPORT SpectrumAnalyzer_Read_Spurious_Emissions_List( int hInstrumentHa
 	
 	CALLOC_ERR( pRespondsString , 10240 , sizeof(char));
 	
-	CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalHandle ));
+	CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalStorage ));
 
-	viGetAttribute ( pLocalHandle->sessionHandle , VI_ATTR_TMO_VALUE , &iTimeout );   
+	viGetAttribute ( pLocalStorage->sessionHandle , VI_ATTR_TMO_VALUE , &iTimeout );   
 	
 	SetBreakOnLibraryErrors (0); 
 	
-	viSetAttribute ( pLocalHandle->sessionHandle , VI_ATTR_TMO_VALUE , (2E3) );  
+	viSetAttribute ( pLocalStorage->sessionHandle , VI_ATTR_TMO_VALUE , (2E3) );  
 	
-	switch ( pLocalHandle->tType )
+	switch ( pLocalStorage->tType )
 	{
 		case MODEL_TYPE_N9030A:
 		case MODEL_TYPE_N9020A:
@@ -5201,10 +5383,10 @@ void* DLLEXPORT SpectrumAnalyzer_Read_Spurious_Emissions_List( int hInstrumentHa
 		case MODEL_TYPE_E7401A:
 		default:
 			
-				CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , ":FETCH:SPUR?\n" ));
+				CHK_VSA ( viPrintf( pLocalStorage->sessionHandle , ":FETCH:SPUR?\n" ));
 	
 				SetBreakOnLibraryErrors (0);
-				viRead( pLocalHandle->sessionHandle, pRespondsString , (10239) , &iActualSize );
+				viRead( pLocalStorage->sessionHandle, pRespondsString , (10239) , &iActualSize );
 				SetBreakOnLibraryErrors (1);
 						
 				pString = pRespondsString;
@@ -5314,7 +5496,7 @@ Error:
 	
 	if ( handle )
 	{
-		viSetAttribute ( pLocalHandle->sessionHandle , VI_ATTR_TMO_VALUE , iTimeout ); 
+		viSetAttribute ( pLocalStorage->sessionHandle , VI_ATTR_TMO_VALUE , iTimeout ); 
 		
 		CmtReleaseTSVPtr ( handle );
 	}
@@ -5330,7 +5512,7 @@ void* DLLEXPORT SpectrumAnalyzer_SetToMode_Specrum( int hInstrumentHandle )
 {
 	STD_ERROR				StdError							=	{0};
 	
-	tsHandle				*pLocalHandle						=	{0};
+	tsHandle				*pLocalStorage						=	{0};
 
 	int						handle								=	0;
 	
@@ -5338,9 +5520,9 @@ void* DLLEXPORT SpectrumAnalyzer_SetToMode_Specrum( int hInstrumentHandle )
 	
 	handle = hInstrumentHandle;
 	
-	CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalHandle ));
+	CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalStorage ));
 	
-	switch ( pLocalHandle->tType )
+	switch ( pLocalStorage->tType )
 	{
 		case MODEL_TYPE_N9030A:
 		case MODEL_TYPE_N9020A:
@@ -5369,7 +5551,7 @@ void* DLLEXPORT SpectrumAnalyzer_SetToMode_Specrum( int hInstrumentHandle )
 		case MODEL_TYPE_E7401A:
 		default :
 				{
-						CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , ":INST:SEL %s\n" , "SA" ));
+						CHK_VSA ( viPrintf( pLocalStorage->sessionHandle , ":INST:SEL %s\n" , "SA" ));
 				}
 	}
 	
@@ -5385,7 +5567,7 @@ void* DLLEXPORT SpectrumAnalyzer_SetFrequency_Specrum( int hInstrumentHandle , d
 {
 	STD_ERROR				StdError							=	{0};
 	
-	tsHandle				*pLocalHandle						=	{0};
+	tsHandle				*pLocalStorage						=	{0};
 
 	int						handle								=	0;
 	
@@ -5393,9 +5575,9 @@ void* DLLEXPORT SpectrumAnalyzer_SetFrequency_Specrum( int hInstrumentHandle , d
 	
 	handle = hInstrumentHandle;
 	
-	CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalHandle ));
+	CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalStorage ));
 	
-	switch ( pLocalHandle->tType )
+	switch ( pLocalStorage->tType )
 	{
 		case MODEL_TYPE_N9030A:
 		case MODEL_TYPE_N9020A:
@@ -5424,7 +5606,7 @@ void* DLLEXPORT SpectrumAnalyzer_SetFrequency_Specrum( int hInstrumentHandle , d
 		case MODEL_TYPE_E7401A:
 		default :
 				{
-					CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , ":SENS:FREQ:CENT %E\n" , lfFrequency ));
+					CHK_VSA ( viPrintf( pLocalStorage->sessionHandle , ":SENS:FREQ:CENT %E\n" , lfFrequency ));
 				}
 	}
 	
@@ -5440,7 +5622,7 @@ void* DLLEXPORT SpectrumAnalyzer_SetFrequency( int hInstrumentHandle , double lf
 {
 	STD_ERROR				StdError							=	{0};
 	
-	tsHandle				*pLocalHandle						=	{0};
+	tsHandle				*pLocalStorage						=	{0};
 
 	int						handle								=	0;
 	
@@ -5448,9 +5630,9 @@ void* DLLEXPORT SpectrumAnalyzer_SetFrequency( int hInstrumentHandle , double lf
 	
 	handle = hInstrumentHandle;
 	
-	CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalHandle ));
+	CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalStorage ));
 	
-	switch ( pLocalHandle->tType )
+	switch ( pLocalStorage->tType )
 	{
 		case MODEL_TYPE_N9030A:
 		case MODEL_TYPE_N9020A:
@@ -5479,7 +5661,7 @@ void* DLLEXPORT SpectrumAnalyzer_SetFrequency( int hInstrumentHandle , double lf
 		case MODEL_TYPE_E7401A:
 		default :
 				{
-						CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , ":SENS:FREQ:CENT %E\n" , lfFrequency ));
+						CHK_VSA ( viPrintf( pLocalStorage->sessionHandle , ":SENS:FREQ:CENT %E\n" , lfFrequency ));
 				}
 	}
 	
@@ -5496,7 +5678,7 @@ void* DLLEXPORT SpectrumAnalyzer_GetFrequency( int hInstrumentHandle , double *p
 {
 	STD_ERROR				StdError							=	{0};
 	
-	tsHandle				*pLocalHandle						=	{0};
+	tsHandle				*pLocalStorage						=	{0};
 
 	int						handle								=	0;
 
@@ -5508,9 +5690,9 @@ void* DLLEXPORT SpectrumAnalyzer_GetFrequency( int hInstrumentHandle , double *p
 	
 	handle = hInstrumentHandle;
 	
-	CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalHandle ));
+	CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalStorage ));
 	
-	switch ( pLocalHandle->tType )
+	switch ( pLocalStorage->tType )
 	{
 		case MODEL_TYPE_N9030A:
 		case MODEL_TYPE_N9020A:
@@ -5539,10 +5721,10 @@ void* DLLEXPORT SpectrumAnalyzer_GetFrequency( int hInstrumentHandle , double *p
 		case MODEL_TYPE_E7401A:
 		default :
 				{
-						CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , ":SENS:FREQ:CENT?\n" ));
+						CHK_VSA ( viPrintf( pLocalStorage->sessionHandle , ":SENS:FREQ:CENT?\n" ));
 						
 						SetBreakOnLibraryErrors (0);
-						viRead( pLocalHandle->sessionHandle, szString , 20 , &iActualSize );
+						viRead( pLocalStorage->sessionHandle, szString , 20 , &iActualSize );
 						SetBreakOnLibraryErrors (1);
 	
 						if ( plfFrequency )
@@ -5562,7 +5744,7 @@ void* DLLEXPORT SpectrumAnalyzer_SetFrequency_EVM( int hInstrumentHandle , doubl
 {
 	STD_ERROR				StdError							=	{0};
 	
-	tsHandle				*pLocalHandle						=	{0};
+	tsHandle				*pLocalStorage						=	{0};
 
 	int						handle								=	0;
 	
@@ -5570,9 +5752,9 @@ void* DLLEXPORT SpectrumAnalyzer_SetFrequency_EVM( int hInstrumentHandle , doubl
 	
 	handle = hInstrumentHandle;
 	
-	CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalHandle ));
+	CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalStorage ));
 	
-	switch ( pLocalHandle->tType )
+	switch ( pLocalStorage->tType )
 	{
 		case MODEL_TYPE_N9030A:
 		case MODEL_TYPE_N9020A:
@@ -5601,7 +5783,7 @@ void* DLLEXPORT SpectrumAnalyzer_SetFrequency_EVM( int hInstrumentHandle , doubl
 		case MODEL_TYPE_E7401A:
 		default :
 				{
-					CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , ":FREQ:CENT %E\n" , lfFrequency ));
+					CHK_VSA ( viPrintf( pLocalStorage->sessionHandle , ":FREQ:CENT %E\n" , lfFrequency ));
 				}
 	}
 	
@@ -5617,7 +5799,7 @@ void* DLLEXPORT SpectrumAnalyzer_RestartMeasure( int hInstrumentHandle )
 {
 	STD_ERROR		StdError							=	{0};
 	
-	tsHandle		*pLocalHandle						=	{0};
+	tsHandle		*pLocalStorage						=	{0};
 
 	int				handle								=	0;
 	
@@ -5625,9 +5807,9 @@ void* DLLEXPORT SpectrumAnalyzer_RestartMeasure( int hInstrumentHandle )
 	
 	handle = hInstrumentHandle;
 	
-	CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalHandle ));
+	CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalStorage ));
 	
-	switch ( pLocalHandle->tType )
+	switch ( pLocalStorage->tType )
 	{
 		case MODEL_TYPE_N9030A:
 		case MODEL_TYPE_N9020A:
@@ -5656,7 +5838,7 @@ void* DLLEXPORT SpectrumAnalyzer_RestartMeasure( int hInstrumentHandle )
 		case MODEL_TYPE_E7401A:
 		default :
 				{
-						CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , ":INIT:REST\n" ));
+						CHK_VSA ( viPrintf( pLocalStorage->sessionHandle , ":INIT:REST\n" ));
 				}
 	}
 	
@@ -5686,7 +5868,7 @@ void* DLLEXPORT SpectrumAnalyzer_Read_SymbolStream( int hInstrumentHandle , int 
 					
 	int						iTryMeasureIndex					=	0;
 	
-	tsHandle				*pLocalHandle						=	{0};
+	tsHandle				*pLocalStorage						=	{0};
 
 	int						handle								=	0;
 	
@@ -5694,9 +5876,9 @@ void* DLLEXPORT SpectrumAnalyzer_Read_SymbolStream( int hInstrumentHandle , int 
 	
 	handle = hInstrumentHandle;
 	
-	CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalHandle ));
+	CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalStorage ));
 	
-	switch ( pLocalHandle->tType )
+	switch ( pLocalStorage->tType )
 	{
 		case MODEL_TYPE_N9030A:
 		case MODEL_TYPE_N9020A:
@@ -5734,7 +5916,7 @@ void* DLLEXPORT SpectrumAnalyzer_Read_SymbolStream( int hInstrumentHandle , int 
 					{
 						sprintf( szString , ":CALC:DDEM:DATA4?\n" );
 	
-						CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , szString ));
+						CHK_VSA ( viPrintf( pLocalStorage->sessionHandle , szString ));
 	
 						if ( IS_NOT_OK )
 							continue;
@@ -5742,7 +5924,7 @@ void* DLLEXPORT SpectrumAnalyzer_Read_SymbolStream( int hInstrumentHandle , int 
 						DelayWithEventProcessing(0.5);
 	
 						SetBreakOnLibraryErrors (0);
-						viRead( pLocalHandle->sessionHandle, pszBuffer , iNumberOfSymbols , &iNumberOfSymbolsRead );
+						viRead( pLocalStorage->sessionHandle, pszBuffer , iNumberOfSymbols , &iNumberOfSymbolsRead );
 						SetBreakOnLibraryErrors (1);
 	
 						if ( iNumberOfSymbolsRead > 2 )
@@ -5794,7 +5976,7 @@ void* DLLEXPORT SpectrumAnalyzer_SetOffset( int hInstrumentHandle , double lfOff
 {
 	STD_ERROR				StdError							=	{0};
 	
-	tsHandle				*pLocalHandle						=	{0};
+	tsHandle				*pLocalStorage						=	{0};
 
 	int						handle								=	0;
 	
@@ -5802,9 +5984,9 @@ void* DLLEXPORT SpectrumAnalyzer_SetOffset( int hInstrumentHandle , double lfOff
 	
 	handle = hInstrumentHandle;
 	
-	CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalHandle ));
+	CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalStorage ));
 	
-	switch ( pLocalHandle->tType )
+	switch ( pLocalStorage->tType )
 	{
 		case MODEL_TYPE_N9030A:
 		case MODEL_TYPE_N9020A:
@@ -5833,7 +6015,66 @@ void* DLLEXPORT SpectrumAnalyzer_SetOffset( int hInstrumentHandle , double lfOff
 		case MODEL_TYPE_E7401A:
 		default :
 				{
-						CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , ":DISP:WIND:TRAC:Y:RLEV:OFFS %E\n" , lfOffset ));
+						CHK_VSA ( viPrintf( pLocalStorage->sessionHandle , ":DISP:WIND:TRAC:Y:RLEV:OFFS %E\n" , lfOffset ));
+				}
+	}
+	
+Error: 
+	
+	if ( handle )
+		CmtReleaseTSVPtr ( handle );
+	
+	return SpectrumAnalyzer_GetErrorTextMessage(hInstrumentHandle,StdError.error,NULL);
+}
+
+void* DLLEXPORT SpectrumAnalyzer_SetTriggerSource( int hInstrumentHandle , int iType )  
+{
+	STD_ERROR				StdError							=	{0};
+	
+	tsHandle				*pLocalStorage						=	{0};
+
+	int						handle								=	0;
+	
+	char					szvValues[][5]						=	{"IMM","EXT1","EXT2","VID","RFB"};
+												
+	IF (( hInstrumentHandle == 0 ) , "Handle is empty" );
+	
+	IF (( iType >= (sizeof(szvValues)/sizeof(szvValues[0]))) , "The parameter is out of range." );  
+		
+	handle = hInstrumentHandle;
+	
+	CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalStorage ));
+	
+	switch ( pLocalStorage->tType )
+	{
+		case MODEL_TYPE_N9030A:
+		case MODEL_TYPE_N9020A:
+		case MODEL_TYPE_N9010A:
+		case MODEL_TYPE_N9000A:
+		case MODEL_TYPE_N8201A:
+		case MODEL_TYPE_E4448A:
+		case MODEL_TYPE_E4447A:
+		case MODEL_TYPE_E4446A:
+		case MODEL_TYPE_E4445A:
+		case MODEL_TYPE_E4443A:
+		case MODEL_TYPE_E4440A:
+		case MODEL_TYPE_E4406A:
+		case MODEL_TYPE_E4411B:
+		case MODEL_TYPE_E4408B:
+		case MODEL_TYPE_E4407B:
+		case MODEL_TYPE_E4405B:
+		case MODEL_TYPE_E4404B:
+		case MODEL_TYPE_E4403B:
+		case MODEL_TYPE_E4402B:
+		case MODEL_TYPE_E4401B:
+		case MODEL_TYPE_E7405A:
+		case MODEL_TYPE_E7404A:
+		case MODEL_TYPE_E7403A:
+		case MODEL_TYPE_E7402A:
+		case MODEL_TYPE_E7401A:
+		default :
+				{
+					CHK_VSA ( viPrintf( pLocalStorage->sessionHandle , ":TRIG:SOUR %s\n" , szvValues[iType] ));    
 				}
 	}
 	
@@ -5872,40 +6113,58 @@ void* DLLEXPORT SpectrumAnalyzer_GetTrace( int hInstrumentHandle , int timeout ,
 	
 	char					szReadFeedback[LOW_STRING]		=	{0};
 	
-	tsHandle				*pLocalHandle					=	{0};
+	tsHandle				*pLocalStorage					=	{0};
 
 	int						handle							=	0;
 	
-	int						model							=	0; 
+	int						model							=	0;
+	
 
 	IF (( hInstrumentHandle == 0 ) , "Handle is empty" );
 	
 	handle = hInstrumentHandle;
 	
-	CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalHandle ));
+	CHK_CMT ( CmtGetTSVPtr ( handle , &pLocalStorage ));
 	
-	model =  pLocalHandle->tType;
+	model =  pLocalStorage->tType;
 	
 	switch ( model )
 	{
-		case MODEL_TYPE_N9010A:	
+		case MODEL_TYPE_N9010A:
+		case MODEL_TYPE_N9010B:
 		case MODEL_TYPE_N9030A:
 			
 			{
-				CHK_VSA (viPrintf( pLocalHandle->sessionHandle ,":FORMat REAL,32\n" ));  
+				CHK_VSA (viPrintf( pLocalStorage->sessionHandle ,":INST?\n" ));    
+				
+				SetBreakOnLibraryErrors (0); 
+				viRead ( pLocalStorage->sessionHandle ,(ViPBuf)szReadFeedback , 10 , &uiCount );
+				SetBreakOnLibraryErrors (1);
+				
+				CHK_VSA (viPrintf( pLocalStorage->sessionHandle ,":FORMat REAL,32\n" ));  
 
-				CHK_VSA (viPrintf( pLocalHandle->sessionHandle ,":FORM:BORD SWAP\n" ));  
+				CHK_VSA (viPrintf( pLocalStorage->sessionHandle ,":FORM:BORD SWAP\n" ));  
+			
+				CHK_VSA (viPrintf( pLocalStorage->sessionHandle , "*WAI\n" )); 
+					
+				if ( strstr( szReadFeedback , "PNOISE" ))
+				{   
 				
-				CHK_VSA (viPrintf( pLocalHandle->sessionHandle , "*WAI\n" )); 
-				
-				CHK_VSA (SpectrumAnalyzer_GetSweep( handle , timeout ));
-				
-				CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , ":TRACe? TRACE1\n" )); 
+					CHK_VSA ( viPrintf( pLocalStorage->sessionHandle , ":READ:LPLot4?\n" ));
+					
+					DelayWithEventProcessing (10);
+				}
+				else
+				{   
+					CHK_VSA ( viPrintf( pLocalStorage->sessionHandle , ":TRACe? TRACE1\n" )); 
+
+					DelayWithEventProcessing (10);
+				}
 
 				do 
 				{
 					SetBreakOnLibraryErrors (0); 
-					viRead ( pLocalHandle->sessionHandle ,(ViPBuf)szReadFeedback , 1 , &uiCount );
+					viRead ( pLocalStorage->sessionHandle ,(ViPBuf)szReadFeedback , 1 , &uiCount );
 					SetBreakOnLibraryErrors (1); 
 
 					if ( szReadFeedback[0] == '#' )
@@ -5918,7 +6177,7 @@ void* DLLEXPORT SpectrumAnalyzer_GetTrace( int hInstrumentHandle , int timeout ,
 				memset( szReadFeedback , 0 , LOW_STRING );
 
 				SetBreakOnLibraryErrors (0); 
-				CHK_VSA (viRead ( pLocalHandle->sessionHandle ,(ViPBuf)szReadFeedback , 1 , &uiCount ));
+				CHK_VSA (viRead ( pLocalStorage->sessionHandle ,(ViPBuf)szReadFeedback , 1 , &uiCount ));
 				SetBreakOnLibraryErrors (1); 
 
 				IF (( uiCount == 0 ) , "Wrong trace reading format" );  
@@ -5928,7 +6187,7 @@ void* DLLEXPORT SpectrumAnalyzer_GetTrace( int hInstrumentHandle , int timeout ,
 				memset( szReadFeedback , 0 , LOW_STRING );
 
 				SetBreakOnLibraryErrors (0); 
-				CHK_VSA (viRead ( pLocalHandle->sessionHandle ,(ViPBuf)szReadFeedback , uiCount , &uiCount ));  
+				CHK_VSA (viRead ( pLocalStorage->sessionHandle ,(ViPBuf)szReadFeedback , uiCount , &uiCount ));  
 				SetBreakOnLibraryErrors (1); 
 				
 				uiNumberOfBinaryData = atoi(szReadFeedback); 
@@ -5936,7 +6195,7 @@ void* DLLEXPORT SpectrumAnalyzer_GetTrace( int hInstrumentHandle , int timeout ,
 				CALLOC_ERR( pFloatBuffer , uiNumberOfBinaryData , sizeof(char)); 
 
 				SetBreakOnLibraryErrors (0);
-				CHK_VSA (viRead ( pLocalHandle->sessionHandle ,(ViPBuf)pFloatBuffer , uiNumberOfBinaryData , &uiCount ));    
+				CHK_VSA (viRead ( pLocalStorage->sessionHandle ,(ViPBuf)pFloatBuffer , uiNumberOfBinaryData , &uiCount ));    
 				SetBreakOnLibraryErrors (1);
 				
 				IF (( uiNumberOfBinaryData != uiCount ) , "Wrong trace reading format" );
@@ -5954,7 +6213,7 @@ void* DLLEXPORT SpectrumAnalyzer_GetTrace( int hInstrumentHandle , int timeout ,
 				}
 
 				SetBreakOnLibraryErrors (0);
-				CHK_VSA (viRead ( pLocalHandle->sessionHandle ,(ViPBuf)szReadFeedback , 1 , &uiCount ));  
+				CHK_VSA (viRead ( pLocalStorage->sessionHandle ,(ViPBuf)szReadFeedback , 1 , &uiCount ));  
 				SetBreakOnLibraryErrors (1);
 			}
 			
@@ -5986,16 +6245,16 @@ void* DLLEXPORT SpectrumAnalyzer_GetTrace( int hInstrumentHandle , int timeout ,
 		default :  	
 		
 				{   
-						viPrintf( pLocalHandle->sessionHandle , "*WAI\n" ); 
+						viPrintf( pLocalStorage->sessionHandle , "*WAI\n" ); 
 						
-						WaitForOperationCompletion( pLocalHandle->sessionHandle , pLocalHandle->lfTimeout  ,  pLocalHandle->lfOpcLowLevelTimeout ); 
+						WaitForOperationCompletion( pLocalStorage->sessionHandle , pLocalStorage->lfTimeout  ,  pLocalStorage->lfOpcLowLevelTimeout ); 
 						
-						CHK_VSA ( viPrintf( pLocalHandle->sessionHandle , ":TRAC:MATH:MEAN? TRACE%d\n" )); 
+						CHK_VSA ( viPrintf( pLocalStorage->sessionHandle , ":TRAC:MATH:MEAN? TRACE%d\n" )); 
 	
 						do 
 						{
 							SetBreakOnLibraryErrors (0); 
-							viRead ( pLocalHandle->sessionHandle ,(ViPBuf)szReadFeedback , 1 , &uiCount );
+							viRead ( pLocalStorage->sessionHandle ,(ViPBuf)szReadFeedback , 1 , &uiCount );
 							SetBreakOnLibraryErrors (1); 
 	
 							if ( szReadFeedback[0] == '#' )
@@ -6008,7 +6267,7 @@ void* DLLEXPORT SpectrumAnalyzer_GetTrace( int hInstrumentHandle , int timeout ,
 						memset( szReadFeedback , 0 , LOW_STRING );
 	
 						SetBreakOnLibraryErrors (0); 
-						viRead ( pLocalHandle->sessionHandle ,(ViPBuf)szReadFeedback , 1 , &uiCount );
+						viRead ( pLocalStorage->sessionHandle ,(ViPBuf)szReadFeedback , 1 , &uiCount );
 						SetBreakOnLibraryErrors (1); 
 	
 						IF (( uiCount == 0 ) , "Wrong trace reading format" );  
@@ -6018,7 +6277,7 @@ void* DLLEXPORT SpectrumAnalyzer_GetTrace( int hInstrumentHandle , int timeout ,
 						memset( szReadFeedback , 0 , LOW_STRING );
 	
 						SetBreakOnLibraryErrors (0); 
-						viRead ( pLocalHandle->sessionHandle ,(ViPBuf)szReadFeedback , uiCount , &uiCount );  
+						viRead ( pLocalStorage->sessionHandle ,(ViPBuf)szReadFeedback , uiCount , &uiCount );  
 						SetBreakOnLibraryErrors (1); 
 						
 						uiNumberOfBinaryData = atoi(szReadFeedback); 
@@ -6026,7 +6285,7 @@ void* DLLEXPORT SpectrumAnalyzer_GetTrace( int hInstrumentHandle , int timeout ,
 						CALLOC_ERR( pReadBuffer , uiNumberOfBinaryData , sizeof(char)); 
 	
 						SetBreakOnLibraryErrors (0);
-						viRead ( pLocalHandle->sessionHandle ,(ViPBuf)pReadBuffer , uiNumberOfBinaryData , &uiCount );    
+						viRead ( pLocalStorage->sessionHandle ,(ViPBuf)pReadBuffer , uiNumberOfBinaryData , &uiCount );    
 						SetBreakOnLibraryErrors (1);
 						
 						IF (( uiNumberOfBinaryData != uiCount ) , "Wrong trace reading format" );     
@@ -6037,7 +6296,7 @@ void* DLLEXPORT SpectrumAnalyzer_GetTrace( int hInstrumentHandle , int timeout ,
 							plfLocalTrace[iIndex] = pReadBuffer[(iIndex*2)];
 
 						SetBreakOnLibraryErrors (0);
-						viRead ( pLocalHandle->sessionHandle ,(ViPBuf)szReadFeedback , 1 , &uiCount );  
+						viRead ( pLocalStorage->sessionHandle ,(ViPBuf)szReadFeedback , 1 , &uiCount );  
 						SetBreakOnLibraryErrors (1);
 				}
 	}
@@ -6175,7 +6434,8 @@ int		RecursiveMakeDirectory( int sessionHandle , char *pPath )
 
 	return 0;
 }
-/*
+
+
 int main (int argc, char *argv[])
 {
 	int					status					=	0;
@@ -6211,17 +6471,19 @@ int main (int argc, char *argv[])
 	
 	InitCVIRTE (0, argv, 0 ); 
 
-	SpectrumAnalyzer_Init ( 0 , "TCPIP::10.0.0.51" , &hInstrumentHandle , &bConnectStatus , &ChannelsQuantity );
+	SpectrumAnalyzer_Init ( 0 , "TCPIP::10.0.1.51" , &hInstrumentHandle , &bConnectStatus , &ChannelsQuantity );
 	
-	SpectrumAnalyzer_SendFile( hInstrumentHandle  , "C:\\HelloWorld.png" , "D:\\Ofir\\HelloWorld.png"  );  
+	SpectrumAnalyzer_GetTrace( hInstrumentHandle , 20000 , &pTrace , 20000 , &Count );   
+
+//	SpectrumAnalyzer_SendFile( hInstrumentHandle  , "C:\\HelloWorld.png" , "D:\\Ofir\\HelloWorld.png"  );  
 	
-	SpectrumAnalyzer_NoiseFigure_SetLossCompensationTable ( hInstrumentHandle , 0 , vFrequencies, vLoss , 10 );
+//	SpectrumAnalyzer_NoiseFigure_SetLossCompensationTable ( hInstrumentHandle , 0 , vFrequencies, vLoss , 10 );
 	
-	SpectrumAnalyzer_SetSweepMode( hInstrumentHandle , 0 );
+//	SpectrumAnalyzer_SetSweepMode( hInstrumentHandle , 0 );
 	
-	SpectrumAnalyzer_RestartMeasure( hInstrumentHandle );  
+//	SpectrumAnalyzer_RestartMeasure( hInstrumentHandle );  
 	
-	SpectrumAnalyzer_GetSweep( hInstrumentHandle , 60.0 );
+//	SpectrumAnalyzer_GetSweep( hInstrumentHandle , 60.0 );
 	
 	//SpectrumAnalyzer_Reset(hInstrumentHandle);
 	
@@ -6229,11 +6491,11 @@ int main (int argc, char *argv[])
 	
 	 
 	
-	SpectrumAnalyzer_SearchMarkerPeak( hInstrumentHandle , 1 ); 
+//	SpectrumAnalyzer_SearchMarkerPeak( hInstrumentHandle , 1 ); 
 	
 	
 		
-	SpectrumAnalyzer_WaitForIntrumentDone(hInstrumentHandle,20000);
+//	SpectrumAnalyzer_WaitForIntrumentDone(hInstrumentHandle,20000);
 	
 	//SpectrumAnalyzer_Read_Spurious_Emissions_List( hInstrumentHandle , &iNumberOfSpurious , &pvRangeNumber , &pvPassFail , &pvlfSpurFrequency , &pvlfSpurAmplitude , &pvlfSpurLimit );     
 	
@@ -6252,14 +6514,14 @@ int main (int argc, char *argv[])
 	//SpectrumAnalyzer_WaitForIntrumentDone(hInstrumentHandle,20000);
 	
 	
-	
+/*	
 	SpectrumAnalyzer_WaitForIntrumentDone(hInstrumentHandle,20000);
 	
 	SpectrumAnalyzer_Reset(hInstrumentHandle);	
 	
 	SpectrumAnalyzer_WaitForIntrumentDone(hInstrumentHandle,20000);
 	
-	//SpectrumAnalyzer_RecallState( hInstrumentHandle , "dlt_ber.state" );
+	SpectrumAnalyzer_RecallState( hInstrumentHandle , "dlt_ber.state" );
 	
 	SpectrumAnalyzer_WaitForIntrumentDone(hInstrumentHandle,20000);
 	
@@ -6310,8 +6572,15 @@ int main (int argc, char *argv[])
 	SpectrumAnalyzer_GetErrorTextMessage ( hInstrumentHandle , status , szOutputText );
 		
 	SpectrumAnalyzer_Close(&hInstrumentHandle);	
-	
+
+
+	SpectrumAnalyzer_SetTriggerSource( hInstrumentHandle , 0 );
+	SpectrumAnalyzer_SetTriggerSource( hInstrumentHandle , 1 );
+	SpectrumAnalyzer_SetTriggerSource( hInstrumentHandle , 2 );
+	SpectrumAnalyzer_SetTriggerSource( hInstrumentHandle , 3 );
+	SpectrumAnalyzer_SetTriggerSource( hInstrumentHandle , 4 );
+*/
 	return 0;
 	
 }
-*/
+
